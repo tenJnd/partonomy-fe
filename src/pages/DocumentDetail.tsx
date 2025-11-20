@@ -399,13 +399,25 @@ const DocumentDetail: React.FC = () => {
                   {assessment?.overall_complexity && (
                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                       <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Complexity</dt>
-                      <dd className="text-sm font-semibold text-gray-900 capitalize">{assessment.overall_complexity.toLowerCase()}</dd>
+                      <dd className={`text-sm font-semibold capitalize ${
+                        assessment.overall_complexity === 'EXTREME' ? 'text-red-600' :
+                        assessment.overall_complexity === 'HIGH' ? 'text-orange-600' :
+                        assessment.overall_complexity === 'MEDIUM' ? 'text-yellow-600' :
+                        assessment.overall_complexity === 'LOW' ? 'text-green-600' :
+                        'text-gray-900'
+                      }`}>{assessment.overall_complexity.toLowerCase()}</dd>
                     </div>
                   )}
                   {assessment?.manufacturing_risk_level && (
                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                       <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Risk Level</dt>
-                      <dd className="text-sm font-semibold text-gray-900 capitalize">{assessment.manufacturing_risk_level.toLowerCase()}</dd>
+                      <dd className={`text-sm font-semibold capitalize ${
+                        assessment.manufacturing_risk_level === 'EXTREME' ? 'text-red-600' :
+                        assessment.manufacturing_risk_level === 'HIGH' ? 'text-orange-600' :
+                        assessment.manufacturing_risk_level === 'MEDIUM' ? 'text-yellow-600' :
+                        assessment.manufacturing_risk_level === 'LOW' ? 'text-green-600' :
+                        'text-gray-900'
+                      }`}>{assessment.manufacturing_risk_level.toLowerCase()}</dd>
                     </div>
                   )}
                   {overview?.highlight_summary && Array.isArray(overview.highlight_summary) && (
@@ -423,9 +435,18 @@ const DocumentDetail: React.FC = () => {
                   {assessment?.shop_alignment && (
                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 col-span-2">
                       <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Shop Alignment</dt>
-                      <dd className="text-sm text-gray-900">
-                        <div><span className="font-semibold">Fit:</span> {assessment.shop_alignment.fit_level}</div>
-                        <div className="text-xs mt-1">{assessment.shop_alignment.fit_summary}</div>
+                      <dd className="text-sm">
+                        <div>
+                          <span className="font-semibold">Fit: </span>
+                          <span className={`font-semibold ${
+                            assessment.shop_alignment.fit_level === 'GOOD' ? 'text-green-600' :
+                            assessment.shop_alignment.fit_level === 'PARTIAL' ? 'text-yellow-600' :
+                            assessment.shop_alignment.fit_level === 'COOPERATION' ? 'text-orange-600' :
+                            assessment.shop_alignment.fit_level === 'LOW' ? 'text-red-600' :
+                            'text-gray-500'
+                          }`}>{assessment.shop_alignment.fit_level}</span>
+                        </div>
+                        <div className="text-xs mt-1 text-gray-900">{assessment.shop_alignment.fit_summary}</div>
                       </dd>
                     </div>
                   )}
@@ -475,71 +496,110 @@ const DocumentDetail: React.FC = () => {
                   )}
 
                   {/* Cost Drivers */}
-                  {costDrivers && Array.isArray(costDrivers) && (
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
-                      <button
-                        onClick={() => toggleSection('cost')}
-                        className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
-                      >
-                        <span className="text-sm font-semibold text-gray-900">Cost Drivers</span>
-                        {expandedSections['cost'] ? (
-                          <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2} />
-                        ) : (
-                          <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2} />
-                        )}
-                      </button>
-                      {expandedSections['cost'] && (
-                        <div className="p-4 bg-white space-y-3">
-                          {costDrivers.map((driver: any, idx: number) => (
-                            <div key={idx} className="border-l-2 border-yellow-400 pl-3">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-sm font-semibold text-gray-900">{driver.factor}</span>
-                                <span className={`text-xs px-2 py-0.5 rounded ${
-                                  driver.impact === 'HIGH' ? 'bg-red-100 text-red-800' :
-                                  driver.impact === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
-                                  'bg-green-100 text-green-800'
-                                }`}>{driver.impact}</span>
+                    {costDrivers && Array.isArray(costDrivers) && (
+                      <div className="border border-gray-200 rounded-lg overflow-hidden">
+                        <button
+                          onClick={() => toggleSection('cost')}
+                          className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
+                        >
+                          <span className="text-sm font-semibold text-gray-900">
+                            Cost Drivers
+                            <span className="ml-1 italic text-[11px] text-gray-500">(Quote Centric)</span>
+                          </span>
+
+                          {expandedSections['cost'] ? (
+                            <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2} />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2} />
+                          )}
+                        </button>
+
+                        {expandedSections['cost'] && (
+                          <div className="p-4 bg-white space-y-3">
+                            {costDrivers.map((driver: any, idx: number) => (
+                              <div
+                                key={idx}
+                                className={`border-l-2 pl-3 ${
+                                  driver.impact === 'EXTREME' ? 'border-red-400'
+                                    : driver.impact === 'HIGH' ? 'border-orange-400'
+                                    : driver.impact === 'MEDIUM' ? 'border-yellow-400'
+                                    : 'border-green-400'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-sm font-semibold text-gray-900">{driver.factor}</span>
+                                  <span
+                                    className={`text-xs px-2 py-0.5 rounded ${
+                                      driver.impact === 'EXTREME' ? 'bg-red-100 text-red-800'
+                                        : driver.impact === 'HIGH' ? 'bg-orange-100 text-yellow-800'
+                                        : driver.impact === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800'
+                                        : 'bg-green-100 text-green-800'
+                                    }`}
+                                  >
+                                    {driver.impact}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-gray-600">{driver.details}</p>
                               </div>
-                              <p className="text-xs text-gray-600">{driver.details}</p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                   {/* Critical Points */}
-                  {criticalPoints && Array.isArray(criticalPoints) && (
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
-                      <button
-                        onClick={() => toggleSection('critical')}
-                        className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
-                      >
-                        <span className="text-sm font-semibold text-gray-900">Critical Points</span>
-                        {expandedSections['critical'] ? (
-                          <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2} />
-                        ) : (
-                          <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2} />
-                        )}
-                      </button>
-                      {expandedSections['critical'] && (
-                        <div className="p-4 bg-white space-y-3">
-                          {criticalPoints.map((point: any, idx: number) => (
-                            <div key={idx} className="border-l-2 border-blue-400 pl-3">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-sm font-semibold text-gray-900 capitalize">{point.type.replace(/_/g, ' ')}</span>
-                                <span className={`text-xs px-2 py-0.5 rounded ${
-                                  point.importance === 'HIGH' ? 'bg-red-100 text-red-800' :
-                                  'bg-yellow-100 text-yellow-800'
-                                }`}>{point.importance}</span>
+                    {criticalPoints && Array.isArray(criticalPoints) && (
+                      <div className="border border-gray-200 rounded-lg overflow-hidden">
+                        <button
+                          onClick={() => toggleSection('critical')}
+                          className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
+                        >
+                          <span className="text-sm font-semibold text-gray-900">
+                            Critical Points
+                            <span className="ml-1 italic text-[11px] text-gray-500">(Production Centric)</span>
+                          </span>
+
+                          {expandedSections['critical'] ? (
+                            <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2} />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2} />
+                          )}
+                        </button>
+
+                        {expandedSections['critical'] && (
+                          <div className="p-4 bg-white space-y-3">
+                            {criticalPoints.map((point: any, idx: number) => (
+                              <div
+                                key={idx}
+                                className={`border-l-2 pl-3 ${
+                                  point.importance === 'EXTREME' ? 'border-red-400'
+                                    : point.importance === 'HIGH' ? 'border-orange-400'
+                                    : point.importance === 'MEDIUM' ? 'border-yellow-400'
+                                    : 'border-green-400'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-sm font-semibold text-gray-900 capitalize">
+                                    {point.type.replace(/_/g, ' ')}
+                                  </span>
+                                  <span
+                                    className={`text-xs px-2 py-0.5 rounded ${
+                                      point.importance === 'EXTREME' ? 'bg-red-100 text-red-800'
+                                        : point.importance === 'HIGH' ? 'bg-orange-100 text-yellow-800'
+                                        : point.importance === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800'
+                                        : 'bg-green-100 text-green-800'
+                                    }`}
+                                  >
+                                    {point.importance}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-gray-600">{point.description}</p>
                               </div>
-                              <p className="text-xs text-gray-600">{point.description}</p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                   {/* Processing Hints */}
                   {processHints && (
@@ -557,16 +617,6 @@ const DocumentDetail: React.FC = () => {
                       </button>
                       {expandedSections['processing'] && (
                         <div className="p-4 bg-white space-y-3">
-                          {processHints.inspection_focus && (
-                            <div>
-                              <dt className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Inspection Focus</dt>
-                              <ul className="space-y-1">
-                                {processHints.inspection_focus.map((item: string, idx: number) => (
-                                  <li key={idx} className="text-xs text-gray-900">• {item}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
                           {processHints.likely_routing_steps && (
                             <div>
                               <dt className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Routing Steps</dt>
@@ -582,6 +632,16 @@ const DocumentDetail: React.FC = () => {
                               <dt className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Machine Capability</dt>
                               <ul className="space-y-1">
                                 {processHints.machine_capability_hint.map((item: string, idx: number) => (
+                                  <li key={idx} className="text-xs text-gray-900">• {item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {processHints.inspection_focus && (
+                            <div>
+                              <dt className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Inspection Focus</dt>
+                              <ul className="space-y-1">
+                                {processHints.inspection_focus.map((item: string, idx: number) => (
                                   <li key={idx} className="text-xs text-gray-900">• {item}</li>
                                 ))}
                               </ul>
