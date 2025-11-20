@@ -107,6 +107,8 @@ export interface Database {
           overall_complexity: ComplexityEnum | null
           report_json: Json | null
           user_overrides: Json | null
+          render_bucket: string | null
+          render_storage_key: string | null
           created_at: string
           last_updated: string
         }
@@ -121,6 +123,8 @@ export interface Database {
           overall_complexity?: ComplexityEnum | null
           report_json?: Json | null
           user_overrides?: Json | null
+          render_bucket?: string | null
+          render_storage_key?: string | null
           created_at?: string
           last_updated?: string
         }
