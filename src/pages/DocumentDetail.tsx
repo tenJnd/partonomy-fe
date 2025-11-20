@@ -344,14 +344,14 @@ const DocumentDetail: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Left: Part Data (JSON) - Takes 1 column */}
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 xl:col-span-1">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Part Data</h2>
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+        {/* Left: Part Data - 40% */}
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 xl:col-span-2">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 px-2">Part Data</h2>
 
           {/* Part Selector */}
           {parts.length > 0 && (
-            <div className="mb-4">
+            <div className="mb-4 px-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Select Part
               </label>
@@ -380,7 +380,7 @@ const DocumentDetail: React.FC = () => {
             const internalNotes = reportJson.internal_notes;
 
             return (
-              <div className="space-y-4 overflow-auto" style={{ height: 'calc(100vh - 280px)', minHeight: '500px' }}>
+              <div className="space-y-4 overflow-auto scroll-smooth px-2" style={{ height: 'calc(100vh - 280px)', minHeight: '500px' }}>
                 {/* Quick Summary */}
                 {overview?.quick_summary && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -622,9 +622,9 @@ const DocumentDetail: React.FC = () => {
           )}
         </div>
 
-        {/* Right: Part Render with Zoom - Takes 2 columns */}
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 xl:col-span-2">
-          <div className="flex items-center justify-between mb-4">
+        {/* Right: Part Render with Zoom - 60% */}
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 xl:col-span-3">
+          <div className="flex items-center justify-between mb-4 px-2">
             <h2 className="text-lg font-semibold text-gray-900">Part Render</h2>
 
             {/* Zoom Controls */}
