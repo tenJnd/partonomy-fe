@@ -1,9 +1,23 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, AlertCircle, Loader, ZoomIn, ZoomOut, RotateCw, Maximize2, Minimize2, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  ArrowLeft,
+  AlertCircle,
+  Loader,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  Maximize2,
+  Minimize2,
+  ChevronDown,
+  ChevronUp,
+  Download
+} from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { Database } from '../lib/database.types';
+import { exportJsonToExcel } from '../utils/exportJsonToExcel';
+import { exportJsonToPdf } from '../utils/exportJsonToPdf';
 
 type Document = Database['public']['Tables']['documents']['Row'];
 type Part = Database['public']['Tables']['parts']['Row'];
@@ -26,6 +40,8 @@ const DocumentDetail: React.FC = () => {
   const [imageAspectRatio, setImageAspectRatio] = useState<number | null>(null);
   const [containerWidth, setContainerWidth] = useState<number>(800);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -240,6 +256,7 @@ const DocumentDetail: React.FC = () => {
   }
 
   const selectedPart = parts.find(p => p.id === selectedPartId);
+  const selectedPartReport = selectedPart?.report_json as any | undefined;
 
   // Fullscreen modal
   const renderFullscreenModal = () => {
@@ -333,19 +350,86 @@ const DocumentDetail: React.FC = () => {
       {renderFullscreenModal()}
 
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <Link
-          to="/"
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5 text-gray-600" strokeWidth={1.5} />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">{document.file_name}</h1>
-          <p className="text-sm text-gray-500">
-            {parts.length} {parts.length === 1 ? 'part' : 'parts'} detected
-          </p>
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-4">
+          <Link
+            to="/"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-600" strokeWidth={1.5} />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">{document.file_name}</h1>
+            <p className="text-sm text-gray-500">
+              {parts.length} {parts.length === 1 ? 'part' : 'parts'} detected
+            </p>
+          </div>
         </div>
+
+        {/* Export dropdown */}
+        {selectedPartReport && (
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsExportMenuOpen(prev => !prev)}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 shadow-sm"
+            >
+              <Download className="w-4 h-4" strokeWidth={1.5} />
+              <span>Export</span>
+              <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={1.5} />
+            </button>
+
+            {isExportMenuOpen && (
+              <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20">
+                <button
+                  type="button"
+                  onClick={() => {
+                    exportJsonToExcel(
+                      selectedPartReport,
+                      selectedPart?.part_number ||
+                      selectedPart?.display_name ||
+                      'part_report'
+                    );
+                    setIsExportMenuOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  Export to XLSX
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    exportJsonToPdf(
+                      selectedPartReport,
+                      selectedPart?.part_number ||
+                      selectedPart?.display_name ||
+                      'part_report'
+                    );
+                    setIsExportMenuOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  Export to PDF
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    exportJson(
+                      selectedPartReport,
+                      selectedPart?.display_name || selectedPart?.part_number || 'part_report'
+                    );
+                    setIsExportMenuOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  Export to JSON
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Main Content */}
@@ -496,110 +580,110 @@ const DocumentDetail: React.FC = () => {
                   )}
 
                   {/* Cost Drivers */}
-                    {costDrivers && Array.isArray(costDrivers) && (
-                      <div className="border border-gray-200 rounded-lg overflow-hidden">
-                        <button
-                          onClick={() => toggleSection('cost')}
-                          className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
-                        >
-                          <span className="text-sm font-semibold text-gray-900">
-                            Cost Drivers
-                            <span className="ml-1 italic text-[11px] text-gray-500">(Quote Centric)</span>
-                          </span>
+                  {costDrivers && Array.isArray(costDrivers) && (
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => toggleSection('cost')}
+                        className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
+                      >
+                        <span className="text-sm font-semibold text-gray-900">
+                          Cost Drivers
+                          <span className="ml-1 italic text-[11px] text-gray-500">(Quote Centric)</span>
+                        </span>
 
-                          {expandedSections['cost'] ? (
-                            <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2} />
-                          ) : (
-                            <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2} />
-                          )}
-                        </button>
-
-                        {expandedSections['cost'] && (
-                          <div className="p-4 bg-white space-y-3">
-                            {costDrivers.map((driver: any, idx: number) => (
-                              <div
-                                key={idx}
-                                className={`border-l-2 pl-3 ${
-                                  driver.impact === 'EXTREME' ? 'border-red-400'
-                                    : driver.impact === 'HIGH' ? 'border-orange-400'
-                                    : driver.impact === 'MEDIUM' ? 'border-yellow-400'
-                                    : 'border-green-400'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-sm font-semibold text-gray-900">{driver.factor}</span>
-                                  <span
-                                    className={`text-xs px-2 py-0.5 rounded ${
-                                      driver.impact === 'EXTREME' ? 'bg-red-100 text-red-800'
-                                        : driver.impact === 'HIGH' ? 'bg-orange-100 text-yellow-800'
-                                        : driver.impact === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800'
-                                        : 'bg-green-100 text-green-800'
-                                    }`}
-                                  >
-                                    {driver.impact}
-                                  </span>
-                                </div>
-                                <p className="text-xs text-gray-600">{driver.details}</p>
-                              </div>
-                            ))}
-                          </div>
+                        {expandedSections['cost'] ? (
+                          <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2} />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2} />
                         )}
-                      </div>
-                    )}
+                      </button>
+
+                      {expandedSections['cost'] && (
+                        <div className="p-4 bg-white space-y-3">
+                          {costDrivers.map((driver: any, idx: number) => (
+                            <div
+                              key={idx}
+                              className={`border-l-2 pl-3 ${
+                                driver.impact === 'EXTREME' ? 'border-red-400'
+                                  : driver.impact === 'HIGH' ? 'border-orange-400'
+                                  : driver.impact === 'MEDIUM' ? 'border-yellow-400'
+                                  : 'border-green-400'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-sm font-semibold text-gray-900">{driver.factor}</span>
+                                <span
+                                  className={`text-xs px-2 py-0.5 rounded ${
+                                    driver.impact === 'EXTREME' ? 'bg-red-100 text-red-800'
+                                      : driver.impact === 'HIGH' ? 'bg-orange-100 text-yellow-800'
+                                      : driver.impact === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800'
+                                      : 'bg-green-100 text-green-800'
+                                  }`}
+                                >
+                                  {driver.impact}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-600">{driver.details}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Critical Points */}
-                    {criticalPoints && Array.isArray(criticalPoints) && (
-                      <div className="border border-gray-200 rounded-lg overflow-hidden">
-                        <button
-                          onClick={() => toggleSection('critical')}
-                          className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
-                        >
-                          <span className="text-sm font-semibold text-gray-900">
-                            Critical Points
-                            <span className="ml-1 italic text-[11px] text-gray-500">(Production Centric)</span>
-                          </span>
+                  {criticalPoints && Array.isArray(criticalPoints) && (
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => toggleSection('critical')}
+                        className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
+                      >
+                        <span className="text-sm font-semibold text-gray-900">
+                          Critical Points
+                          <span className="ml-1 italic text-[11px] text-gray-500">(Production Centric)</span>
+                        </span>
 
-                          {expandedSections['critical'] ? (
-                            <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2} />
-                          ) : (
-                            <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2} />
-                          )}
-                        </button>
-
-                        {expandedSections['critical'] && (
-                          <div className="p-4 bg-white space-y-3">
-                            {criticalPoints.map((point: any, idx: number) => (
-                              <div
-                                key={idx}
-                                className={`border-l-2 pl-3 ${
-                                  point.importance === 'EXTREME' ? 'border-red-400'
-                                    : point.importance === 'HIGH' ? 'border-orange-400'
-                                    : point.importance === 'MEDIUM' ? 'border-yellow-400'
-                                    : 'border-green-400'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-sm font-semibold text-gray-900 capitalize">
-                                    {point.type.replace(/_/g, ' ')}
-                                  </span>
-                                  <span
-                                    className={`text-xs px-2 py-0.5 rounded ${
-                                      point.importance === 'EXTREME' ? 'bg-red-100 text-red-800'
-                                        : point.importance === 'HIGH' ? 'bg-orange-100 text-yellow-800'
-                                        : point.importance === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800'
-                                        : 'bg-green-100 text-green-800'
-                                    }`}
-                                  >
-                                    {point.importance}
-                                  </span>
-                                </div>
-                                <p className="text-xs text-gray-600">{point.description}</p>
-                              </div>
-                            ))}
-                          </div>
+                        {expandedSections['critical'] ? (
+                          <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2} />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2} />
                         )}
-                      </div>
-                    )}
+                      </button>
+
+                      {expandedSections['critical'] && (
+                        <div className="p-4 bg-white space-y-3">
+                          {criticalPoints.map((point: any, idx: number) => (
+                            <div
+                              key={idx}
+                              className={`border-l-2 pl-3 ${
+                                point.importance === 'EXTREME' ? 'border-red-400'
+                                  : point.importance === 'HIGH' ? 'border-orange-400'
+                                  : point.importance === 'MEDIUM' ? 'border-yellow-400'
+                                  : 'border-green-400'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-sm font-semibold text-gray-900 capitalize">
+                                  {point.type.replace(/_/g, ' ')}
+                                </span>
+                                <span
+                                  className={`text-xs px-2 py-0.5 rounded ${
+                                    point.importance === 'EXTREME' ? 'bg-red-100 text-red-800'
+                                      : point.importance === 'HIGH' ? 'bg-orange-100 text-yellow-800'
+                                      : point.importance === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800'
+                                      : 'bg-green-100 text-green-800'
+                                  }`}
+                                >
+                                  {point.importance}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-600">{point.description}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Processing Hints */}
                   {processHints && (
@@ -925,13 +1009,13 @@ const DocumentDetail: React.FC = () => {
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">Material</h3>
                         <div className="space-y-3">
-                            {overview.material.value && (
-                                <div>
-                                    <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Material</dt>
-                                    <dd className="text-sm text-gray-900">{overview.material.value}</dd>
-                                </div>
-                            )}
-                            {overview.material.text && (
+                          {overview.material.value && (
+                            <div>
+                              <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Material</dt>
+                              <dd className="text-sm text-gray-900">{overview.material.value}</dd>
+                            </div>
+                          )}
+                          {overview.material.text && (
                             <div>
                               <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Note</dt>
                               <dd className="text-sm text-gray-900">{overview.material.text}</dd>
