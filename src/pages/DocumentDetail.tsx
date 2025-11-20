@@ -369,16 +369,255 @@ const DocumentDetail: React.FC = () => {
             </div>
           )}
 
-          {/* JSON Data Display */}
-          {selectedPart ? (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 overflow-auto" style={{ height: 'calc(100vh - 280px)', minHeight: '500px' }}>
-              <pre className="text-xs text-gray-800 whitespace-pre-wrap break-words font-mono">
-                {JSON.stringify(selectedPart.report_json, null, 2)}
-              </pre>
-            </div>
-          ) : (
+          {/* Part Analysis Content */}
+          {selectedPart && (selectedPart.report_json as any) ? (() => {
+            const reportJson = selectedPart.report_json as any;
+            const overview = reportJson.overview;
+            const assessment = reportJson.assessment;
+            const costDrivers = reportJson.cost_drivers;
+            const criticalPoints = reportJson.critical_points;
+            const processHints = reportJson.process_hints;
+            const internalNotes = reportJson.internal_notes;
+
+            return (
+              <div className="space-y-4 overflow-auto" style={{ height: 'calc(100vh - 280px)', minHeight: '500px' }}>
+                {/* Quick Summary */}
+                {overview?.quick_summary && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h3 className="text-sm font-semibold text-blue-900 mb-2">Summary</h3>
+                    <p className="text-sm text-blue-800 leading-relaxed">{overview.quick_summary}</p>
+                  </div>
+                )}
+
+                {/* Key Metrics Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  {assessment?.overall_complexity && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                      <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Complexity</dt>
+                      <dd className="text-sm font-semibold text-gray-900 capitalize">{assessment.overall_complexity.toLowerCase()}</dd>
+                    </div>
+                  )}
+                  {assessment?.manufacturing_risk_level && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                      <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Risk Level</dt>
+                      <dd className="text-sm font-semibold text-gray-900 capitalize">{assessment.manufacturing_risk_level.toLowerCase()}</dd>
+                    </div>
+                  )}
+                  {overview?.highlight_summary && Array.isArray(overview.highlight_summary) && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 col-span-2">
+                      <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Highlights</dt>
+                      <dd className="text-xs text-gray-900">
+                        <ul className="list-disc list-inside space-y-1">
+                          {overview.highlight_summary.map((item: string, idx: number) => (
+                            <li key={idx}>{item}</li>
+                          ))}
+                        </ul>
+                      </dd>
+                    </div>
+                  )}
+                  {assessment?.shop_alignment && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 col-span-2">
+                      <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Shop Alignment</dt>
+                      <dd className="text-sm text-gray-900">
+                        <div><span className="font-semibold">Fit:</span> {assessment.shop_alignment.fit_level}</div>
+                        <div className="text-xs mt-1">{assessment.shop_alignment.fit_summary}</div>
+                      </dd>
+                    </div>
+                  )}
+                </div>
+
+                {/* Collapsible Sections */}
+                <div className="space-y-2">
+                  {/* Key Risks & Opportunities */}
+                  {(assessment?.key_risks || assessment?.key_opportunities) && (
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => toggleSection('risks')}
+                        className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
+                      >
+                        <span className="text-sm font-semibold text-gray-900">Key Risks & Opportunities</span>
+                        {expandedSections['risks'] ? (
+                          <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2} />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2} />
+                        )}
+                      </button>
+                      {expandedSections['risks'] && (
+                        <div className="p-4 bg-white space-y-4">
+                          {assessment.key_risks && Array.isArray(assessment.key_risks) && (
+                            <div>
+                              <dt className="text-xs font-semibold text-red-600 uppercase tracking-wider mb-2">Risks</dt>
+                              <ul className="space-y-2">
+                                {assessment.key_risks.map((risk: string, idx: number) => (
+                                  <li key={idx} className="text-sm text-gray-900 pl-4 border-l-2 border-red-300">{risk}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {assessment.key_opportunities && Array.isArray(assessment.key_opportunities) && (
+                            <div>
+                              <dt className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-2">Opportunities</dt>
+                              <ul className="space-y-2">
+                                {assessment.key_opportunities.map((opp: string, idx: number) => (
+                                  <li key={idx} className="text-sm text-gray-900 pl-4 border-l-2 border-green-300">{opp}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Cost Drivers */}
+                  {costDrivers && Array.isArray(costDrivers) && (
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => toggleSection('cost')}
+                        className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
+                      >
+                        <span className="text-sm font-semibold text-gray-900">Cost Drivers</span>
+                        {expandedSections['cost'] ? (
+                          <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2} />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2} />
+                        )}
+                      </button>
+                      {expandedSections['cost'] && (
+                        <div className="p-4 bg-white space-y-3">
+                          {costDrivers.map((driver: any, idx: number) => (
+                            <div key={idx} className="border-l-2 border-yellow-400 pl-3">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-sm font-semibold text-gray-900">{driver.factor}</span>
+                                <span className={`text-xs px-2 py-0.5 rounded ${
+                                  driver.impact === 'HIGH' ? 'bg-red-100 text-red-800' :
+                                  driver.impact === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-green-100 text-green-800'
+                                }`}>{driver.impact}</span>
+                              </div>
+                              <p className="text-xs text-gray-600">{driver.details}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Critical Points */}
+                  {criticalPoints && Array.isArray(criticalPoints) && (
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => toggleSection('critical')}
+                        className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
+                      >
+                        <span className="text-sm font-semibold text-gray-900">Critical Points</span>
+                        {expandedSections['critical'] ? (
+                          <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2} />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2} />
+                        )}
+                      </button>
+                      {expandedSections['critical'] && (
+                        <div className="p-4 bg-white space-y-3">
+                          {criticalPoints.map((point: any, idx: number) => (
+                            <div key={idx} className="border-l-2 border-blue-400 pl-3">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-sm font-semibold text-gray-900 capitalize">{point.type.replace(/_/g, ' ')}</span>
+                                <span className={`text-xs px-2 py-0.5 rounded ${
+                                  point.importance === 'HIGH' ? 'bg-red-100 text-red-800' :
+                                  'bg-yellow-100 text-yellow-800'
+                                }`}>{point.importance}</span>
+                              </div>
+                              <p className="text-xs text-gray-600">{point.description}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Processing Hints */}
+                  {processHints && (
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => toggleSection('processing')}
+                        className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
+                      >
+                        <span className="text-sm font-semibold text-gray-900">Processing Hints</span>
+                        {expandedSections['processing'] ? (
+                          <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2} />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2} />
+                        )}
+                      </button>
+                      {expandedSections['processing'] && (
+                        <div className="p-4 bg-white space-y-3">
+                          {processHints.inspection_focus && (
+                            <div>
+                              <dt className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Inspection Focus</dt>
+                              <ul className="space-y-1">
+                                {processHints.inspection_focus.map((item: string, idx: number) => (
+                                  <li key={idx} className="text-xs text-gray-900">• {item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {processHints.likely_routing_steps && (
+                            <div>
+                              <dt className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Routing Steps</dt>
+                              <div className="flex flex-wrap gap-2">
+                                {processHints.likely_routing_steps.map((step: string, idx: number) => (
+                                  <span key={idx} className="text-xs bg-gray-100 px-2 py-1 rounded">{step}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {processHints.machine_capability_hint && (
+                            <div>
+                              <dt className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Machine Capability</dt>
+                              <ul className="space-y-1">
+                                {processHints.machine_capability_hint.map((item: string, idx: number) => (
+                                  <li key={idx} className="text-xs text-gray-900">• {item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Internal Notes */}
+                  {internalNotes && Array.isArray(internalNotes) && (
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => toggleSection('notes')}
+                        className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
+                      >
+                        <span className="text-sm font-semibold text-gray-900">Internal Notes</span>
+                        {expandedSections['notes'] ? (
+                          <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2} />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2} />
+                        )}
+                      </button>
+                      {expandedSections['notes'] && (
+                        <div className="p-4 bg-white">
+                          <ul className="space-y-2">
+                            {internalNotes.map((note: string, idx: number) => (
+                              <li key={idx} className="text-sm text-gray-700 pl-4 border-l-2 border-gray-300">{note}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })() : (
             <div className="text-center py-12 text-gray-500">
-              <p>No parts detected for this document</p>
+              <p>No analysis data available</p>
             </div>
           )}
         </div>
