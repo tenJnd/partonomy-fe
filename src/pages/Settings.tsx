@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Globe, Clock, Building2, Users, CreditCard, Save, AlertCircle, CheckCircle } from 'lucide-react';
+import { Building2, Users, CreditCard, Save, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
