@@ -18,6 +18,7 @@ import { useAuth } from '../contexts/AuthContext';
 import type { Database } from '../lib/database.types';
 import { exportJsonToExcel } from '../utils/exportJsonToExcel';
 import { exportJsonToPdf } from '../utils/exportJsonToPdf';
+import { exportJson } from '../utils/exportJson';
 
 type Document = Database['public']['Tables']['documents']['Row'];
 type Part = Database['public']['Tables']['parts']['Row'];
