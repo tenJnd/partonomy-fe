@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -13,8 +13,16 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 
 const AppLayout: React.FC = () => {
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Collapse sidebar when on document detail page
+  useEffect(() => {
+    if (location.pathname.startsWith('/documents/') && location.pathname !== '/documents') {
+      setSidebarCollapsed(true);
+    }
+  }, [location.pathname]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);

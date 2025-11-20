@@ -120,6 +120,11 @@ const DocumentDetail: React.FC = () => {
         const img = new Image();
         img.onload = () => {
           setImageAspectRatio(img.width / img.height);
+          // Reset scroll position when image loads
+          if (containerRef.current) {
+            containerRef.current.scrollTop = 0;
+            containerRef.current.scrollLeft = 0;
+          }
         };
         img.src = data.signedUrl;
       }
@@ -203,7 +208,7 @@ const DocumentDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="p-6 max-w-[1800px] mx-auto">
         <div className="flex items-center justify-center min-h-[60vh]">
           <Loader className="w-8 h-8 text-gray-400 animate-spin" strokeWidth={1.5} />
         </div>
@@ -213,7 +218,7 @@ const DocumentDetail: React.FC = () => {
 
   if (error || !document) {
     return (
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="p-6 max-w-[1800px] mx-auto">
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <AlertCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" strokeWidth={1.5} />
@@ -324,7 +329,7 @@ const DocumentDetail: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6 max-w-[1800px] mx-auto">
       {renderFullscreenModal()}
 
       {/* Header */}
@@ -347,7 +352,7 @@ const DocumentDetail: React.FC = () => {
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
         {/* Left: Part Data - 40% */}
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 xl:col-span-2">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 px-2">Part Data</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 px-2">Report</h2>
 
           {/* Part Selector */}
           {parts.length > 0 && (
@@ -380,7 +385,7 @@ const DocumentDetail: React.FC = () => {
             const internalNotes = reportJson.internal_notes;
 
             return (
-              <div className="space-y-4 overflow-auto scroll-smooth px-2" style={{ height: 'calc(100vh - 280px)', minHeight: '500px' }}>
+              <div className="space-y-4 px-2">
                 {/* Quick Summary */}
                 {overview?.quick_summary && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -624,16 +629,14 @@ const DocumentDetail: React.FC = () => {
 
         {/* Right: Part Render with Zoom - 60% */}
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 xl:col-span-3">
-          <div className="flex items-center justify-between mb-4 px-2">
-            <h2 className="text-lg font-semibold text-gray-900">Part Render</h2>
-
+          <div className="flex items-center justify-end mb-4 px-2">
             {/* Zoom Controls */}
             {partRenderUrl && (
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleZoomOut}
                   disabled={zoom <= 25}
-                  className="p-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300 rounded-lg transition-colors"
+                  className="p-1 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300 rounded-lg transition-colors"
                   title="Zoom out"
                 >
                   <ZoomOut className="w-4 h-4" strokeWidth={1.5} />
@@ -644,14 +647,14 @@ const DocumentDetail: React.FC = () => {
                 <button
                   onClick={handleZoomIn}
                   disabled={zoom >= 300}
-                  className="p-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300 rounded-lg transition-colors"
+                  className="p-1 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300 rounded-lg transition-colors"
                   title="Zoom in"
                 >
                   <ZoomIn className="w-4 h-4" strokeWidth={1.5} />
                 </button>
                 <button
                   onClick={handleResetZoom}
-                  className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  className="p-1 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                   title="Reset zoom"
                 >
                   <RotateCw className="w-4 h-4" strokeWidth={1.5} />
@@ -659,7 +662,7 @@ const DocumentDetail: React.FC = () => {
                 <div className="w-px h-6 bg-gray-200 mx-1" />
                 <button
                   onClick={toggleFullscreen}
-                  className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  className="p-1 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                   title="Fullscreen"
                 >
                   <Maximize2 className="w-4 h-4" strokeWidth={1.5} />
@@ -862,16 +865,16 @@ const DocumentDetail: React.FC = () => {
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">Material</h3>
                         <div className="space-y-3">
-                          {overview.material.text && (
+                            {overview.material.value && (
+                                <div>
+                                    <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Material</dt>
+                                    <dd className="text-sm text-gray-900">{overview.material.value}</dd>
+                                </div>
+                            )}
+                            {overview.material.text && (
                             <div>
-                              <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Text</dt>
+                              <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Note</dt>
                               <dd className="text-sm text-gray-900">{overview.material.text}</dd>
-                            </div>
-                          )}
-                          {overview.material.value && (
-                            <div>
-                              <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Value</dt>
-                              <dd className="text-sm text-gray-900">{overview.material.value}</dd>
                             </div>
                           )}
                           {overview.material.confidence !== undefined && overview.material.confidence !== null && (
@@ -889,16 +892,16 @@ const DocumentDetail: React.FC = () => {
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">Blank Dimensions</h3>
                         <div className="space-y-3">
-                          {overview.blank_dimensions.text && (
-                            <div>
-                              <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Dimensions</dt>
-                              <dd className="text-sm text-gray-900">{overview.blank_dimensions.text}</dd>
-                            </div>
-                          )}
                           {overview.blank_dimensions.text_norm && (
                             <div>
-                              <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Note</dt>
+                              <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Dimensions</dt>
                               <dd className="text-sm text-gray-900">{overview.blank_dimensions.text_norm}</dd>
+                            </div>
+                          )}
+                          {overview.blank_dimensions.text && (
+                            <div>
+                              <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Note</dt>
+                              <dd className="text-sm text-gray-900">{overview.blank_dimensions.text}</dd>
                             </div>
                           )}
                           <div className="grid grid-cols-3 gap-2">
