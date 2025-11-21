@@ -162,7 +162,7 @@ export function validateFile(
 ): Error | null {
     const {
         maxSizeBytes = 50 * 1024 * 1024, // 50MB default
-        allowedExtensions = ['pdf', 'dwg', 'dxf'],
+        allowedExtensions = ['pdf', 'tiff', 'tif', 'jpg', 'jpeg', 'png'],
     } = options;
 
     // Check file size

@@ -56,6 +56,23 @@ export interface Database {
           role?: RoleEnum
         }
       }
+      organization_profiles: {
+            Row: {
+              org_id: string
+              report_lang: string | null
+              profile_text: string | null
+            }
+            Insert: {
+              org_id: string
+              report_lang?: string | null
+              profile_text?: string | null
+            }
+            Update: {
+              org_id?: string
+              report_lang?: string | null
+              profile_text?: string | null
+            }
+          }
       documents: {
         Row: {
           id: string

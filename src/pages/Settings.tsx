@@ -1,15 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Building2, Users, CreditCard, Save, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
 const Settings: React.FC = () => {
   const { currentOrg } = useAuth();
+
+  // --- state ---
   const [orgName, setOrgName] = useState(currentOrg?.organization.name || '');
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
 
+  const [reportLang, setReportLang] = useState<string>('en');
+  const [profileText, setProfileText] = useState<string>('');
+  const [profileLoaded, setProfileLoaded] = useState(false);
+
+  // původní hodnoty pro "dirty" check
+  const [initialReportLang, setInitialReportLang] = useState<string>('en');
+  const [initialProfileText, setInitialProfileText] = useState<string>('');
+
+  // --- load organization profile (lang + profile text) ---
+  useEffect(() => {
+    if (!currentOrg) return;
+
+    const loadProfile = async () => {
+      const { data, error } = await supabase
+        .from('organization_profiles')
+        .select('*')
+        .eq('org_id', currentOrg.org_id)
+        .single();
+
+      if (!error && data) {
+        const lang = data.report_lang || 'en';
+        const profile = data.profile_text || '';
+
+        setReportLang(lang);
+        setInitialReportLang(lang);
+
+        setProfileText(profile);
+        setInitialProfileText(profile);
+      }
+
+      setProfileLoaded(true);
+    };
+
+    loadProfile();
+  }, [currentOrg]);
+
+  // --- save organization name ---
   const handleSaveOrgName = async () => {
     if (!currentOrg || !orgName.trim()) return;
 
@@ -34,11 +73,85 @@ const Settings: React.FC = () => {
     }
   };
 
+  // --- save organization profile (lang + profile text) ---
+  const handleSaveProfile = async () => {
+    if (!currentOrg || !profileLoaded) return;
+
+    setSaving(true);
+    setSaveError('');
+    setSaveSuccess(false);
+
+    // Zkusíme najít existující záznam
+    const { data: existing } = await supabase
+      .from('organization_profiles')
+      .select('*')
+      .eq('org_id', currentOrg.org_id)
+      .single();
+
+    let error;
+
+    if (existing) {
+      // UPDATE
+      const { error: updateError } = await supabase
+        .from('organization_profiles')
+        .update({
+          report_lang: reportLang,
+          profile_text: profileText
+        })
+        .eq('org_id', currentOrg.org_id);
+      error = updateError;
+    } else {
+      // INSERT
+      const { error: insertError } = await supabase
+        .from('organization_profiles')
+        .insert({
+          org_id: currentOrg.org_id,
+          report_lang: reportLang,
+          profile_text: profileText
+        });
+      error = insertError;
+    }
+
+    setSaving(false);
+
+    if (error) {
+      setSaveError(error.message);
+    } else {
+      // po úspěšném uložení posuneme "initial" hodnoty → tlačítka se zase disablují
+      setInitialReportLang(reportLang);
+      setInitialProfileText(profileText);
+
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    }
+  };
+
   return (
     <div className="p-6 max-w-4xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-4">
         <h1 className="text-2xl font-semibold text-gray-900">Settings</h1>
+      </div>
+
+      {/* Global alerts (platí pro jakýkoliv save na stránce) */}
+      <div className="mb-6 space-y-3">
+        {saveError && (
+          <div className="p-4 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" strokeWidth={2} />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-rose-900">Error</p>
+              <p className="text-sm text-rose-700 mt-1">{saveError}</p>
+            </div>
+          </div>
+        )}
+        {saveSuccess && (
+          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg flex items-start gap-3">
+            <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" strokeWidth={2} />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-emerald-900">Changes saved successfully!</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Settings Sections */}
@@ -51,23 +164,6 @@ const Settings: React.FC = () => {
             <p className="text-sm text-gray-500 mt-1">Manage organization details and preferences</p>
           </div>
           <div className="p-6 space-y-4">
-            {saveError && (
-              <div className="p-4 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" strokeWidth={2} />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-rose-900">Error</p>
-                  <p className="text-sm text-rose-700 mt-1">{saveError}</p>
-                </div>
-              </div>
-            )}
-            {saveSuccess && (
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" strokeWidth={2} />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-emerald-900">Saved successfully!</p>
-                </div>
-              </div>
-            )}
             <div className="flex items-center justify-between py-3">
               <div className="flex items-center gap-3">
                 <Building2 className="w-5 h-5 text-gray-400" strokeWidth={1.5} />
@@ -87,12 +183,78 @@ const Settings: React.FC = () => {
                 <button
                   onClick={handleSaveOrgName}
                   disabled={saving || !orgName.trim() || orgName === currentOrg?.organization.name}
-                  className="h-[38px] px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-lg text-sm font-medium transition-all active:scale-[0.98] disabled:cursor-not-allowed flex items-center gap-2"
+                  className="h-[38px] px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-all active:scale-[0.98] flex items-center gap-2"
                 >
                   <Save className="w-4 h-4" strokeWidth={2} />
                   {saving ? 'Saving...' : 'Save'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Report Language */}
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-900">Report Language</h2>
+            <p className="text-sm text-gray-500 mt-1">Choose the language for the reports</p>
+          </div>
+
+          <div className="p-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Building2 className="w-5 h-5 text-gray-400" strokeWidth={1.5} />
+              <div>
+                <div className="text-sm font-medium text-gray-900">Report Language</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <select
+                value={reportLang}
+                onChange={(e) => setReportLang(e.target.value)}
+                className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all text-sm"
+              >
+                <option value="en">English</option>
+                <option value="de">German</option>
+                <option value="cz">Czech</option>
+              </select>
+
+              <button
+                onClick={handleSaveProfile}
+                disabled={saving || !profileLoaded || reportLang === initialReportLang}
+                className="h-[38px] px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+              >
+                <Save className="w-4 h-4" strokeWidth={2} />
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Organization Profile */}
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-900">Organization Profile</h2>
+            <p className="text-sm text-gray-500 mt-1">Your report will be personalized based on this profile.</p>
+          </div>
+
+          <div className="p-6 space-y-4">
+            <textarea
+              value={profileText}
+              onChange={(e) => setProfileText(e.target.value)}
+              className="w-full min-h-[120px] p-3 bg-white border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none text-sm"
+              placeholder="Describe your organization in your own words, capabilities, preferences, etc."
+            />
+
+            <div className="flex justify-end">
+              <button
+                onClick={handleSaveProfile}
+                disabled={saving || !profileLoaded || profileText === initialProfileText}
+                className="h-[38px] px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+              >
+                <Save className="w-4 h-4" strokeWidth={2} />
+                Save Profile
+              </button>
             </div>
           </div>
         </div>
