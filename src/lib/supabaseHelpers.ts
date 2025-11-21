@@ -2,7 +2,7 @@ import {supabase} from './supabase';
 import type {Database} from './database.types';
 
 type Document = Database['public']['Tables']['documents']['Row'];
-type Part = Database['public']['Tables']['parts']['Row'];
+// type Part = Database['public']['Tables']['parts']['Row'];
 type DocumentInsert = Database['public']['Tables']['documents']['Insert'];
 type PartInsert = Database['public']['Tables']['parts']['Insert'];
 type PartUpdate = Database['public']['Tables']['parts']['Update'];

@@ -17,7 +17,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { Database } from '../lib/database.types';
 import { exportJsonToExcel } from '../utils/exportJsonToExcel';
-import { exportJsonToPdf } from '../utils/exportJsonToPdf';
+import { exportJsonToText } from '../utils/exportJsonToText';
 import { exportJson } from '../utils/exportJson';
 
 type Document = Database['public']['Tables']['documents']['Row'];
@@ -90,7 +90,7 @@ const DocumentDetail: React.FC = () => {
           console.error('Error fetching parts:', partsError);
         } else if (partsData) {
           const fetchedParts = partsData
-            .map(dp => dp.parts)
+            .map(dp => dp.parts as unknown as Part | null)
             .filter((p): p is Part => p !== null);
           setParts(fetchedParts);
 
@@ -401,7 +401,7 @@ const DocumentDetail: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    exportJsonToPdf(
+                    exportJsonToText(
                       selectedPartReport,
                       selectedPart?.part_number ||
                       selectedPart?.display_name ||
@@ -411,15 +411,16 @@ const DocumentDetail: React.FC = () => {
                   }}
                   className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                 >
-                  Export to PDF
+                  Export to TXT
                 </button>
+
 
                 <button
                   type="button"
                   onClick={() => {
                     exportJson(
                       selectedPartReport,
-                      selectedPart?.display_name || selectedPart?.part_number || 'part_report'
+                      selectedPart?.part_number || selectedPart?.part_number || 'part_report'
                     );
                     setIsExportMenuOpen(false);
                   }}

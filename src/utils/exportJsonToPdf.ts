@@ -58,7 +58,7 @@ const addLabelValueInline = (
   return y + lines.length * 5;
 };
 
-// For long text (summary, fit summary, paragraphs)
+// For long text (paragraph)
 const addBlock = (
   doc: jsPDF,
   label: string,
@@ -92,6 +92,46 @@ const addMultilineList = (doc: jsPDF, items: string[], y: number) => {
     y = ensurePage(doc, y + 2);
     const bullet = '• ';
     const lines = doc.splitTextToSize(bullet + item, CONTENT_WIDTH);
+    doc.text(lines, MARGIN_LEFT, y);
+    y += lines.length * 5;
+  });
+
+  return y;
+};
+
+// --- NEW: sentence splitting helper ---
+const splitIntoSentences = (text: string): string[] => {
+  return text
+    .split(/(?<=[.!?])\s+/) // split after ., !, ? + space
+    .map(s => s.trim())
+    .filter(Boolean);
+};
+
+// --- NEW: block rendered sentence-by-sentence ---
+const addSentenceBlock = (
+  doc: jsPDF,
+  label: string,
+  value: string,
+  y: number
+) => {
+  if (!value) return y;
+
+  const sentences = splitIntoSentences(value);
+  if (sentences.length === 0) return y;
+
+  y = ensurePage(doc, y + 2);
+  doc.setFontSize(10);
+
+  // label
+  doc.setFont('helvetica', 'bold');
+  doc.text(label, MARGIN_LEFT, y);
+  y += 5;
+
+  // each sentence as its own "paragraph"
+  doc.setFont('helvetica', 'normal');
+  sentences.forEach(sentence => {
+    y = ensurePage(doc, y + 2);
+    const lines = doc.splitTextToSize(sentence, CONTENT_WIDTH);
     doc.text(lines, MARGIN_LEFT, y);
     y += lines.length * 5;
   });
@@ -163,9 +203,9 @@ export const exportJsonToPdf = (data: AnyReport, fileName = 'analysis_report') =
   // --- SUMMARY ---
   y = addSectionTitle(doc, 'Summary', y);
 
-  // Quick summary and fit summary as full-width blocks (no chop on the right)
-  y = addBlock(doc, 'Quick summary', overview.quick_summary || '', y);
-  y = addBlock(doc, 'Fit summary', shopAlignment.fit_summary || '', y);
+  // Quick summary and fit summary sentence-by-sentence (lepší čitelnost)
+  y = addSentenceBlock(doc, 'Quick summary', overview.quick_summary || '', y);
+  y = addSentenceBlock(doc, 'Fit summary', shopAlignment.fit_summary || '', y);
 
   if (Array.isArray(overview.highlight_summary) && overview.highlight_summary.length > 0) {
     y = ensurePage(doc, y + 4);
@@ -312,5 +352,4 @@ export const exportJsonToPdf = (data: AnyReport, fileName = 'analysis_report') =
   }
 
   doc.save(`${sanitizeFilename(fileName)}_report.pdf`);
-
 };
