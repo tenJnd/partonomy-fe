@@ -8,6 +8,10 @@ import MembersList from '../components/MembersList';
 const Settings: React.FC = () => {
     const {currentOrg, user} = useAuth();
 
+    // --- derived permissions ---
+    const canManageOrg =
+        currentOrg?.role === 'owner' || currentOrg?.role === 'admin';
+
     // --- state ---
     const [orgName, setOrgName] = useState(currentOrg?.organization.name || '');
     const [saving, setSaving] = useState(false);
@@ -26,7 +30,11 @@ const Settings: React.FC = () => {
 
     // --- load organization profile (lang + profile text) ---
     useEffect(() => {
-        if (!currentOrg) return;
+        if (!currentOrg || !canManageOrg) {
+            // pokud user není admin/owner, profil ani nezkoušíme tahat
+            setProfileLoaded(true);
+            return;
+        }
 
         const loadProfile = async () => {
             const {data, error} = await supabase
@@ -50,11 +58,11 @@ const Settings: React.FC = () => {
         };
 
         loadProfile();
-    }, [currentOrg]);
+    }, [currentOrg, canManageOrg]);
 
     // --- save organization name ---
     const handleSaveOrgName = async () => {
-        if (!currentOrg || !orgName.trim()) return;
+        if (!currentOrg || !orgName.trim() || !canManageOrg) return;
 
         setSaving(true);
         setSaveError('');
@@ -79,7 +87,7 @@ const Settings: React.FC = () => {
 
     // --- save organization profile (lang + profile text) ---
     const handleSaveProfile = async () => {
-        if (!currentOrg || !profileLoaded) return;
+        if (!currentOrg || !profileLoaded || !canManageOrg) return;
 
         setSaving(true);
         setSaveError('');
@@ -100,7 +108,7 @@ const Settings: React.FC = () => {
                 .from('organization_profiles')
                 .update({
                     report_lang: reportLang,
-                    profile_text: profileText
+                    profile_text: profileText,
                 })
                 .eq('org_id', currentOrg.org_id);
             error = updateError;
@@ -111,7 +119,7 @@ const Settings: React.FC = () => {
                 .insert({
                     org_id: currentOrg.org_id,
                     report_lang: reportLang,
-                    profile_text: profileText
+                    profile_text: profileText,
                 });
             error = insertError;
         }
@@ -145,6 +153,23 @@ const Settings: React.FC = () => {
                 <h1 className="text-2xl font-semibold text-gray-900">Settings</h1>
             </div>
 
+            {/* Info, pokud user není admin/owner */}
+            {!canManageOrg && (
+                <div className="mb-4 p-4 bg-red-100 border border-gray-200 rounded-lg flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" strokeWidth={2}/>
+                    <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                            You don&apos;t have permission to manage organization settings.
+                        </p>
+                        <p className="text-sm text-gray-600 mt-1">
+                            Only organization owners and admins can change these settings. Contact your admin if you
+                            need
+                            access.
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {/* Global alerts (platí pro jakýkoliv save na stránce) */}
             <div className="mb-6 space-y-3">
                 {saveError && (
@@ -160,20 +185,24 @@ const Settings: React.FC = () => {
                     <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg flex items-start gap-3">
                         <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" strokeWidth={2}/>
                         <div className="flex-1">
-                            <p className="text-sm font-medium text-emerald-900">Changes saved successfully!</p>
+                            <p className="text-sm font-medium text-emerald-900">
+                                Changes saved successfully!
+                            </p>
                         </div>
                     </div>
                 )}
             </div>
 
             {/* Settings Sections */}
-            <div className="space-y-6">
-
+            {/* když user nemá práva → celý obsah zšedne a nejde klikat */}
+            <div className={`space-y-6 ${!canManageOrg ? 'opacity-60 pointer-events-none' : ''}`}>
                 {/* Organization Settings */}
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-100">
                         <h2 className="text-lg font-semibold text-gray-900">Organization</h2>
-                        <p className="text-sm text-gray-500 mt-1">Manage organization details and preferences</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                            Manage organization details and preferences
+                        </p>
                     </div>
                     <div className="p-6 space-y-4">
                         <div className="flex items-center justify-between py-3">
@@ -188,13 +217,17 @@ const Settings: React.FC = () => {
                                 <input
                                     type="text"
                                     value={orgName}
-                                    onChange={(e) => setOrgName(e.target.value)}
+                                    onChange={e => setOrgName(e.target.value)}
                                     className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-sm min-w-[200px]"
                                     placeholder="Organization name"
                                 />
                                 <button
                                     onClick={handleSaveOrgName}
-                                    disabled={saving || !orgName.trim() || orgName === currentOrg?.organization.name}
+                                    disabled={
+                                        saving ||
+                                        !orgName.trim() ||
+                                        orgName === currentOrg?.organization.name
+                                    }
                                     className="h-[38px] px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-all active:scale-[0.98] flex items-center gap-2"
                                 >
                                     <Save className="w-4 h-4" strokeWidth={2}/>
@@ -209,7 +242,9 @@ const Settings: React.FC = () => {
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-100">
                         <h2 className="text-lg font-semibold text-gray-900">Report Language</h2>
-                        <p className="text-sm text-gray-500 mt-1">Choose the language for the reports</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                            Choose the language for the reports
+                        </p>
                     </div>
 
                     <div className="p-6 flex items-center justify-between">
@@ -223,7 +258,7 @@ const Settings: React.FC = () => {
                         <div className="flex items-center gap-2">
                             <select
                                 value={reportLang}
-                                onChange={(e) => setReportLang(e.target.value)}
+                                onChange={e => setReportLang(e.target.value)}
                                 className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all text-sm"
                             >
                                 <option value="en">English</option>
@@ -233,7 +268,11 @@ const Settings: React.FC = () => {
 
                             <button
                                 onClick={handleSaveProfile}
-                                disabled={saving || !profileLoaded || reportLang === initialReportLang}
+                                disabled={
+                                    saving ||
+                                    !profileLoaded ||
+                                    reportLang === initialReportLang
+                                }
                                 className="h-[38px] px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-all flex items-center gap-2"
                             >
                                 <Save className="w-4 h-4" strokeWidth={2}/>
@@ -246,15 +285,18 @@ const Settings: React.FC = () => {
                 {/* Organization Profile */}
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-100">
-                        <h2 className="text-lg font-semibold text-gray-900">Organization Profile</h2>
-                        <p className="text-sm text-gray-500 mt-1">Your report will be personalized based on this
-                            profile.</p>
+                        <h2 className="text-lg font-semibold text-gray-900">
+                            Organization Profile
+                        </h2>
+                        <p className="text-sm text-gray-500 mt-1">
+                            Your report will be personalized based on this profile.
+                        </p>
                     </div>
 
                     <div className="p-6 space-y-4">
             <textarea
                 value={profileText}
-                onChange={(e) => setProfileText(e.target.value)}
+                onChange={e => setProfileText(e.target.value)}
                 className="w-full min-h-[120px] p-3 bg-white border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none text-sm"
                 placeholder="Describe your organization in your own words, capabilities, preferences, etc."
             />
@@ -262,11 +304,15 @@ const Settings: React.FC = () => {
                         <div className="flex justify-end">
                             <button
                                 onClick={handleSaveProfile}
-                                disabled={saving || !profileLoaded || profileText === initialProfileText}
+                                disabled={
+                                    saving ||
+                                    !profileLoaded ||
+                                    profileText === initialProfileText
+                                }
                                 className="h-[38px] px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-all flex items-center gap-2"
                             >
                                 <Save className="w-4 h-4" strokeWidth={2}/>
-                                Save Profile
+                                Save
                             </button>
                         </div>
                     </div>
@@ -276,7 +322,9 @@ const Settings: React.FC = () => {
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-100">
                         <h2 className="text-lg font-semibold text-gray-900">Members</h2>
-                        <p className="text-sm text-gray-500 mt-1">Manage team members and permissions</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                            Manage team members and permissions
+                        </p>
                     </div>
                     <div className="p-6 space-y-4">
                         <MembersList
@@ -285,7 +333,7 @@ const Settings: React.FC = () => {
                             currentUserId={user.id}
                         />
 
-                        <div className="pt-4 border-t border-gray-100">
+                        <div className="pt-4 border-t border-gray-100 flex justify-center">
                             <button
                                 onClick={() => setInviteModalOpen(true)}
                                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-all active:scale-[0.98]"
@@ -300,7 +348,9 @@ const Settings: React.FC = () => {
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-100">
                         <h2 className="text-lg font-semibold text-gray-900">Billing</h2>
-                        <p className="text-sm text-gray-500 mt-1">Manage subscription and billing information</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                            Manage subscription and billing information
+                        </p>
                     </div>
                     <div className="p-6">
                         <div className="text-center py-8">
@@ -309,7 +359,9 @@ const Settings: React.FC = () => {
                                 <CreditCard className="w-4 h-4" strokeWidth={1.5}/>
                                 Starter Plan
                             </div>
-                            <p className="text-sm text-gray-500 mb-4">Current plan includes basic features</p>
+                            <p className="text-sm text-gray-500 mb-4">
+                                Current plan includes basic features
+                            </p>
                             <button
                                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm text-sm font-medium transition-all active:scale-[0.98]">
                                 Upgrade Plan

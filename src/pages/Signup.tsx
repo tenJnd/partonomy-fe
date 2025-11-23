@@ -14,6 +14,7 @@ import { supabase } from '../lib/supabase';
 const Signup: React.FC = () => {
   const [step, setStep] = useState<'account' | 'organization'>('account');
   const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState(''); // ✅ NEW: jméno / nickname
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [organizationName, setOrganizationName] = useState('');
@@ -24,7 +25,6 @@ const Signup: React.FC = () => {
     null
   );
 
-  // ⬇⬇ teď bereme i refreshOrganizations
   const { signUp, refreshOrganizations } = useAuth();
   const navigate = useNavigate();
 
@@ -39,6 +39,11 @@ const Signup: React.FC = () => {
     e.preventDefault();
     setError('');
 
+    if (!fullName.trim()) {
+      setError('Please enter your name');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -50,7 +55,7 @@ const Signup: React.FC = () => {
     }
 
     if (pendingInviteToken) {
-      await handleSignupWithInvite(); // ⬅ důležité, aby se čekalo
+      await handleSignupWithInvite();
     } else {
       setStep('organization');
     }
@@ -65,7 +70,8 @@ const Signup: React.FC = () => {
       console.log('[Signup] Creating user account for invite...');
       const { data: authData, error: signUpError } = await signUp(
         email,
-        password
+        password,
+        fullName // ✅ posíláme jméno do signUp (user_metadata)
       );
 
       if (signUpError) {
@@ -86,7 +92,10 @@ const Signup: React.FC = () => {
       console.log('[Signup] Accepting invite token...');
       const { data: inviteData, error: inviteError } = await supabase.rpc(
         'accept_organization_invite',
-        { p_token: pendingInviteToken }
+        {
+          p_token: pendingInviteToken,
+          p_user_name: fullName, // ✅ nové param jméno do funkce v DB
+        }
       );
 
       if (inviteError) {
@@ -106,7 +115,6 @@ const Signup: React.FC = () => {
 
           sessionStorage.removeItem('pendingInviteToken');
 
-          // ⬇⬇ TADY JE POINTA: víme přesně userId z téhle session
           try {
             await refreshOrganizations(session.user.id);
           } catch (e) {
@@ -145,14 +153,20 @@ const Signup: React.FC = () => {
       return;
     }
 
+    if (!fullName.trim()) {
+      // pojistka – kdyby se někdo proklikal
+      setError('Please enter your name');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // 1. Create user account
       console.log('[Signup] Creating user account...');
       const { data: authData, error: signUpError } = await signUp(
         email,
-        password
+        password,
+        fullName // ✅ signUp s jménem
       );
       console.log('[Signup] Sign up result:', { authData, signUpError });
 
@@ -162,7 +176,6 @@ const Signup: React.FC = () => {
         return;
       }
 
-      // 2. Get session from signup response
       const session = authData?.session;
       console.log('[Signup] Session from signup:', session?.user?.id);
 
@@ -174,12 +187,12 @@ const Signup: React.FC = () => {
 
       const userId = session.user.id;
 
-      // 3. Create organization with owner using database function (bypasses RLS)
       console.log('[Signup] Calling create_organization_with_owner RPC...');
 
       const rpcPromise = supabase.rpc('create_organization_with_owner', {
         p_org_name: organizationName.trim(),
         p_user_id: userId,
+        p_user_name: fullName, // ✅ nové param jméno do create_organization_with_owner
       });
 
       const timeoutPromise = new Promise((_, reject) =>
@@ -214,7 +227,6 @@ const Signup: React.FC = () => {
       console.log('[Signup] Organization created successfully!');
       setSuccess(true);
 
-      // ⬇⬇ TADY znovu – refresh podle userId ze session, ne podle user v contextu
       try {
         await refreshOrganizations(userId);
       } catch (e) {
@@ -320,6 +332,21 @@ const Signup: React.FC = () => {
           {/* Account Step Form */}
           {step === 'account' && (
             <form onSubmit={handleAccountSubmit} className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Full name
+                </label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={e => setFullName(e.target.value)}
+                  className="w-full h-11 px-3 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none"
+                  placeholder="How should we call you?"
+                  required
+                  disabled={loading || success}
+                />
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Email address
