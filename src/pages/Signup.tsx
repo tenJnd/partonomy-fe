@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
 import {useAuth} from '../contexts/AuthContext';
 import {AlertCircle, Building2, CheckCircle, Lock, Mail, UserPlus} from 'lucide-react';
@@ -13,8 +13,18 @@ const Signup: React.FC = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [pendingInviteToken, setPendingInviteToken] = useState<string | null>(null);
     const {signUp} = useAuth();
     const navigate = useNavigate();
+
+    useEffect(() => {
+        // Check if there's a pending invite token
+        const token = sessionStorage.getItem('pendingInviteToken');
+        if (token) {
+            setPendingInviteToken(token);
+            // Skip to account creation (no org step needed)
+        }
+    }, []);
 
     const handleAccountSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -31,8 +41,75 @@ const Signup: React.FC = () => {
             return;
         }
 
-        // Move to organization step
-        setStep('organization');
+        // If we have a pending invite, skip to account creation
+        if (pendingInviteToken) {
+            handleSignupWithInvite();
+        } else {
+            // Move to organization step
+            setStep('organization');
+        }
+    };
+
+    const handleSignupWithInvite = async () => {
+        setError('');
+        setSuccess(false);
+        setLoading(true);
+
+        try {
+            console.log('[Signup] Creating user account for invite...');
+            const {data: authData, error: signUpError} = await signUp(email, password);
+
+            if (signUpError) {
+                setError(signUpError.message || 'Failed to create account');
+                setLoading(false);
+                return;
+            }
+
+            const session = authData?.session;
+            console.log('[Signup] Account created:', session?.user?.id);
+
+            if (!session?.user) {
+                setError('Failed to get user session');
+                setLoading(false);
+                return;
+            }
+
+            // Accept the invite
+            console.log('[Signup] Accepting invite token...');
+            const {data: inviteData, error: inviteError} = await supabase.rpc(
+                'accept_organization_invite',
+                {p_token: pendingInviteToken}
+            );
+
+            if (inviteError) {
+                setError('Failed to accept invite: ' + inviteError.message);
+                setLoading(false);
+                return;
+            }
+
+            if (inviteData && inviteData.length > 0) {
+                const result = inviteData[0];
+                if (result.success) {
+                    console.log('[Signup] Successfully joined organization:', result.org_id);
+                    setSuccess(true);
+
+                    // Clear the pending token
+                    sessionStorage.removeItem('pendingInviteToken');
+
+                    setTimeout(() => {
+                        setLoading(false);
+                        navigate('/');
+                    }, 1500);
+                } else {
+                    setError('Failed to accept invite: ' + result.message);
+                    setLoading(false);
+                }
+            }
+        } catch (err: any) {
+            console.error('[Signup] Error:', err);
+            setError('An unexpected error occurred: ' + err.message);
+            setLoading(false);
+        }
     };
 
     const handleOrganizationSubmit = async (e: React.FormEvent) => {
@@ -51,7 +128,7 @@ const Signup: React.FC = () => {
             // 1. Create user account
             console.log('[Signup] Creating user account...');
             const {data: authData, error: signUpError} = await signUp(email, password);
-            console.log('[Signup] Sign up result:', { authData, signUpError });
+            console.log('[Signup] Sign up result:', {authData, signUpError});
 
             if (signUpError) {
                 setError(signUpError.message || 'Failed to create account');
@@ -72,11 +149,10 @@ const Signup: React.FC = () => {
             // 3. Create organization with owner using database function (bypasses RLS)
             console.log('[Signup] Calling create_organization_with_owner RPC...');
 
-            const rpcPromise = supabase
-                .rpc('create_organization_with_owner', {
-                    p_org_name: organizationName.trim(),
-                    p_user_id: session.user.id
-                });
+            const rpcPromise = supabase.rpc('create_organization_with_owner', {
+                p_org_name: organizationName.trim(),
+                p_user_id: session.user.id
+            });
 
             // Add timeout
             const timeoutPromise = new Promise((_, reject) =>
@@ -88,10 +164,10 @@ const Signup: React.FC = () => {
                 timeoutPromise
             ]).catch(err => {
                 console.error('[Signup] RPC error or timeout:', err);
-                return { data: null, error: err };
+                return {data: null, error: err};
             });
 
-            console.log('[Signup] RPC completed:', { orgData, orgError });
+            console.log('[Signup] RPC completed:', {orgData, orgError});
 
             if (orgError) {
                 setError('Failed to create organization: ' + (orgError.message || JSON.stringify(orgError)));
@@ -113,8 +189,8 @@ const Signup: React.FC = () => {
                 setLoading(false);
                 navigate('/');
             }, 500);
-
         } catch (err) {
+            console.error('[Signup] Error:', err);
             setError('An unexpected error occurred');
             setLoading(false);
         }
@@ -137,21 +213,29 @@ const Signup: React.FC = () => {
                             {step === 'account' ? 'Create your account' : 'Create your organization'}
                         </h1>
                         <p className="text-sm text-gray-600">
-                            {step === 'account'
-                                ? 'Get started with Partonomy today'
-                                : 'You will be the owner of this organization'}
+                            {pendingInviteToken
+                                ? 'Sign up to join the organization'
+                                : step === 'account'
+                                    ? 'Get started with Partonomy today'
+                                    : 'You will be the owner of this organization'}
                         </p>
                     </div>
 
-                    {/* Progress indicator */}
-                    <div className="flex items-center justify-center gap-2 mb-8">
-                        <div className={`h-2 w-20 rounded-full transition-colors ${
-                            step === 'account' ? 'bg-blue-600' : 'bg-blue-400'
-                        }`}/>
-                        <div className={`h-2 w-20 rounded-full transition-colors ${
-                            step === 'organization' ? 'bg-blue-600' : 'bg-gray-300'
-                        }`}/>
-                    </div>
+                    {/* Progress indicator - only show if no invite */}
+                    {!pendingInviteToken && (
+                        <div className="flex items-center justify-center gap-2 mb-8">
+                            <div
+                                className={`h-2 w-20 rounded-full transition-colors ${
+                                    step === 'account' ? 'bg-blue-600' : 'bg-blue-400'
+                                }`}
+                            />
+                            <div
+                                className={`h-2 w-20 rounded-full transition-colors ${
+                                    step === 'organization' ? 'bg-blue-600' : 'bg-gray-300'
+                                }`}
+                            />
+                        </div>
+                    )}
 
                     {error && (
                         <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-3">
@@ -168,9 +252,13 @@ const Signup: React.FC = () => {
                             className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg flex items-start gap-3">
                             <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" strokeWidth={2}/>
                             <div className="flex-1">
-                                <p className="text-sm font-medium text-emerald-900">Account created successfully!</p>
+                                <p className="text-sm font-medium text-emerald-900">
+                                    {pendingInviteToken ? 'Successfully joined!' : 'Account created successfully!'}
+                                </p>
                                 <p className="text-sm text-emerald-700 mt-1">
-                                    Check your email to verify your account. Redirecting to login...
+                                    {pendingInviteToken
+                                        ? 'Redirecting to your organization...'
+                                        : 'Check your email to verify your account. Redirecting...'}
                                 </p>
                             </div>
                         </div>
@@ -194,6 +282,7 @@ const Signup: React.FC = () => {
                                         placeholder="you@company.com"
                                         required
                                         autoComplete="email"
+                                        disabled={loading || success}
                                     />
                                 </div>
                             </div>
@@ -213,6 +302,7 @@ const Signup: React.FC = () => {
                                         placeholder="At least 6 characters"
                                         required
                                         autoComplete="new-password"
+                                        disabled={loading || success}
                                     />
                                 </div>
                             </div>
@@ -232,15 +322,17 @@ const Signup: React.FC = () => {
                                         placeholder="Confirm your password"
                                         required
                                         autoComplete="new-password"
+                                        disabled={loading || success}
                                     />
                                 </div>
                             </div>
 
                             <button
                                 type="submit"
-                                className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-all active:scale-[0.98]"
+                                disabled={loading || success}
+                                className="w-full h-11 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium text-sm transition-all active:scale-[0.98] disabled:cursor-not-allowed"
                             >
-                                Continue
+                                {loading ? 'Creating...' : success ? 'Success!' : 'Continue'}
                             </button>
                         </form>
                     )}
@@ -260,7 +352,8 @@ const Signup: React.FC = () => {
                                 <div className="relative">
                                     <Building2
                                         className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                                        strokeWidth={1.5}/>
+                                        strokeWidth={1.5}
+                                    />
                                     <input
                                         type="text"
                                         value={organizationName}
@@ -297,10 +390,8 @@ const Signup: React.FC = () => {
                     <div className="mt-6 text-center">
                         <p className="text-sm text-gray-600">
                             Already have an account?{' '}
-                            <Link
-                                to="/login"
-                                className="font-medium text-blue-600 hover:text-blue-700 transition-colors"
-                            >
+                            <Link to="/login"
+                                  className="font-medium text-blue-600 hover:text-blue-700 transition-colors">
                                 Sign in
                             </Link>
                         </p>
