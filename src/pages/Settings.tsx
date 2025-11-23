@@ -281,7 +281,7 @@ const Settings: React.FC = () => {
                     <div className="p-6 space-y-4">
                         <MembersList
                             orgId={currentOrg.org_id}
-                            currentUserRole={currentOrg.member_role}
+                            currentUserRole={currentOrg.role}
                             currentUserId={user.id}
                         />
 

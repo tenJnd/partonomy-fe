@@ -1,416 +1,477 @@
-import React, {useEffect, useState} from 'react';
-import {Link, useNavigate} from 'react-router-dom';
-import {useAuth} from '../contexts/AuthContext';
-import {AlertCircle, Building2, CheckCircle, Lock, Mail, UserPlus} from 'lucide-react';
-import {supabase} from '../lib/supabase';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import {
+  AlertCircle,
+  Building2,
+  CheckCircle,
+  Lock,
+  Mail,
+  UserPlus,
+} from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 const Signup: React.FC = () => {
-    const [step, setStep] = useState<'account' | 'organization'>('account');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [organizationName, setOrganizationName] = useState('');
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [pendingInviteToken, setPendingInviteToken] = useState<string | null>(null);
-    const {signUp} = useAuth();
-    const navigate = useNavigate();
+  const [step, setStep] = useState<'account' | 'organization'>('account');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [organizationName, setOrganizationName] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [pendingInviteToken, setPendingInviteToken] = useState<string | null>(
+    null
+  );
 
-    useEffect(() => {
-        // Check if there's a pending invite token
-        const token = sessionStorage.getItem('pendingInviteToken');
-        if (token) {
-            setPendingInviteToken(token);
-            // Skip to account creation (no org step needed)
-        }
-    }, []);
+  // ⬇⬇ teď bereme i refreshOrganizations
+  const { signUp, refreshOrganizations } = useAuth();
+  const navigate = useNavigate();
 
-    const handleAccountSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
+  useEffect(() => {
+    const token = sessionStorage.getItem('pendingInviteToken');
+    if (token) {
+      setPendingInviteToken(token);
+    }
+  }, []);
 
-        // Validation
-        if (password !== confirmPassword) {
-            setError('Passwords do not match');
-            return;
-        }
+  const handleAccountSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
 
-        if (password.length < 6) {
-            setError('Password must be at least 6 characters');
-            return;
-        }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
 
-        // If we have a pending invite, skip to account creation
-        if (pendingInviteToken) {
-            handleSignupWithInvite();
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    if (pendingInviteToken) {
+      await handleSignupWithInvite(); // ⬅ důležité, aby se čekalo
+    } else {
+      setStep('organization');
+    }
+  };
+
+  const handleSignupWithInvite = async () => {
+    setError('');
+    setSuccess(false);
+    setLoading(true);
+
+    try {
+      console.log('[Signup] Creating user account for invite...');
+      const { data: authData, error: signUpError } = await signUp(
+        email,
+        password
+      );
+
+      if (signUpError) {
+        setError(signUpError.message || 'Failed to create account');
+        setLoading(false);
+        return;
+      }
+
+      const session = authData?.session;
+      console.log('[Signup] Account created:', session?.user?.id);
+
+      if (!session?.user) {
+        setError('Failed to get user session');
+        setLoading(false);
+        return;
+      }
+
+      console.log('[Signup] Accepting invite token...');
+      const { data: inviteData, error: inviteError } = await supabase.rpc(
+        'accept_organization_invite',
+        { p_token: pendingInviteToken }
+      );
+
+      if (inviteError) {
+        setError('Failed to accept invite: ' + inviteError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (inviteData && inviteData.length > 0) {
+        const result = inviteData[0];
+        if (result.success) {
+          console.log(
+            '[Signup] Successfully joined organization:',
+            result.org_id
+          );
+          setSuccess(true);
+
+          sessionStorage.removeItem('pendingInviteToken');
+
+          // ⬇⬇ TADY JE POINTA: víme přesně userId z téhle session
+          try {
+            await refreshOrganizations(session.user.id);
+          } catch (e) {
+            console.error(
+              '[Signup] Failed to refresh organizations after invite:',
+              e
+            );
+          }
+
+          setTimeout(() => {
+            setLoading(false);
+            navigate('/');
+          }, 1500);
         } else {
-            // Move to organization step
-            setStep('organization');
+          setError('Failed to accept invite: ' + result.message);
+          setLoading(false);
         }
-    };
+      } else {
+        setError('Failed to accept invite: No data returned');
+        setLoading(false);
+      }
+    } catch (err: any) {
+      console.error('[Signup] Error:', err);
+      setError('An unexpected error occurred: ' + err.message);
+      setLoading(false);
+    }
+  };
 
-    const handleSignupWithInvite = async () => {
-        setError('');
-        setSuccess(false);
-        setLoading(true);
+  const handleOrganizationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess(false);
 
-        try {
-            console.log('[Signup] Creating user account for invite...');
-            const {data: authData, error: signUpError} = await signUp(email, password);
+    if (!organizationName.trim()) {
+      setError('Organization name is required');
+      return;
+    }
 
-            if (signUpError) {
-                setError(signUpError.message || 'Failed to create account');
-                setLoading(false);
-                return;
-            }
+    setLoading(true);
 
-            const session = authData?.session;
-            console.log('[Signup] Account created:', session?.user?.id);
+    try {
+      // 1. Create user account
+      console.log('[Signup] Creating user account...');
+      const { data: authData, error: signUpError } = await signUp(
+        email,
+        password
+      );
+      console.log('[Signup] Sign up result:', { authData, signUpError });
 
-            if (!session?.user) {
-                setError('Failed to get user session');
-                setLoading(false);
-                return;
-            }
+      if (signUpError) {
+        setError(signUpError.message || 'Failed to create account');
+        setLoading(false);
+        return;
+      }
 
-            // Accept the invite
-            console.log('[Signup] Accepting invite token...');
-            const {data: inviteData, error: inviteError} = await supabase.rpc(
-                'accept_organization_invite',
-                {p_token: pendingInviteToken}
-            );
+      // 2. Get session from signup response
+      const session = authData?.session;
+      console.log('[Signup] Session from signup:', session?.user?.id);
 
-            if (inviteError) {
-                setError('Failed to accept invite: ' + inviteError.message);
-                setLoading(false);
-                return;
-            }
+      if (!session?.user) {
+        setError('Failed to get user session');
+        setLoading(false);
+        return;
+      }
 
-            if (inviteData && inviteData.length > 0) {
-                const result = inviteData[0];
-                if (result.success) {
-                    console.log('[Signup] Successfully joined organization:', result.org_id);
-                    setSuccess(true);
+      const userId = session.user.id;
 
-                    // Clear the pending token
-                    sessionStorage.removeItem('pendingInviteToken');
+      // 3. Create organization with owner using database function (bypasses RLS)
+      console.log('[Signup] Calling create_organization_with_owner RPC...');
 
-                    setTimeout(() => {
-                        setLoading(false);
-                        navigate('/');
-                    }, 1500);
-                } else {
-                    setError('Failed to accept invite: ' + result.message);
-                    setLoading(false);
-                }
-            }
-        } catch (err: any) {
-            console.error('[Signup] Error:', err);
-            setError('An unexpected error occurred: ' + err.message);
-            setLoading(false);
-        }
-    };
+      const rpcPromise = supabase.rpc('create_organization_with_owner', {
+        p_org_name: organizationName.trim(),
+        p_user_id: userId,
+      });
 
-    const handleOrganizationSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-        setSuccess(false);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('RPC timeout after 10s')), 10000)
+      );
 
-        if (!organizationName.trim()) {
-            setError('Organization name is required');
-            return;
-        }
+      const { data: orgData, error: orgError } = (await Promise.race([
+        rpcPromise,
+        timeoutPromise,
+      ]).catch(err => {
+        console.error('[Signup] RPC error or timeout:', err);
+        return { data: null, error: err };
+      })) as any;
 
-        setLoading(true);
+      console.log('[Signup] RPC completed:', { orgData, orgError });
 
-        try {
-            // 1. Create user account
-            console.log('[Signup] Creating user account...');
-            const {data: authData, error: signUpError} = await signUp(email, password);
-            console.log('[Signup] Sign up result:', {authData, signUpError});
+      if (orgError) {
+        setError(
+          'Failed to create organization: ' +
+            (orgError.message || JSON.stringify(orgError))
+        );
+        setLoading(false);
+        return;
+      }
 
-            if (signUpError) {
-                setError(signUpError.message || 'Failed to create account');
-                setLoading(false);
-                return;
-            }
+      if (!orgData || orgData.length === 0) {
+        setError('Failed to create organization: No data returned');
+        setLoading(false);
+        return;
+      }
 
-            // 2. Get session from signup response
-            const session = authData?.session;
-            console.log('[Signup] Session from signup:', session?.user?.id);
+      console.log('[Signup] Organization created successfully!');
+      setSuccess(true);
 
-            if (!session?.user) {
-                setError('Failed to get user session');
-                setLoading(false);
-                return;
-            }
+      // ⬇⬇ TADY znovu – refresh podle userId ze session, ne podle user v contextu
+      try {
+        await refreshOrganizations(userId);
+      } catch (e) {
+        console.error(
+          '[Signup] Failed to refresh organizations after creation:',
+          e
+        );
+      }
 
-            // 3. Create organization with owner using database function (bypasses RLS)
-            console.log('[Signup] Calling create_organization_with_owner RPC...');
+      setTimeout(() => {
+        setLoading(false);
+        navigate('/');
+      }, 500);
+    } catch (err: any) {
+      console.error('[Signup] Error:', err);
+      setError('An unexpected error occurred');
+      setLoading(false);
+    }
+  };
 
-            const rpcPromise = supabase.rpc('create_organization_with_owner', {
-                p_org_name: organizationName.trim(),
-                p_user_id: session.user.id
-            });
-
-            // Add timeout
-            const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('RPC timeout after 10s')), 10000)
-            );
-
-            const {data: orgData, error: orgError} = await Promise.race([
-                rpcPromise,
-                timeoutPromise
-            ]).catch(err => {
-                console.error('[Signup] RPC error or timeout:', err);
-                return {data: null, error: err};
-            });
-
-            console.log('[Signup] RPC completed:', {orgData, orgError});
-
-            if (orgError) {
-                setError('Failed to create organization: ' + (orgError.message || JSON.stringify(orgError)));
-                setLoading(false);
-                return;
-            }
-
-            if (!orgData || orgData.length === 0) {
-                setError('Failed to create organization: No data returned');
-                setLoading(false);
-                return;
-            }
-
-            console.log('[Signup] Organization created successfully!');
-            setSuccess(true);
-
-            // Wait a moment for database to settle, then redirect
-            setTimeout(() => {
-                setLoading(false);
-                navigate('/');
-            }, 500);
-        } catch (err) {
-            console.error('[Signup] Error:', err);
-            setError('An unexpected error occurred');
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-            <div className="w-full max-w-md">
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8">
-                    {/* Header */}
-                    <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg mb-4">
-                            {step === 'account' ? (
-                                <UserPlus className="w-6 h-6 text-blue-600" strokeWidth={2}/>
-                            ) : (
-                                <Building2 className="w-6 h-6 text-blue-600" strokeWidth={2}/>
-                            )}
-                        </div>
-                        <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-                            {step === 'account' ? 'Create your account' : 'Create your organization'}
-                        </h1>
-                        <p className="text-sm text-gray-600">
-                            {pendingInviteToken
-                                ? 'Sign up to join the organization'
-                                : step === 'account'
-                                    ? 'Get started with Partonomy today'
-                                    : 'You will be the owner of this organization'}
-                        </p>
-                    </div>
-
-                    {/* Progress indicator - only show if no invite */}
-                    {!pendingInviteToken && (
-                        <div className="flex items-center justify-center gap-2 mb-8">
-                            <div
-                                className={`h-2 w-20 rounded-full transition-colors ${
-                                    step === 'account' ? 'bg-blue-600' : 'bg-blue-400'
-                                }`}
-                            />
-                            <div
-                                className={`h-2 w-20 rounded-full transition-colors ${
-                                    step === 'organization' ? 'bg-blue-600' : 'bg-gray-300'
-                                }`}
-                            />
-                        </div>
-                    )}
-
-                    {error && (
-                        <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-3">
-                            <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" strokeWidth={2}/>
-                            <div className="flex-1">
-                                <p className="text-sm font-medium text-rose-900">Sign Up Error</p>
-                                <p className="text-sm text-rose-700 mt-1">{error}</p>
-                            </div>
-                        </div>
-                    )}
-
-                    {success && (
-                        <div
-                            className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg flex items-start gap-3">
-                            <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" strokeWidth={2}/>
-                            <div className="flex-1">
-                                <p className="text-sm font-medium text-emerald-900">
-                                    {pendingInviteToken ? 'Successfully joined!' : 'Account created successfully!'}
-                                </p>
-                                <p className="text-sm text-emerald-700 mt-1">
-                                    {pendingInviteToken
-                                        ? 'Redirecting to your organization...'
-                                        : 'Check your email to verify your account. Redirecting...'}
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Account Step Form */}
-                    {step === 'account' && (
-                        <form onSubmit={handleAccountSubmit} className="space-y-5">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Email address
-                                </label>
-                                <div className="relative">
-                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                                          strokeWidth={1.5}/>
-                                    <input
-                                        type="email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        className="w-full h-11 pl-10 pr-4 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none"
-                                        placeholder="you@company.com"
-                                        required
-                                        autoComplete="email"
-                                        disabled={loading || success}
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Password
-                                </label>
-                                <div className="relative">
-                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                                          strokeWidth={1.5}/>
-                                    <input
-                                        type="password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full h-11 pl-10 pr-4 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none"
-                                        placeholder="At least 6 characters"
-                                        required
-                                        autoComplete="new-password"
-                                        disabled={loading || success}
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Confirm password
-                                </label>
-                                <div className="relative">
-                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                                          strokeWidth={1.5}/>
-                                    <input
-                                        type="password"
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
-                                        className="w-full h-11 pl-10 pr-4 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none"
-                                        placeholder="Confirm your password"
-                                        required
-                                        autoComplete="new-password"
-                                        disabled={loading || success}
-                                    />
-                                </div>
-                            </div>
-
-                            <button
-                                type="submit"
-                                disabled={loading || success}
-                                className="w-full h-11 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium text-sm transition-all active:scale-[0.98] disabled:cursor-not-allowed"
-                            >
-                                {loading ? 'Creating...' : success ? 'Success!' : 'Continue'}
-                            </button>
-                        </form>
-                    )}
-
-                    {/* Organization Step Form */}
-                    {step === 'organization' && (
-                        <form onSubmit={handleOrganizationSubmit} className="space-y-5">
-                            <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                                <p className="text-xs text-gray-500 mb-1">Account email</p>
-                                <p className="text-sm font-medium text-gray-900">{email}</p>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Organization name
-                                </label>
-                                <div className="relative">
-                                    <Building2
-                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                                        strokeWidth={1.5}
-                                    />
-                                    <input
-                                        type="text"
-                                        value={organizationName}
-                                        onChange={(e) => setOrganizationName(e.target.value)}
-                                        className="w-full h-11 pl-10 pr-4 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none"
-                                        placeholder="Acme Inc."
-                                        required
-                                        autoComplete="organization"
-                                        disabled={loading || success}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setStep('account')}
-                                    disabled={loading || success}
-                                    className="flex-1 h-11 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg font-medium text-sm transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    Back
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={loading || success}
-                                    className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium text-sm transition-all active:scale-[0.98] disabled:cursor-not-allowed"
-                                >
-                                    {loading ? 'Creating...' : success ? 'Success!' : 'Create organization'}
-                                </button>
-                            </div>
-                        </form>
-                    )}
-
-                    <div className="mt-6 text-center">
-                        <p className="text-sm text-gray-600">
-                            Already have an account?{' '}
-                            <Link to="/login"
-                                  className="font-medium text-blue-600 hover:text-blue-700 transition-colors">
-                                Sign in
-                            </Link>
-                        </p>
-                    </div>
-                </div>
-
-                <p className="mt-6 text-center text-xs text-gray-500">
-                    By creating an account, you agree to our{' '}
-                    <a href="#" className="text-gray-700 hover:text-gray-900 underline">
-                        Terms of Service
-                    </a>{' '}
-                    and{' '}
-                    <a href="#" className="text-gray-700 hover:text-gray-900 underline">
-                        Privacy Policy
-                    </a>
-                </p>
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+      <div className="w-full max-w-md">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg mb-4">
+              {step === 'account' ? (
+                <UserPlus className="w-6 h-6 text-blue-600" strokeWidth={2} />
+              ) : (
+                <Building2
+                  className="w-6 h-6 text-blue-600"
+                  strokeWidth={2}
+                />
+              )}
             </div>
+            <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+              {step === 'account'
+                ? 'Create your account'
+                : 'Create your organization'}
+            </h1>
+            <p className="text-sm text-gray-600">
+              {pendingInviteToken
+                ? 'Sign up to join the organization'
+                : step === 'account'
+                ? 'Get started with Partonomy today'
+                : 'You will be the owner of this organization'}
+            </p>
+          </div>
+
+          {/* Progress indicator - only show if no invite */}
+          {!pendingInviteToken && (
+            <div className="flex items-center justify-center gap-2 mb-8">
+              <div
+                className={`h-2 w-20 rounded-full transition-colors ${
+                  step === 'account' ? 'bg-blue-600' : 'bg-blue-400'
+                }`}
+              />
+              <div
+                className={`h-2 w-20 rounded-full transition-colors ${
+                  step === 'organization' ? 'bg-blue-600' : 'bg-gray-300'
+                }`}
+              />
+            </div>
+          )}
+
+          {error && (
+            <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-3">
+              <AlertCircle
+                className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5"
+                strokeWidth={2}
+              />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-rose-900">
+                  Sign Up Error
+                </p>
+                <p className="text-sm text-rose-700 mt-1">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {success && (
+            <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg flex items-start gap-3">
+              <CheckCircle
+                className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5"
+                strokeWidth={2}
+              />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-emerald-900">
+                  {pendingInviteToken
+                    ? 'Successfully joined!'
+                    : 'Account created successfully!'}
+                </p>
+                <p className="text-sm text-emerald-700 mt-1">
+                  {pendingInviteToken
+                    ? 'Redirecting to your organization...'
+                    : 'Check your email to verify your account. Redirecting...'}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Account Step Form */}
+          {step === 'account' && (
+            <form onSubmit={handleAccountSubmit} className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email address
+                </label>
+                <div className="relative">
+                  <Mail
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+                    strokeWidth={1.5}
+                  />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    className="w-full h-11 pl-10 pr-4 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none"
+                    placeholder="you@company.com"
+                    required
+                    autoComplete="email"
+                    disabled={loading || success}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+                    strokeWidth={1.5}
+                  />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className="w-full h-11 pl-10 pr-4 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none"
+                    placeholder="At least 6 characters"
+                    required
+                    autoComplete="new-password"
+                    disabled={loading || success}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Confirm password
+                </label>
+                <div className="relative">
+                  <Lock
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+                    strokeWidth={1.5}
+                  />
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    className="w-full h-11 pl-10 pr-4 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none"
+                    placeholder="Confirm your password"
+                    required
+                    autoComplete="new-password"
+                    disabled={loading || success}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || success}
+                className="w-full h-11 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium text-sm transition-all active:scale-[0.98] disabled:cursor-not-allowed"
+              >
+                {loading ? 'Creating...' : success ? 'Success!' : 'Continue'}
+              </button>
+            </form>
+          )}
+
+          {/* Organization Step Form */}
+          {step === 'organization' && (
+            <form onSubmit={handleOrganizationSubmit} className="space-y-5">
+              <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <p className="text-xs text-gray-500 mb-1">Account email</p>
+                <p className="text-sm font-medium text-gray-900">{email}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Organization name
+                </label>
+                <div className="relative">
+                  <Building2
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+                    strokeWidth={1.5}
+                  />
+                  <input
+                    type="text"
+                    value={organizationName}
+                    onChange={e => setOrganizationName(e.target.value)}
+                    className="w-full h-11 pl-10 pr-4 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none"
+                    placeholder="Acme Inc."
+                    required
+                    autoComplete="organization"
+                    disabled={loading || success}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStep('account')}
+                  disabled={loading || success}
+                  className="flex-1 h-11 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg font-medium text-sm transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading || success}
+                  className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium text-sm transition-all active:scale-[0.98] disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Creating...' : success ? 'Success!' : 'Create organization'}
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Already have an account?{' '}
+              <Link
+                to="/login"
+                className="font-medium text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                Sign in
+              </Link>
+            </p>
+          </div>
         </div>
-    );
+
+        <p className="mt-6 text-center text-xs text-gray-500">
+          By creating an account, you agree to our{' '}
+          <a href="#" className="text-gray-700 hover:text-gray-900 underline">
+            Terms of Service
+          </a>{' '}
+          and{' '}
+          <a href="#" className="text-gray-700 hover:text-gray-900 underline">
+            Privacy Policy
+          </a>
+        </p>
+      </div>
+    </div>
+  );
 };
 
 export default Signup;

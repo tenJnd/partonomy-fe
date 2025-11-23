@@ -19,9 +19,11 @@ interface AuthContextType {
   currentOrg: OrganizationMembership | null;
   organizations: OrganizationMembership[];
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
-  signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signUp: (email: string, password: string) => Promise<{ data: any; error: AuthError | null }>;
   signOut: () => Promise<void>;
   switchOrganization: (orgId: string) => void;
+  // ⬇⬇ DŮLEŽITÉ: userId může přijít zvenku (např. ze Signup)
+  refreshOrganizations: (userId?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -65,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: item.role as RoleEnum,
         organization: Array.isArray(item.organization)
           ? item.organization[0]
-          : item.organization
+          : item.organization,
       };
     }) as OrganizationMembership[];
 
@@ -73,34 +75,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return mapped;
   };
 
+  // ⬇⬇ DŮLEŽITÉ: bere volitelně userId – když přijde, ignoruje user z contextu
+  const refreshOrganizations = async (userIdOverride?: string) => {
+    const effectiveUserId = userIdOverride ?? user?.id;
+
+    if (!effectiveUserId) {
+      console.warn('[AuthContext] refreshOrganizations called with no user');
+      setOrganizations([]);
+      setCurrentOrg(null);
+      return;
+    }
+
+    const orgs = await fetchOrganizations(effectiveUserId);
+    setOrganizations(orgs);
+
+    if (orgs.length > 0) {
+      const lastOrgId = localStorage.getItem('currentOrgId');
+      const defaultOrg = lastOrgId
+        ? orgs.find(o => o.org_id === lastOrgId) || orgs[0]
+        : orgs[0];
+
+      setCurrentOrg(defaultOrg);
+      console.log('[AuthContext] refreshOrganizations set currentOrg:', defaultOrg.organization.name);
+    } else {
+      console.warn('[AuthContext] refreshOrganizations found no orgs');
+      setCurrentOrg(null);
+    }
+  };
+
   // Initialize auth state
   useEffect(() => {
-    // Clear any corrupted session data
     const initAuth = async () => {
       try {
-        // Add timeout to detect hanging requests
         const timeoutId = setTimeout(() => {
           console.error('[AuthContext] getSession() timed out after 5 seconds');
           setLoading(false);
         }, 5000);
 
-        // Get initial session
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         clearTimeout(timeoutId);
+
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          const orgs = await fetchOrganizations(session.user.id);
-          setOrganizations(orgs);
-
-          // Get last selected org from localStorage or use first org
-          const lastOrgId = localStorage.getItem('currentOrgId');
-          const defaultOrg = lastOrgId
-            ? orgs.find(o => o.org_id === lastOrgId) || orgs[0]
-            : orgs[0];
-
-          setCurrentOrg(defaultOrg || null);
+          // ⬇⬇ máme k dispozici session.user.id, rovnou ho použijeme
+          await refreshOrganizations(session.user.id);
         }
       } catch (err) {
         console.error('[AuthContext] Error initializing auth:', err);
@@ -112,50 +134,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('[AuthContext] Auth state changed:', event, session?.user?.id);
-        setSession(session);
-        setUser(session?.user ?? null);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[AuthContext] Auth state changed:', event, session?.user?.id);
+      setSession(session);
+      setUser(session?.user ?? null);
 
-        if (session?.user) {
-          // Don't block on fetching organizations during signup
-          // The signup flow will handle org creation
-          if (event === 'SIGNED_IN') {
-            console.log('[AuthContext] User signed in, fetching orgs...');
-            fetchOrganizations(session.user.id)
-              .then(orgs => {
-                console.log('[AuthContext] Orgs loaded:', orgs.length);
-                setOrganizations(orgs);
-
-                if (orgs.length > 0) {
-                  const lastOrgId = localStorage.getItem('currentOrgId');
-                  const defaultOrg = lastOrgId
-                    ? orgs.find(o => o.org_id === lastOrgId) || orgs[0]
-                    : orgs[0];
-                  setCurrentOrg(defaultOrg);
-                  console.log('[AuthContext] Set current org:', defaultOrg.organization.name);
-                } else {
-                  console.warn('[AuthContext] No organizations found for user');
-                }
-              })
-              .catch(err => {
-                console.error('[AuthContext] Error fetching organizations:', err);
-                setOrganizations([]);
-                setCurrentOrg(null);
-              });
-          }
-        } else {
-          setOrganizations([]);
-          setCurrentOrg(null);
+      if (session?.user) {
+        if (event === 'SIGNED_IN') {
+          console.log('[AuthContext] User signed in, refreshing orgs...');
+          refreshOrganizations(session.user.id).catch(err => {
+            console.error('[AuthContext] Error refreshing organizations:', err);
+            setOrganizations([]);
+            setCurrentOrg(null);
+          });
         }
-
-        setLoading(false);
+      } else {
+        setOrganizations([]);
+        setCurrentOrg(null);
       }
-    );
+
+      setLoading(false);
+    });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -188,7 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const value = {
+  const value: AuthContextType = {
     user,
     session,
     loading,
@@ -198,6 +202,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signUp,
     signOut,
     switchOrganization,
+    refreshOrganizations,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
