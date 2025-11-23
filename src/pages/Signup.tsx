@@ -445,7 +445,7 @@ const Signup: React.FC = () => {
                     value={organizationName}
                     onChange={e => setOrganizationName(e.target.value)}
                     className="w-full h-11 pl-10 pr-4 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none"
-                    placeholder="Acme Inc."
+                    placeholder="My Company Inc."
                     required
                     autoComplete="organization"
                     disabled={loading || success}
