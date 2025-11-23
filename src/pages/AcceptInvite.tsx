@@ -7,7 +7,7 @@ import {useAuth} from '../contexts/AuthContext';
 const AcceptInvite: React.FC = () => {
     const {token} = useParams<{ token: string }>();
     const navigate = useNavigate();
-    const {user, refetch} = useAuth();
+    const {user, refreshOrganizations} = useAuth();
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -15,20 +15,28 @@ const AcceptInvite: React.FC = () => {
     const [orgName, setOrgName] = useState('');
 
     useEffect(() => {
-        // If not logged in, store token and redirect to signup
+        // Pokud není user přihlášený → uložíme token a pošleme ho na signup
         if (!user && token) {
             sessionStorage.setItem('pendingInviteToken', token);
             navigate('/signup', {replace: true});
             return;
         }
 
-        // If logged in, accept the invite
+        // Pokud je user přihlášený → rovnou akceptujeme invite
         if (user && token) {
             const acceptInvite = async () => {
                 try {
+                    // nějaké jméno pro p_user_name (vezmeme full_name z metadata, fallback na email prefix)
+                    const displayName =
+                        (user.user_metadata && (user.user_metadata.full_name as string)) ||
+                        (user.email ? user.email.split('@')[0] : null);
+
                     const {data, error: fnError} = await supabase.rpc(
                         'accept_organization_invite',
-                        {p_token: token}
+                        {
+                            p_token: token,
+                            p_user_name: displayName, // ✅ nový parametr
+                        }
                     );
 
                     if (fnError) throw fnError;
@@ -49,16 +57,26 @@ const AcceptInvite: React.FC = () => {
 
                             setSuccess(true);
 
-                            // Refresh auth context to update org list
-                            await refetch?.();
+                            // ✅ refresh auth context orgs pro tohoto usera
+                            try {
+                                await refreshOrganizations(user.id);
+                            } catch (e) {
+                                console.error(
+                                    '[AcceptInvite] Failed to refresh organizations after invite:',
+                                    e
+                                );
+                            }
 
                             // Redirect after 2 seconds
                             setTimeout(() => navigate('/'), 2000);
                         } else {
                             setError(result.message || 'Failed to accept invite');
                         }
+                    } else {
+                        setError('Failed to accept invite: No data returned');
                     }
                 } catch (err: any) {
+                    console.error('[AcceptInvite] Error:', err);
                     setError(err.message || 'Failed to accept invite');
                 } finally {
                     setLoading(false);
@@ -67,7 +85,7 @@ const AcceptInvite: React.FC = () => {
 
             acceptInvite();
         }
-    }, [user, token, navigate, refetch]);
+    }, [user, token, navigate, refreshOrganizations]); // ✅ refetch pryč
 
     if (!user) {
         return (
