@@ -1,170 +1,97 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useMemo, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {AlertCircle, CheckCircle, FileText, Loader, MoreHorizontal, Upload, XCircle,} from 'lucide-react';
+import {AlertCircle, Upload} from 'lucide-react';
 import {useAuth} from '../contexts/AuthContext';
 import {supabase} from '../lib/supabase';
-import {uploadDocument, validateFile} from '../lib/storageHelpers';
 import DeleteDocumentModal from '../components/DeleteDocumentModal';
+import {useDocuments} from '../hooks/useDocuments';
+import {useDocumentUpload} from '../hooks/useDocumentUpload';
+import DocumentsTable from '../components/documents/DocumentsTable';
+
+type StatusFilter = 'all' | 'processed' | 'processing' | 'error';
+type TimeFilter = 'all' | '7d' | '30d' | '90d';
+
+export type SortField =
+    | 'file_name'
+    | 'company_name'
+    | 'part_class'
+    | 'part_complexity'
+    | 'part_fit_level'
+    | 'created_at'
+    | 'last_status';
+
+type SortDirection = 'asc' | 'desc';
 
 const Documents: React.FC = () => {
-    const [uploading, setUploading] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState(0);
-    const [uploadError, setUploadError] = useState('');
-    const [documents, setDocuments] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [thumbnailUrls, setThumbnailUrls] = useState<Record<string, string>>({});
+    const {currentOrg, user} = useAuth();
+    const navigate = useNavigate();
+
+    const {
+        documents,
+        thumbnailUrls,
+        loading,
+        setDocuments,
+        setThumbnailUrls,
+    } = useDocuments(currentOrg);
+
+    const {
+        uploading,
+        uploadProgress,
+        uploadError,
+        setUploadError,
+        uploadFiles,
+    } = useDocumentUpload(currentOrg, user);
+
     const [isDragging, setIsDragging] = useState(false);
-    const [rowMenuOpenId, setRowMenuOpenId] = useState<string | null>(null);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [docToDelete, setDocToDelete] = useState<any | null>(null);
 
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+    const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
+    const [sortField, setSortField] = useState<SortField>('created_at');
+    const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const navigate = useNavigate();
-    const {currentOrg, user} = useAuth();
-
-    // Fetch documents + realtime
-    useEffect(() => {
-        if (!currentOrg) return;
-
-        const fetchDocuments = async () => {
-            const {data, error} = await supabase
-                .from('documents')
-                .select('*')
-                .eq('org_id', currentOrg.org_id)
-                .order('created_at', {ascending: false});
-
-            if (error) {
-                console.error('[Documents] Error fetching documents:', error);
-            } else {
-                setDocuments(data || []);
-                if (data) {
-                    const urls: Record<string, string> = {};
-                    await Promise.all(
-                        data.map(async (doc) => {
-                            if (doc.thumbnail_storage_key && doc.thumbnail_bucket) {
-                                const {data: signedData} = await supabase.storage
-                                    .from(doc.thumbnail_bucket)
-                                    .createSignedUrl(doc.thumbnail_storage_key, 3600);
-                                if (signedData?.signedUrl) {
-                                    urls[doc.id] = signedData.signedUrl;
-                                }
-                            }
-                        }),
-                    );
-                    setThumbnailUrls(urls);
-                }
-            }
-            setLoading(false);
-        };
-
-        fetchDocuments();
-
-        const channel = supabase
-            .channel('documents-changes')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'documents',
-                    filter: `org_id=eq.${currentOrg.org_id}`,
-                },
-                async (payload) => {
-                    if (payload.eventType === 'INSERT') {
-                        setDocuments((prev) => [payload.new as any, ...prev]);
-                    } else if (payload.eventType === 'UPDATE') {
-                        const newDoc = payload.new as any;
-                        setDocuments((prev) =>
-                            prev.map((doc) => (doc.id === newDoc.id ? newDoc : doc)),
-                        );
-                        if (newDoc.thumbnail_storage_key && newDoc.thumbnail_bucket) {
-                            const {data: signedData} = await supabase.storage
-                                .from(newDoc.thumbnail_bucket)
-                                .createSignedUrl(newDoc.thumbnail_storage_key, 3600);
-                            if (signedData?.signedUrl) {
-                                setThumbnailUrls((prev) => ({
-                                    ...prev,
-                                    [newDoc.id]: signedData.signedUrl,
-                                }));
-                            }
-                        }
-                    } else if (payload.eventType === 'DELETE') {
-                        setDocuments((prev) => prev.filter((doc) => doc.id !== payload.old.id));
-                        setThumbnailUrls((prev) => {
-                            const next = {...prev};
-                            delete next[payload.old.id];
-                            return next;
-                        });
-                    }
-                },
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [currentOrg]);
-
-    const displayDocuments = documents;
-
-    const getStatusConfig = (status: string) => {
-        switch (status) {
-            case 'queued':
-                return {
-                    label: 'Queued',
-                    icon: Loader,
-                    iconColor: 'text-gray-500',
-                    borderColor: 'border-l-gray-400',
-                };
-            case 'processing':
-                return {
-                    label: 'Processing',
-                    icon: Loader,
-                    iconColor: 'text-blue-500',
-                    borderColor: 'border-l-blue-500',
-                };
-            case 'success':
-                return {
-                    label: 'Completed',
-                    icon: CheckCircle,
-                    iconColor: 'text-emerald-500',
-                    borderColor: 'border-l-emerald-500',
-                };
-            case 'failed':
-                return {
-                    label: 'Failed',
-                    icon: XCircle,
-                    iconColor: 'text-rose-500',
-                    borderColor: 'border-l-rose-500',
-                };
-            default:
-                return {
-                    label: 'Unknown',
-                    icon: AlertCircle,
-                    iconColor: 'text-gray-400',
-                    borderColor: 'border-l-gray-400',
-                };
-        }
-    };
-
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        const now = new Date();
-        const diffInMs = now.getTime() - date.getTime();
-        const diffInHours = diffInMs / (1000 * 60 * 60);
-
-        if (diffInHours < 24) {
-            return `${Math.floor(diffInHours)}h ago`;
-        } else if (diffInHours < 168) {
-            return `${Math.floor(diffInHours / 24)}d ago`;
-        } else {
-            return date.toLocaleDateString();
-        }
-    };
 
     const handleUploadClick = () => {
         fileInputRef.current?.click();
     };
+
+    const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+
+        await uploadFiles(Array.from(files));
+
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    // Drag & Drop handlers – NA CELÉ STRÁNCE
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        if (e.currentTarget === e.target) {
+            setIsDragging(false);
+        }
+    };
+
+    const handleDrop = async (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+
+        const files = e.dataTransfer.files;
+        if (!files || files.length === 0) return;
+
+        await uploadFiles(Array.from(files));
+    };
+
+    // ACTION HANDLERS (menu)
 
     const handleRerunDocument = async (docId: string) => {
         try {
@@ -183,15 +110,12 @@ const Documents: React.FC = () => {
         } catch (err: any) {
             console.error('[Documents] Error rerunning document:', err);
             setUploadError(err.message || 'Failed to re-run document');
-        } finally {
-            setRowMenuOpenId(null);
         }
     };
 
     const openDeleteModal = (doc: any) => {
         setDocToDelete(doc);
         setDeleteModalOpen(true);
-        setRowMenuOpenId(null);
     };
 
     const handleDeleteDocumentConfirm = async () => {
@@ -209,7 +133,7 @@ const Documents: React.FC = () => {
                 return;
             }
 
-            // okamžitě aktualizuj lokální state
+            // Lokálně smažeme dokument i thumbnail
             setDocuments((prev) => prev.filter((d) => d.id !== docToDelete.id));
             setThumbnailUrls((prev) => {
                 const next = {...prev};
@@ -251,137 +175,107 @@ const Documents: React.FC = () => {
         } catch (err: any) {
             console.error('[Documents] Error downloading document:', err);
             setUploadError(err.message || 'Failed to download document');
-        } finally {
-            setRowMenuOpenId(null);
         }
     };
 
-    // upload více souborů
-    const uploadFiles = async (files: File[]) => {
-        if (!currentOrg || !user || files.length === 0) return;
+    // ŘAZENÍ – změna sortField / sortDirection
+    const handleSortChange = (field: SortField) => {
+        setSortDirection((prevDir) =>
+            field === sortField ? (prevDir === 'asc' ? 'desc' : 'asc') : 'asc',
+        );
+        setSortField(field);
+    };
 
-        setUploadError('');
-        setUploadProgress(0);
-        setUploading(true);
+    // Derivované: filtrování + řazení
+    const filteredSortedDocuments = useMemo(() => {
+        let result = [...documents];
 
-        let lastError: string | null = null;
+        // Status filter
+        if (statusFilter !== 'all') {
+            result = result.filter((doc) => {
+                const s = doc.last_status as string | null;
+                if (!s) return false;
 
-        try {
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-
-                const validationError = validateFile(file);
-                if (validationError) {
-                    lastError = validationError.message;
-                    continue;
+                if (statusFilter === 'processed') {
+                    return s === 'success';
                 }
-
-                const baseProgress = Math.round((i / files.length) * 100);
-                setUploadProgress(baseProgress);
-
-                const {data: existingDoc} = await supabase
-                    .from('documents')
-                    .select('id')
-                    .eq('org_id', currentOrg.org_id)
-                    .eq('file_name', file.name)
-                    .maybeSingle();
-
-                const documentId = existingDoc?.id || crypto.randomUUID();
-
-                const {key, error: uploadErrorRes} = await uploadDocument(
-                    file,
-                    currentOrg.org_id,
-                    documentId,
-                );
-
-                if (uploadErrorRes || !key) {
-                    lastError = uploadErrorRes?.message || 'Upload failed';
-                    continue;
+                if (statusFilter === 'processing') {
+                    // processing + queued bereme jako "in progress"
+                    return s === 'processing' || s === 'queued';
                 }
-
-                setUploadProgress(baseProgress + 30);
-
-                if (existingDoc) {
-                    const {error: updateError} = await supabase
-                        .from('documents')
-                        .update({
-                            user_id: user.id,
-                            last_status: 'queued',
-                        })
-                        .eq('id', documentId);
-
-                    if (updateError) {
-                        lastError = updateError.message;
-                        continue;
-                    }
-                } else {
-                    const {error: insertError} = await supabase
-                        .from('documents')
-                        .insert({
-                            id: documentId,
-                            org_id: currentOrg.org_id,
-                            user_id: user.id,
-                            file_name: file.name,
-                            raw_bucket: 'documents-raw',
-                            raw_storage_key: key,
-                            thumbnail_bucket: 'document-thumbnails',
-                            thumbnail_storage_key: null,
-                            last_status: 'queued',
-                        });
-
-                    if (insertError) {
-                        lastError = insertError.message;
-                        continue;
-                    }
+                if (statusFilter === 'error') {
+                    return s === 'failed';
                 }
+                return true;
+            });
+        }
 
-                setUploadProgress(Math.round(((i + 1) / files.length) * 100));
-            }
-        } finally {
-            setTimeout(() => {
-                setUploading(false);
-                setUploadProgress(0);
-            }, 500);
+        // Time filter
+        if (timeFilter !== 'all') {
+            const now = new Date();
+            const days =
+                timeFilter === '7d' ? 7 : timeFilter === '30d' ? 30 : timeFilter === '90d' ? 90 : 0;
 
-            if (lastError) {
-                setUploadError(lastError);
+            if (days > 0) {
+                const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+                result = result.filter((doc) => {
+                    const created = doc.created_at ? new Date(doc.created_at) : null;
+                    return created ? created >= cutoff : false;
+                });
             }
         }
-    };
 
-    const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const files = event.target.files;
-        if (!files || files.length === 0) return;
+        // Sorting
+        const direction = sortDirection === 'asc' ? 1 : -1;
 
-        await uploadFiles(Array.from(files));
+        const statusOrder = (status: string | null | undefined) => {
+            switch (status) {
+                case 'success':
+                    return 1;
+                case 'processing':
+                    return 2;
+                case 'queued':
+                    return 3;
+                case 'failed':
+                    return 4;
+                default:
+                    return 5;
+            }
+        };
 
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
-    };
+        result.sort((a, b) => {
+            let aVal: any;
+            let bVal: any;
 
-    // Drag & Drop handlers – NA CELÉ STRÁNCE
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(true);
-    };
+            switch (sortField) {
+                case 'created_at':
+                    aVal = a.created_at ? new Date(a.created_at).getTime() : 0;
+                    bVal = b.created_at ? new Date(b.created_at).getTime() : 0;
+                    break;
+                case 'last_status':
+                    aVal = statusOrder(a.last_status);
+                    bVal = statusOrder(b.last_status);
+                    break;
+                case 'file_name':
+                case 'company_name':
+                case 'part_class':
+                case 'part_complexity':
+                case 'part_fit_level':
+                    aVal = (a[sortField] || '').toString().toLowerCase();
+                    bVal = (b[sortField] || '').toString().toLowerCase();
+                    break;
+                default:
+                    aVal = 0;
+                    bVal = 0;
+            }
 
-    const handleDragLeave = (e: React.DragEvent) => {
-        e.preventDefault();
-        if (e.currentTarget === e.target) {
-            setIsDragging(false);
-        }
-    };
+            if (aVal < bVal) return -1 * direction;
+            if (aVal > bVal) return 1 * direction;
+            return 0;
+        });
 
-    const handleDrop = async (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(false);
-
-        const files = e.dataTransfer.files;
-        if (!files || files.length === 0) return;
-
-        await uploadFiles(Array.from(files));
-    };
+        return result;
+    }, [documents, statusFilter, timeFilter, sortField, sortDirection]);
 
     return (
         <div
@@ -437,8 +331,8 @@ const Documents: React.FC = () => {
                     </div>
                 )}
 
-                {/* Upload Progress Display */}
-                {uploading && (
+                {/* Upload Progress Display (globální) */}
+                {uploading && filteredSortedDocuments.length > 0 && (
                     <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                         <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-blue-900">
@@ -457,202 +351,47 @@ const Documents: React.FC = () => {
 
                 {/* Filters Bar */}
                 <div className="flex items-center gap-3 mb-6 flex-wrap">
+                    {/* Status filter */}
                     <select
-                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-sm">
-                        <option>All Status</option>
-                        <option>Processed</option>
-                        <option>Processing</option>
-                        <option>Error</option>
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-sm"
+                    >
+                        <option value="all">All Status</option>
+                        <option value="processed">Processed</option>
+                        <option value="processing">Processing</option>
+                        <option value="error">Error</option>
                     </select>
+
+                    {/* Time filter */}
                     <select
-                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-sm">
-                        <option>All Time</option>
-                        <option>Last 7 days</option>
-                        <option>Last 30 days</option>
-                        <option>Last 90 days</option>
+                        value={timeFilter}
+                        onChange={(e) => setTimeFilter(e.target.value as TimeFilter)}
+                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-sm"
+                    >
+                        <option value="all">All Time</option>
+                        <option value="7d">Last 7 days</option>
+                        <option value="30d">Last 30 days</option>
+                        <option value="90d">Last 90 days</option>
                     </select>
                 </div>
 
                 {/* Documents Table */}
-                {loading ? (
-                    <div className="flex items-center justify-center py-12">
-                        <Loader className="w-8 h-8 text-gray-400 animate-spin" strokeWidth={1.5}/>
-                    </div>
-                ) : displayDocuments.length === 0 ? (
-                    <div className="text-center py-12">
-                        <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" strokeWidth={1.5}/>
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">No documents yet</h3>
-                        <p className="text-sm text-gray-500 mb-6">
-                            Upload your first document to get started
-                        </p>
-                        <button
-                            onClick={handleUploadClick}
-                            disabled={uploading}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg shadow-sm transition-all disabled:cursor-not-allowed"
-                        >
-                            <Upload className="w-4 h-4" strokeWidth={1.5}/>
-                            <span className="text-sm font-medium">
-                {uploading ? 'Uploading...' : 'Upload Documents'}
-              </span>
-                        </button>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
-                        <table className="min-w-full text-left text-sm table-fixed">
-                            <thead className="bg-gray-50 text-[11px] uppercase tracking-wide text-gray-500">
-                            <tr>
-                                <th className="px-4 py-2 font-semibold w-[280px]">Document</th>
-                                <th className="px-4 py-2 font-semibold w-[140px]">Company</th>
-                                <th className="px-4 py-2 font-semibold w-[100px]">Class</th>
-                                <th className="px-4 py-2 font-semibold w-[110px]">Complexity</th>
-                                <th className="px-4 py-2 font-semibold w-[90px]">Fit</th>
-                                <th className="px-4 py-2 font-semibold w-[100px]">Created</th>
-                                <th className="px-4 py-2 font-semibold w-[60px] text-center">Status</th>
-                                <th className="px-4 py-2 font-semibold w-[40px] text-right"></th>
-                            </tr>
-                            </thead>
-
-                            <tbody className="divide-y divide-gray-100 text-xs md:text-sm">
-                            {displayDocuments.map((doc) => {
-                                const statusConfig = getStatusConfig(doc.last_status);
-                                const StatusIcon = statusConfig.icon;
-                                const thumbnailUrl = thumbnailUrls[doc.id];
-
-                                const RowMenu = (
-                                    <div className="relative">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setRowMenuOpenId((prev) => (prev === doc.id ? null : doc.id));
-                                            }}
-                                            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-                                        >
-                                            <MoreHorizontal className="w-4 h-4 text-gray-500"/>
-                                        </button>
-                                        {rowMenuOpenId === doc.id && (
-                                            <>
-                                                {/* backdrop – zavře menu, ale nezpůsobí navigate */}
-                                                <div
-                                                    className="fixed inset-0 z-40"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setRowMenuOpenId(null);
-                                                    }}
-                                                />
-                                                <div
-                                                    className="absolute right-0 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleRerunDocument(doc.id);
-                                                        }}
-                                                        className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
-                                                    >
-                                                        Re-run Report
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleDownloadDocument(doc);
-                                                        }}
-                                                        className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
-                                                    >
-                                                        Download
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            openDeleteModal(doc);
-                                                        }}
-                                                        className="w-full text-left px-3 py-1.5 text-sm text-rose-600 hover:bg-rose-50"
-                                                    >
-                                                        Delete file
-                                                    </button>
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                );
-
-                                return (
-                                    <tr
-                                        key={doc.id}
-                                        className="group cursor-pointer hover:bg-gray-50"
-                                        onClick={() => navigate(`/documents/${doc.id}`)}
-                                    >
-                                        {/* Document */}
-                                        <td
-                                            className={`px-4 py-3 align-middle border-l-4 ${statusConfig.borderColor} w-[280px]`}
-                                        >
-                                            <div className="flex items-center gap-3 min-w-0">
-                                                {thumbnailUrl ? (
-                                                    <img
-                                                        src={thumbnailUrl}
-                                                        alt={doc.file_name}
-                                                        className="w-8 h-8 object-cover rounded flex-shrink-0"
-                                                    />
-                                                ) : (
-                                                    <FileText
-                                                        className="w-8 h-8 text-blue-500 flex-shrink-0"
-                                                        strokeWidth={1.5}
-                                                    />
-                                                )}
-                                                <span className="truncate block text-gray-900 font-medium">
-                            {doc.file_name}
-                          </span>
-                                            </div>
-                                        </td>
-
-                                        {/* Company */}
-                                        <td className="px-4 py-3 align-middle text-gray-700 truncate w-[140px]">
-                                            {doc.company_name || '—'}
-                                        </td>
-
-                                        {/* Class */}
-                                        <td className="px-4 py-3 align-middle text-gray-700 truncate w-[100px]">
-                                            {doc.part_class || '—'}
-                                        </td>
-
-                                        {/* Complexity */}
-                                        <td className="px-4 py-3 align-middle text-gray-700 w-[110px]">
-                                            {doc.part_complexity || '—'}
-                                        </td>
-
-                                        {/* Fit */}
-                                        <td className="px-4 py-3 align-middle text-gray-700 w-[90px]">
-                                            {doc.part_fit_level || '—'}
-                                        </td>
-
-                                        {/* Created */}
-                                        <td className="px-4 py-3 align-middle text-gray-500 w-[100px]">
-                                            {formatDate(doc.created_at)}
-                                        </td>
-
-                                        {/* Status icon */}
-                                        <td className="px-4 py-3 align-middle text-center w-[60px]">
-                                            <StatusIcon
-                                                className={`w-4 h-4 inline-block ${statusConfig.iconColor}`}
-                                                strokeWidth={2}
-                                                // title={statusConfig.label}
-                                            />
-                                        </td>
-
-                                        {/* Menu */}
-                                        <td
-                                            className="px-4 py-3 align-middle text-right w-[40px]"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            {RowMenu}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                <DocumentsTable
+                    documents={filteredSortedDocuments}
+                    thumbnailUrls={thumbnailUrls}
+                    loading={loading}
+                    uploading={uploading}
+                    uploadProgress={uploadProgress}
+                    sortField={sortField}
+                    sortDirection={sortDirection}
+                    onSortChange={handleSortChange}
+                    onUploadClick={handleUploadClick}
+                    onRerun={handleRerunDocument}
+                    onDownload={handleDownloadDocument}
+                    onDelete={openDeleteModal}
+                    onRowClick={(id) => navigate(`/documents/${id}`)}
+                />
             </div>
 
             {/* Delete modal */}
