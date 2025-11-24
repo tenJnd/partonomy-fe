@@ -548,7 +548,7 @@ const Documents: React.FC = () => {
                             disabled={loadingMore}
                             className="px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50"
                         >
-                            {loadingMore ? 'Načítám...' : 'Načíst další'}
+                            {loadingMore ? 'Loading...' : 'Load more'}
                         </button>
                     </div>
                 )}

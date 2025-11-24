@@ -250,7 +250,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                         >
                             {/* Document */}
                             <td
-                                className={`px-4 py-3 align-middle border-l-4 ${statusConfig.borderColor} w-[280px]`}
+                                className={`px-4 py-3 align-middle border-l-4 ${statusConfig.borderColor} w-[250px]`}
                             >
                                 <div className="flex items-center gap-3 min-w-0">
                                     {thumbnailUrl ? (
@@ -272,27 +272,27 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                             </td>
 
                             {/* Company */}
-                            <td className="px-4 py-3 align-middle text-gray-700 truncate w-[140px]">
+                            <td className="px-4 py-3 align-middle text-gray-600 truncate w-[120px] text-xs">
                                 {doc.company_name || '—'}
                             </td>
 
                             {/* Class */}
-                            <td className="px-4 py-3 align-middle text-gray-700 truncate w-[100px]">
+                            <td className="px-4 py-3 align-middle text-gray-600 truncate w-[100px] text-xs">
                                 {doc.part_class || '—'}
                             </td>
 
                             {/* Complexity */}
-                            <td className="px-4 py-3 align-middle text-gray-700 w-[110px]">
+                            <td className="px-4 py-3 align-middle text-gray-600 w-[110px] text-xs">
                                 {doc.part_complexity || '—'}
                             </td>
 
                             {/* Fit */}
-                            <td className="px-4 py-3 align-middle text-gray-700 w-[90px]">
+                            <td className="px-4 py-3 align-middle text-gray-600 w-[90px] text-xs">
                                 {doc.part_fit_level || '—'}
                             </td>
 
                             {/* Created */}
-                            <td className="px-4 py-3 align-middle text-gray-500 w-[100px]">
+                            <td className="px-4 py-3 align-middle text-gray-500 w-[100px] text-xs">
                                 {formatDate(doc.created_at)}
                             </td>
 
