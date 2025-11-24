@@ -22,6 +22,9 @@ export type SortField =
 
 type SortDirection = 'asc' | 'desc';
 
+type ComplexityFilter = 'all' | 'LOW' | 'MEDIUM' | 'HIGH' | 'EXTREME';
+type FitFilter = 'all' | 'GOOD' | 'PARTIAL' | 'COOPERATION' | 'LOW' | 'UNKNOWN';
+
 const Documents: React.FC = () => {
     const {currentOrg, user} = useAuth();
     const navigate = useNavigate();
@@ -30,9 +33,12 @@ const Documents: React.FC = () => {
         documents,
         thumbnailUrls,
         loading,
+        loadingMore,
+        hasMore,
+        loadMore,
         setDocuments,
         setThumbnailUrls,
-    } = useDocuments(currentOrg);
+    } = useDocuments(currentOrg, 50); // 50 záznamů na stránku
 
     const {
         uploading,
@@ -48,6 +54,11 @@ const Documents: React.FC = () => {
 
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
     const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
+    const [complexityFilter, setComplexityFilter] = useState<ComplexityFilter>('all');
+    const [fitFilter, setFitFilter] = useState<FitFilter>('all');
+    const [companyFilter, setCompanyFilter] = useState<string>('all');
+    const [classFilter, setClassFilter] = useState<string>('all');
+
     const [sortField, setSortField] = useState<SortField>('created_at');
     const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -186,6 +197,39 @@ const Documents: React.FC = () => {
         setSortField(field);
     };
 
+    const resetFilters = () => {
+        setStatusFilter('all');
+        setTimeFilter('all');
+        setComplexityFilter('all');
+        setFitFilter('all');
+        setCompanyFilter('all');
+        setClassFilter('all');
+    };
+
+    // Distinct values pro company a class
+    const {uniqueCompanies, uniqueClasses} = useMemo(() => {
+        const companySet = new Set<string>();
+        const classSet = new Set<string>();
+
+        for (const doc of documents) {
+            if (doc.company_name) {
+                companySet.add(doc.company_name as string);
+            }
+            if (doc.part_class) {
+                classSet.add(doc.part_class as string);
+            }
+        }
+
+        const companies = Array.from(companySet).sort((a, b) =>
+            a.localeCompare(b, undefined, {sensitivity: 'base'}),
+        );
+        const classes = Array.from(classSet).sort((a, b) =>
+            a.localeCompare(b, undefined, {sensitivity: 'base'}),
+        );
+
+        return {uniqueCompanies: companies, uniqueClasses: classes};
+    }, [documents]);
+
     // Derivované: filtrování + řazení
     const filteredSortedDocuments = useMemo(() => {
         let result = [...documents];
@@ -223,6 +267,34 @@ const Documents: React.FC = () => {
                     return created ? created >= cutoff : false;
                 });
             }
+        }
+
+        // Complexity filter
+        if (complexityFilter !== 'all') {
+            result = result.filter(
+                (doc) => (doc.part_complexity as string | null) === complexityFilter,
+            );
+        }
+
+        // Fit filter
+        if (fitFilter !== 'all') {
+            result = result.filter(
+                (doc) => (doc.part_fit_level as string | null) === fitFilter,
+            );
+        }
+
+        // Company filter (dynamický)
+        if (companyFilter !== 'all') {
+            result = result.filter(
+                (doc) => (doc.company_name as string | null) === companyFilter,
+            );
+        }
+
+        // Class filter (dynamický)
+        if (classFilter !== 'all') {
+            result = result.filter(
+                (doc) => (doc.part_class as string | null) === classFilter,
+            );
         }
 
         // Sorting
@@ -274,8 +346,19 @@ const Documents: React.FC = () => {
             return 0;
         });
 
+
         return result;
-    }, [documents, statusFilter, timeFilter, sortField, sortDirection]);
+    }, [
+        documents,
+        statusFilter,
+        timeFilter,
+        complexityFilter,
+        fitFilter,
+        companyFilter,
+        classFilter,
+        sortField,
+        sortDirection,
+    ]);
 
     return (
         <div
@@ -374,13 +457,77 @@ const Documents: React.FC = () => {
                         <option value="30d">Last 30 days</option>
                         <option value="90d">Last 90 days</option>
                     </select>
+
+                    {/* Complexity filter */}
+                    <select
+                        value={complexityFilter}
+                        onChange={(e) => setComplexityFilter(e.target.value as ComplexityFilter)}
+                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-sm"
+                    >
+                        <option value="all">All Complexity</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="extreme">Extreme</option>
+                    </select>
+
+                    {/* Fit filter */}
+                    <select
+                        value={fitFilter}
+                        onChange={(e) => setFitFilter(e.target.value as FitFilter)}
+                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-sm"
+                    >
+                        <option value="all">All Fit</option>
+                        <option value="good">Good</option>
+                        <option value="partial">Partial</option>
+                        <option value="cooperation">Cooperation</option>
+                        <option value="low">Low</option>
+                        <option value="unknown">Unknown</option>
+                    </select>
+
+                    {/* Company filter – dynamické hodnoty */}
+                    <select
+                        value={companyFilter}
+                        onChange={(e) => setCompanyFilter(e.target.value)}
+                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-sm"
+                    >
+                        <option value="all">All Companies</option>
+                        {uniqueCompanies.map((c) => (
+                            <option key={c} value={c}>
+                                {c}
+                            </option>
+                        ))}
+                    </select>
+
+                    {/* Class filter – dynamické hodnoty */}
+                    <select
+                        value={classFilter}
+                        onChange={(e) => setClassFilter(e.target.value)}
+                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-sm"
+                    >
+                        <option value="all">All Classes</option>
+                        {uniqueClasses.map((c) => (
+                            <option key={c} value={c}>
+                                {c}
+                            </option>
+                        ))}
+                    </select>
+
+
+                    <button
+                        onClick={resetFilters}
+                        className="h-[38px] px-3 bg-gray-100 border border-gray-200 rounded-lg shadow-sm hover:bg-gray-200 text-sm text-gray-700"
+                    >
+                        Reset filters
+                    </button>
+
                 </div>
 
                 {/* Documents Table */}
                 <DocumentsTable
                     documents={filteredSortedDocuments}
                     thumbnailUrls={thumbnailUrls}
-                    loading={loading}
+                    loading={loading && documents.length === 0}
                     uploading={uploading}
                     uploadProgress={uploadProgress}
                     sortField={sortField}
@@ -392,6 +539,19 @@ const Documents: React.FC = () => {
                     onDelete={openDeleteModal}
                     onRowClick={(id) => navigate(`/documents/${id}`)}
                 />
+
+                {/* Load more button */}
+                {hasMore && !loading && (
+                    <div className="flex justify-center mt-4">
+                        <button
+                            onClick={loadMore}
+                            disabled={loadingMore}
+                            className="px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50"
+                        >
+                            {loadingMore ? 'Načítám...' : 'Načíst další'}
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Delete modal */}
