@@ -43,22 +43,23 @@ export async function uploadDocument(
     try {
         const key = `${orgId}/${documentId}/${file.name}`;
 
-        const {error} = await supabase.storage
+        const { error } = await supabase.storage
             .from(BUCKET_DOCUMENTS_RAW)
             .upload(key, file, {
-                upsert: false,
+                upsert: true,     // ⬅⬅⬅ overwrite if exists!
                 cacheControl: '3600',
             });
 
         if (error) {
-            return {error: new Error(error.message)};
+            return { error: new Error(error.message) };
         }
 
-        return {key};
+        return { key };
     } catch (err) {
-        return {error: err instanceof Error ? err : new Error('Upload failed')};
+        return { error: err instanceof Error ? err : new Error('Upload failed') };
     }
 }
+
 
 /**
  * Get a signed URL for downloading/viewing a document

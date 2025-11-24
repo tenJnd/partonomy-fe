@@ -126,7 +126,6 @@ export interface Database {
                     last_error: string | null
                     last_processed_at: string | null
                     last_job_id: string | null
-                    primary_part_id: string | null
                     detected_parts_count: number | null
                     created_at: string
                 }
@@ -144,7 +143,6 @@ export interface Database {
                     last_error?: string | null
                     last_processed_at?: string | null
                     last_job_id?: string | null
-                    primary_part_id?: string | null
                     detected_parts_count?: number | null
                     created_at?: string
                 }

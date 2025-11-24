@@ -1,25 +1,12 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {
-    AlertCircle,
-    CheckCircle,
-    FileText,
-    Grid3x3,
-    List,
-    Loader,
-    MoreHorizontal,
-    Upload,
-    XCircle,
-} from 'lucide-react';
+import {AlertCircle, CheckCircle, FileText, Loader, MoreHorizontal, Upload, XCircle,} from 'lucide-react';
 import {useAuth} from '../contexts/AuthContext';
 import {supabase} from '../lib/supabase';
 import {uploadDocument, validateFile} from '../lib/storageHelpers';
 import DeleteDocumentModal from '../components/DeleteDocumentModal';
 
-type ViewMode = 'grid' | 'list';
-
 const Documents: React.FC = () => {
-    const [viewMode, setViewMode] = useState<ViewMode>('list');
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [uploadError, setUploadError] = useState('');
@@ -30,7 +17,6 @@ const Documents: React.FC = () => {
     const [rowMenuOpenId, setRowMenuOpenId] = useState<string | null>(null);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [docToDelete, setDocToDelete] = useState<any | null>(null);
-
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
@@ -51,7 +37,6 @@ const Documents: React.FC = () => {
                 console.error('[Documents] Error fetching documents:', error);
             } else {
                 setDocuments(data || []);
-                // thumbnails
                 if (data) {
                     const urls: Record<string, string> = {};
                     await Promise.all(
@@ -64,7 +49,7 @@ const Documents: React.FC = () => {
                                     urls[doc.id] = signedData.signedUrl;
                                 }
                             }
-                        })
+                        }),
                     );
                     setThumbnailUrls(urls);
                 }
@@ -90,7 +75,7 @@ const Documents: React.FC = () => {
                     } else if (payload.eventType === 'UPDATE') {
                         const newDoc = payload.new as any;
                         setDocuments((prev) =>
-                            prev.map((doc) => (doc.id === newDoc.id ? newDoc : doc))
+                            prev.map((doc) => (doc.id === newDoc.id ? newDoc : doc)),
                         );
                         if (newDoc.thumbnail_storage_key && newDoc.thumbnail_bucket) {
                             const {data: signedData} = await supabase.storage
@@ -111,7 +96,7 @@ const Documents: React.FC = () => {
                             return next;
                         });
                     }
-                }
+                },
             )
             .subscribe();
 
@@ -128,35 +113,35 @@ const Documents: React.FC = () => {
                 return {
                     label: 'Queued',
                     icon: Loader,
-                    className: 'bg-gray-50 text-gray-700 border-gray-200',
+                    iconColor: 'text-gray-500',
                     borderColor: 'border-l-gray-400',
                 };
             case 'processing':
                 return {
                     label: 'Processing',
                     icon: Loader,
-                    className: 'bg-blue-50 text-blue-700 border-blue-200',
+                    iconColor: 'text-blue-500',
                     borderColor: 'border-l-blue-500',
                 };
             case 'success':
                 return {
                     label: 'Completed',
                     icon: CheckCircle,
-                    className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                    iconColor: 'text-emerald-500',
                     borderColor: 'border-l-emerald-500',
                 };
             case 'failed':
                 return {
                     label: 'Failed',
                     icon: XCircle,
-                    className: 'bg-rose-50 text-rose-700 border-rose-200',
+                    iconColor: 'text-rose-500',
                     borderColor: 'border-l-rose-500',
                 };
             default:
                 return {
                     label: 'Unknown',
                     icon: AlertCircle,
-                    className: 'bg-gray-50 text-gray-700 border-gray-200',
+                    iconColor: 'text-gray-400',
                     borderColor: 'border-l-gray-400',
                 };
         }
@@ -181,8 +166,6 @@ const Documents: React.FC = () => {
         fileInputRef.current?.click();
     };
 
-    // ⬇⬇ ACTION HANDLERS (menu)
-
     const handleRerunDocument = async (docId: string) => {
         try {
             const {error} = await supabase
@@ -205,14 +188,12 @@ const Documents: React.FC = () => {
         }
     };
 
-    // otevře modal pro delete
     const openDeleteModal = (doc: any) => {
         setDocToDelete(doc);
         setDeleteModalOpen(true);
         setRowMenuOpenId(null);
     };
 
-// samotný delete po potvrzení v modalu
     const handleDeleteDocumentConfirm = async () => {
         if (!docToDelete) return;
 
@@ -225,7 +206,16 @@ const Documents: React.FC = () => {
             if (error) {
                 console.error('[Documents] Error deleting document:', error);
                 setUploadError(error.message || 'Failed to delete document');
+                return;
             }
+
+            // okamžitě aktualizuj lokální state
+            setDocuments((prev) => prev.filter((d) => d.id !== docToDelete.id));
+            setThumbnailUrls((prev) => {
+                const next = {...prev};
+                delete next[docToDelete.id];
+                return next;
+            });
         } catch (err: any) {
             console.error('[Documents] Error deleting document:', err);
             setUploadError(err.message || 'Failed to delete document');
@@ -234,7 +224,6 @@ const Documents: React.FC = () => {
             setDocToDelete(null);
         }
     };
-
 
     const handleDownloadDocument = async (doc: any) => {
         try {
@@ -267,7 +256,7 @@ const Documents: React.FC = () => {
         }
     };
 
-    // společná funkce pro upload více souborů
+    // upload více souborů
     const uploadFiles = async (files: File[]) => {
         if (!currentOrg || !user || files.length === 0) return;
 
@@ -302,7 +291,7 @@ const Documents: React.FC = () => {
                 const {key, error: uploadErrorRes} = await uploadDocument(
                     file,
                     currentOrg.org_id,
-                    documentId
+                    documentId,
                 );
 
                 if (uploadErrorRes || !key) {
@@ -317,10 +306,7 @@ const Documents: React.FC = () => {
                         .from('documents')
                         .update({
                             user_id: user.id,
-                            raw_storage_key: key,
                             last_status: 'queued',
-                            last_error: null,
-                            updated_at: new Date().toISOString(),
                         })
                         .eq('id', documentId);
 
@@ -340,12 +326,7 @@ const Documents: React.FC = () => {
                             raw_storage_key: key,
                             thumbnail_bucket: 'document-thumbnails',
                             thumbnail_storage_key: null,
-                            page_count: null,
                             last_status: 'queued',
-                            last_error: null,
-                            last_job_id: null,
-                            primary_part_id: null,
-                            detected_parts_count: null,
                         });
 
                     if (insertError) {
@@ -368,7 +349,6 @@ const Documents: React.FC = () => {
         }
     };
 
-    // input change – více souborů
     const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (!files || files.length === 0) return;
@@ -477,17 +457,6 @@ const Documents: React.FC = () => {
 
                 {/* Filters Bar */}
                 <div className="flex items-center gap-3 mb-6 flex-wrap">
-                    {/*<div className="relative flex-1 min-w-[200px]">*/}
-                    {/*    <Search*/}
-                    {/*        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"*/}
-                    {/*        strokeWidth={1.5}*/}
-                    {/*    />*/}
-                    {/*    <input*/}
-                    {/*        type="text"*/}
-                    {/*        placeholder="Search documents..."*/}
-                    {/*        className="w-full h-[38px] pl-10 pr-4 bg-white border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-sm"*/}
-                    {/*    />*/}
-                    {/*</div>*/}
                     <select
                         className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-sm">
                         <option>All Status</option>
@@ -502,33 +471,9 @@ const Documents: React.FC = () => {
                         <option>Last 30 days</option>
                         <option>Last 90 days</option>
                     </select>
-                    <div className="flex border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                        <button
-                            onClick={() => setViewMode('grid')}
-                            className={`px-3 py-2 transition-colors ${
-                                viewMode === 'grid'
-                                    ? 'bg-gray-100 text-gray-900'
-                                    : 'bg-white text-gray-500 hover:bg-gray-50'
-                            }`}
-                            title="Grid view"
-                        >
-                            <Grid3x3 className="w-4 h-4" strokeWidth={1.5}/>
-                        </button>
-                        <button
-                            onClick={() => setViewMode('list')}
-                            className={`px-3 py-2 transition-colors ${
-                                viewMode === 'list'
-                                    ? 'bg-gray-100 text-gray-900'
-                                    : 'bg-white text-gray-500 hover:bg-gray-50'
-                            }`}
-                            title="List view"
-                        >
-                            <List className="w-4 h-4" strokeWidth={1.5}/>
-                        </button>
-                    </div>
                 </div>
 
-                {/* Documents List/Grid */}
+                {/* Documents Table */}
                 {loading ? (
                     <div className="flex items-center justify-center py-12">
                         <Loader className="w-8 h-8 text-gray-400 animate-spin" strokeWidth={1.5}/>
@@ -552,161 +497,165 @@ const Documents: React.FC = () => {
                         </button>
                     </div>
                 ) : (
-                    <div
-                        className={
-                            viewMode === 'grid'
-                                ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
-                                : 'space-y-3'
-                        }
-                    >
-                        {displayDocuments.map((doc) => {
-                            const statusConfig = getStatusConfig(doc.last_status);
-                            const StatusIcon = statusConfig.icon;
-                            const thumbnailUrl = thumbnailUrls[doc.id];
+                    <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+                        <table className="min-w-full text-left text-sm table-fixed">
+                            <thead className="bg-gray-50 text-[11px] uppercase tracking-wide text-gray-500">
+                            <tr>
+                                <th className="px-4 py-2 font-semibold w-[280px]">Document</th>
+                                <th className="px-4 py-2 font-semibold w-[140px]">Company</th>
+                                <th className="px-4 py-2 font-semibold w-[100px]">Class</th>
+                                <th className="px-4 py-2 font-semibold w-[110px]">Complexity</th>
+                                <th className="px-4 py-2 font-semibold w-[90px]">Fit</th>
+                                <th className="px-4 py-2 font-semibold w-[100px]">Created</th>
+                                <th className="px-4 py-2 font-semibold w-[60px] text-center">Status</th>
+                                <th className="px-4 py-2 font-semibold w-[40px] text-right"></th>
+                            </tr>
+                            </thead>
 
-                            // ROW MENU BUTTON
-                            const RowMenu = (
-                                <div className="relative">
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setRowMenuOpenId((prev) => (prev === doc.id ? null : doc.id));
-                                        }}
-                                        className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-                                    >
-                                        <MoreHorizontal className="w-4 h-4 text-gray-500"/>
-                                    </button>
-                                    {rowMenuOpenId === doc.id && (
-                                        <>
-                                            {/* backdrop – zavře menu, ale nezpůsobí navigate */}
-                                            <div
-                                                className="fixed inset-0 z-40"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();        // ⬅️ důležité
-                                                    setRowMenuOpenId(null);
-                                                }}
-                                            />
+                            <tbody className="divide-y divide-gray-100 text-xs md:text-sm">
+                            {displayDocuments.map((doc) => {
+                                const statusConfig = getStatusConfig(doc.last_status);
+                                const StatusIcon = statusConfig.icon;
+                                const thumbnailUrl = thumbnailUrls[doc.id];
 
-                                            {/* samotné menu – taky stopPropagation, aby klik uvnitř neotevřel detail */}
-                                            <div
-                                                className="absolute right-0 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleRerunDocument(doc.id);
-                                                    }}
-                                                    className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
-                                                >
-                                                    Re-run Report
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDownloadDocument(doc);
-                                                    }}
-                                                    className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
-                                                >
-                                                    Download
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        openDeleteModal(doc);
-                                                    }}
-                                                    className="w-full text-left px-3 py-1.5 text-sm text-rose-600 hover:bg-rose-50"
-                                                >
-                                                    Delete file
-                                                </button>
-
-                                            </div>
-                                        </>
-                                    )}
-
-                                </div>
-                            );
-
-                            return viewMode === 'grid' ? (
-                                <div
-                                    key={doc.id}
-                                    className={`group bg-white border border-gray-200 ${statusConfig.borderColor} border-l-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer p-4`}
-                                    onClick={() => navigate(`/documents/${doc.id}`)}
-                                >
-                                    <div className="flex items-start gap-3 mb-3">
-                                        {thumbnailUrl ? (
-                                            <img
-                                                src={thumbnailUrl}
-                                                alt={doc.file_name}
-                                                className="w-10 h-10 object-cover rounded flex-shrink-0"
-                                            />
-                                        ) : (
-                                            <FileText
-                                                className="w-10 h-10 text-blue-500 flex-shrink-0"
-                                                strokeWidth={1.5}
-                                            />
-                                        )}
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-start justify-between gap-2">
-                                                <h3 className="text-base font-medium text-gray-900 truncate mb-1">
-                                                    {doc.file_name}
-                                                </h3>
-                                                {RowMenu}
-                                            </div>
-                                            <div
-                                                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-xs font-medium ${statusConfig.className}`}
-                                            >
-                                                <StatusIcon className="w-3 h-3" strokeWidth={2}/>
-                                                {statusConfig.label}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col gap-1 text-sm text-gray-500">
-                                        <div>Uploaded: {formatDate(doc.created_at)}</div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div
-                                    key={doc.id}
-                                    className={`group bg-white border border-gray-200 ${statusConfig.borderColor} border-l-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer py-3 px-4`}
-                                    onClick={() => navigate(`/documents/${doc.id}`)}
-                                >
-                                    <div className="flex items-center gap-4">
-                                        {thumbnailUrl ? (
-                                            <img
-                                                src={thumbnailUrl}
-                                                alt={doc.file_name}
-                                                className="w-8 h-8 object-cover rounded flex-shrink-0"
-                                            />
-                                        ) : (
-                                            <FileText
-                                                className="w-8 h-8 text-blue-500 flex-shrink-0"
-                                                strokeWidth={1.5}
-                                            />
-                                        )}
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className="text-sm font-medium text-gray-900 truncate">
-                                                {doc.file_name}
-                                            </h3>
-                                        </div>
-                                        <div className="hidden sm:flex items-center gap-4 text-sm text-gray-500">
-                                            <span>Uploaded: {formatDate(doc.created_at)}</span>
-                                        </div>
-                                        <div
-                                            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-xs font-medium ${statusConfig.className}`}
+                                const RowMenu = (
+                                    <div className="relative">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setRowMenuOpenId((prev) => (prev === doc.id ? null : doc.id));
+                                            }}
+                                            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
                                         >
-                                            <StatusIcon className="w-3 h-3" strokeWidth={2}/>
-                                            {statusConfig.label}
-                                        </div>
-                                        {RowMenu}
+                                            <MoreHorizontal className="w-4 h-4 text-gray-500"/>
+                                        </button>
+                                        {rowMenuOpenId === doc.id && (
+                                            <>
+                                                {/* backdrop – zavře menu, ale nezpůsobí navigate */}
+                                                <div
+                                                    className="fixed inset-0 z-40"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setRowMenuOpenId(null);
+                                                    }}
+                                                />
+                                                <div
+                                                    className="absolute right-0 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleRerunDocument(doc.id);
+                                                        }}
+                                                        className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+                                                    >
+                                                        Re-run Report
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDownloadDocument(doc);
+                                                        }}
+                                                        className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+                                                    >
+                                                        Download
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            openDeleteModal(doc);
+                                                        }}
+                                                        className="w-full text-left px-3 py-1.5 text-sm text-rose-600 hover:bg-rose-50"
+                                                    >
+                                                        Delete file
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
-                                </div>
-                            );
-                        })}
+                                );
+
+                                return (
+                                    <tr
+                                        key={doc.id}
+                                        className="group cursor-pointer hover:bg-gray-50"
+                                        onClick={() => navigate(`/documents/${doc.id}`)}
+                                    >
+                                        {/* Document */}
+                                        <td
+                                            className={`px-4 py-3 align-middle border-l-4 ${statusConfig.borderColor} w-[280px]`}
+                                        >
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                {thumbnailUrl ? (
+                                                    <img
+                                                        src={thumbnailUrl}
+                                                        alt={doc.file_name}
+                                                        className="w-8 h-8 object-cover rounded flex-shrink-0"
+                                                    />
+                                                ) : (
+                                                    <FileText
+                                                        className="w-8 h-8 text-blue-500 flex-shrink-0"
+                                                        strokeWidth={1.5}
+                                                    />
+                                                )}
+                                                <span className="truncate block text-gray-900 font-medium">
+                            {doc.file_name}
+                          </span>
+                                            </div>
+                                        </td>
+
+                                        {/* Company */}
+                                        <td className="px-4 py-3 align-middle text-gray-700 truncate w-[140px]">
+                                            {doc.company_name || '—'}
+                                        </td>
+
+                                        {/* Class */}
+                                        <td className="px-4 py-3 align-middle text-gray-700 truncate w-[100px]">
+                                            {doc.part_class || '—'}
+                                        </td>
+
+                                        {/* Complexity */}
+                                        <td className="px-4 py-3 align-middle text-gray-700 w-[110px]">
+                                            {doc.part_complexity || '—'}
+                                        </td>
+
+                                        {/* Fit */}
+                                        <td className="px-4 py-3 align-middle text-gray-700 w-[90px]">
+                                            {doc.part_fit_level || '—'}
+                                        </td>
+
+                                        {/* Created */}
+                                        <td className="px-4 py-3 align-middle text-gray-500 w-[100px]">
+                                            {formatDate(doc.created_at)}
+                                        </td>
+
+                                        {/* Status icon */}
+                                        <td className="px-4 py-3 align-middle text-center w-[60px]">
+                                            <StatusIcon
+                                                className={`w-4 h-4 inline-block ${statusConfig.iconColor}`}
+                                                strokeWidth={2}
+                                                // title={statusConfig.label}
+                                            />
+                                        </td>
+
+                                        {/* Menu */}
+                                        <td
+                                            className="px-4 py-3 align-middle text-right w-[40px]"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            {RowMenu}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                            </tbody>
+                        </table>
                     </div>
                 )}
             </div>
 
+            {/* Delete modal */}
             <DeleteDocumentModal
                 open={deleteModalOpen}
                 onClose={() => {
