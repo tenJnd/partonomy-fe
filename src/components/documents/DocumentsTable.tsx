@@ -159,13 +159,13 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
         <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
             {/* table-auto + šířky řešíme uvnitř buněk, ne přes table layout */}
             <table className="min-w-full text-left text-sm table-auto">
-                <thead className="bg-gray-50 text-[11px] tracking-wide text-gray-500">
+                <thead className="sticky bg-gray-50 text-[11px] tracking-wide text-gray-500">
                 <tr>
                     {renderSortableHeader('Document', 'file_name')}
                     {renderSortableHeader('Company', 'company_name')}
                     {renderSortableHeader('Class', 'part_class')}
                     <th className="px-3 py-2 font-semibold text-[11px] text-gray-500">
-                        <span className="truncate">Envelope</span>
+                        <span className="truncate">Est. blank dims</span>
                     </th>
                     {renderSortableHeader('Complexity', 'part_complexity')}
                     {renderSortableHeader('Fit', 'part_fit_level')}
