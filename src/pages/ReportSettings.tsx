@@ -184,7 +184,7 @@ const ReportSettings: React.FC = () => {
                                 You can write the profile in <span className="underline">your native language</span>.
                             </p>
 
-                            <p className="font-medium text-gray-900 mb-2">Examples (CNC machining):</p>
+                            <p className="font-medium text-gray-900 mb-2">Examples:</p>
 
                             <ul className="space-y-3">
 
