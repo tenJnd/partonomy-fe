@@ -79,7 +79,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                            thumbnailUrls,
                                                            loading,
                                                            uploading,
-                                                           uploadProgress,
+                                                           // uploadProgress,
                                                            sortField,
                                                            sortDirection,
                                                            onSortChange,
@@ -95,9 +95,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
         const isActive = sortField === field;
 
         return (
-            <th
-                className={`px-4 py-2 font-semibold ${extraClasses}`}
-            >
+            <th className={`px-4 py-2 font-semibold ${extraClasses}`}>
                 <button
                     type="button"
                     onClick={() => onSortChange(field)}
@@ -106,8 +104,8 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                     <span>{label}</span>
                     {isActive && (
                         <span className="text-[10px] text-gray-500">
-              {sortDirection === 'asc' ? '▲' : '▼'}
-            </span>
+                            {sortDirection === 'asc' ? '▲' : '▼'}
+                        </span>
                     )}
                 </button>
             </th>
@@ -127,9 +125,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
             <div className="text-center py-12">
                 <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" strokeWidth={1.5}/>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No documents yet</h3>
-                <p className="text-sm text-gray-500 mb-6">
-                    Upload your first document to get started
-                </p>
+                <p className="text-sm text-gray-500 mb-6">Upload your first document to get started</p>
                 <button
                     onClick={onUploadClick}
                     disabled={uploading}
@@ -137,24 +133,9 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                 >
                     <Upload className="w-4 h-4" strokeWidth={1.5}/>
                     <span className="text-sm font-medium">
-            {uploading ? 'Uploading...' : 'Upload Documents'}
-          </span>
+                        {uploading ? 'Uploading...' : 'Upload Documents'}
+                    </span>
                 </button>
-
-                {uploading && (
-                    <div className="mt-4 w-full max-w-md mx-auto text-left">
-                        <div className="mb-2 flex items-center justify-between text-xs text-gray-600">
-                            <span>Uploading...</span>
-                            <span>{uploadProgress}%</span>
-                        </div>
-                        <div className="w-full bg-blue-200 rounded-full h-2">
-                            <div
-                                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                style={{width: `${uploadProgress}%`}}
-                            />
-                        </div>
-                    </div>
-                )}
             </div>
         );
     }
@@ -162,13 +143,16 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
     return (
         <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
             <table className="min-w-full text-left text-sm table-fixed">
-                <thead className="bg-gray-50 text-[11px] uppercase tracking-wide text-gray-500">
+                <thead className="bg-gray-50 text-[11px] tracking-wide text-gray-500">
                 <tr>
-                    {renderSortableHeader('Document', 'file_name', 'w-[280px]')}
+                    {renderSortableHeader('Document', 'file_name', 'w-[250px]')}
                     {renderSortableHeader('Company', 'company_name', 'w-[140px]')}
                     {renderSortableHeader('Class', 'part_class', 'w-[100px]')}
+
+
                     {renderSortableHeader('Complexity', 'part_complexity', 'w-[110px]')}
                     {renderSortableHeader('Fit', 'part_fit_level', 'w-[90px]')}
+                    {/*<th className="px-4 py-2 font-semibold w-[40px] ">Parts</th>*/}
                     {renderSortableHeader('Created', 'created_at', 'w-[100px]')}
                     {renderSortableHeader('Status', 'last_status', 'w-[60px] text-center')}
                     <th className="px-4 py-2 font-semibold w-[40px] text-right"></th>
@@ -180,6 +164,15 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                     const statusConfig = getStatusConfig(doc.last_status);
                     const StatusIcon = statusConfig.icon;
                     const thumbnailUrl = thumbnailUrls[doc.id];
+
+                    // const parts = doc.detected_parts_count;
+                    // let partsLabel = '—';
+                    //
+                    // if (parts === 1) {
+                    //     partsLabel = '1 part';
+                    // } else if (parts > 1) {
+                    //     partsLabel = `${parts} parts`;
+                    // }
 
                     const RowMenu = (
                         <div className="relative">
@@ -194,7 +187,6 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                             </button>
                             {rowMenuOpenId === doc.id && (
                                 <>
-                                    {/* backdrop – zavře menu, ale neotevře detail */}
                                     <div
                                         className="fixed inset-0 z-40"
                                         onClick={(e) => {
@@ -266,8 +258,8 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                         />
                                     )}
                                     <span className="truncate block text-gray-900 font-medium">
-                      {doc.file_name}
-                    </span>
+                                            {doc.file_name}
+                                        </span>
                                 </div>
                             </td>
 
@@ -281,6 +273,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                 {doc.part_class || '—'}
                             </td>
 
+
                             {/* Complexity */}
                             <td className="px-4 py-3 align-middle text-gray-600 w-[110px] text-xs">
                                 {doc.part_complexity || '—'}
@@ -291,19 +284,25 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                 {doc.part_fit_level || '—'}
                             </td>
 
+                            {/*/!* PARTS COUNT *!/*/}
+                            {/*<td className="px-4 py-3 align-middle text-gray-600 w-[40px] text-xs">*/}
+                            {/*    {doc.detected_parts_count}*/}
+                            {/*</td>*/}
+
                             {/* Created */}
                             <td className="px-4 py-3 align-middle text-gray-500 w-[100px] text-xs">
                                 {formatDate(doc.created_at)}
                             </td>
 
-                            {/* Status icon */}
-                            <td className="px-4 py-3 align-middle text-center w-[60px]">
+
+                            {/* Status */}
+                            <td className="px-4 py-3 align-middle text-center w-[40px]">
                                 <StatusIcon
                                     className={`w-4 h-4 inline-block ${statusConfig.iconColor}`}
                                     strokeWidth={2}
-                                    // title={statusConfig.label}
                                 />
                             </td>
+
 
                             {/* Menu */}
                             <td
