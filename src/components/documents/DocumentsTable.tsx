@@ -19,6 +19,19 @@ type DocumentsTableProps = {
     onRowClick: (docId: string) => void;
 };
 
+// Jedno místo, kde nastavíš šířky sloupců
+const COLUMN_WIDTHS = {
+    file_name: 'w-[300px] max-w-[320px]',
+    company_name: 'w-[140px] max-w-[140px]',
+    part_class: 'w-[60px] max-w-[60px]',
+    envelope: 'w-[100px] max-w-[100px]',
+    part_complexity: 'w-[60px] max-w-[60px]',
+    part_fit_level: 'w-[80px] max-w-[80px]',
+    created_at: 'w-[60px] max-w-[60px]',
+    status: 'w-[20px] max-w-[20px]',
+    menu: 'w-[20px] max-w-[20px]',
+};
+
 const getStatusConfig = (status: string) => {
     switch (status) {
         case 'queued':
@@ -91,21 +104,21 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                        }) => {
     const [rowMenuOpenId, setRowMenuOpenId] = useState<string | null>(null);
 
-    const renderSortableHeader = (label: string, field: SortField, extraClasses = '') => {
+    const renderSortableHeader = (label: string, field: SortField) => {
         const isActive = sortField === field;
 
         return (
-            <th className={`px-4 py-2 font-semibold ${extraClasses}`}>
+            <th className="px-3 py-2 font-semibold text-[11px] text-gray-500">
                 <button
                     type="button"
                     onClick={() => onSortChange(field)}
-                    className="flex items-center gap-1 group select-none"
+                    className="flex items-center gap-1 group select-none w-full text-left"
                 >
-                    <span>{label}</span>
+                    <span className="truncate">{label}</span>
                     {isActive && (
                         <span className="text-[10px] text-gray-500">
-                            {sortDirection === 'asc' ? '▲' : '▼'}
-                        </span>
+              {sortDirection === 'asc' ? '▲' : '▼'}
+            </span>
                     )}
                 </button>
             </th>
@@ -125,7 +138,9 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
             <div className="text-center py-12">
                 <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" strokeWidth={1.5}/>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No documents yet</h3>
-                <p className="text-sm text-gray-500 mb-6">Upload your first document to get started</p>
+                <p className="text-sm text-gray-500 mb-6">
+                    Upload your first document to get started
+                </p>
                 <button
                     onClick={onUploadClick}
                     disabled={uploading}
@@ -133,8 +148,8 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                 >
                     <Upload className="w-4 h-4" strokeWidth={1.5}/>
                     <span className="text-sm font-medium">
-                        {uploading ? 'Uploading...' : 'Upload Documents'}
-                    </span>
+            {uploading ? 'Uploading...' : 'Upload Documents'}
+          </span>
                 </button>
             </div>
         );
@@ -142,20 +157,23 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
 
     return (
         <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
-            <table className="min-w-full text-left text-sm table-fixed">
+            {/* table-auto + šířky řešíme uvnitř buněk, ne přes table layout */}
+            <table className="min-w-full text-left text-sm table-auto">
                 <thead className="bg-gray-50 text-[11px] tracking-wide text-gray-500">
                 <tr>
-                    {renderSortableHeader('Document', 'file_name', 'w-[250px]')}
-                    {renderSortableHeader('Company', 'company_name', 'w-[140px]')}
-                    {renderSortableHeader('Class', 'part_class', 'w-[100px]')}
-
-
-                    {renderSortableHeader('Complexity', 'part_complexity', 'w-[110px]')}
-                    {renderSortableHeader('Fit', 'part_fit_level', 'w-[90px]')}
-                    {/*<th className="px-4 py-2 font-semibold w-[40px] ">Parts</th>*/}
-                    {renderSortableHeader('Created', 'created_at', 'w-[100px]')}
-                    {renderSortableHeader('Status', 'last_status', 'w-[60px] text-center')}
-                    <th className="px-4 py-2 font-semibold w-[40px] text-right"></th>
+                    {renderSortableHeader('Document', 'file_name')}
+                    {renderSortableHeader('Company', 'company_name')}
+                    {renderSortableHeader('Class', 'part_class')}
+                    <th className="px-3 py-2 font-semibold text-[11px] text-gray-500">
+                        <span className="truncate">Envelope</span>
+                    </th>
+                    {renderSortableHeader('Complexity', 'part_complexity')}
+                    {renderSortableHeader('Fit', 'part_fit_level')}
+                    {renderSortableHeader('Created', 'created_at')}
+                    {renderSortableHeader('Status', 'last_status')}
+                    <th className="px-3 py-2 font-semibold text-[11px] text-right text-gray-500">
+                        {/* Menu */}
+                    </th>
                 </tr>
                 </thead>
 
@@ -164,15 +182,6 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                     const statusConfig = getStatusConfig(doc.last_status);
                     const StatusIcon = statusConfig.icon;
                     const thumbnailUrl = thumbnailUrls[doc.id];
-
-                    // const parts = doc.detected_parts_count;
-                    // let partsLabel = '—';
-                    //
-                    // if (parts === 1) {
-                    //     partsLabel = '1 part';
-                    // } else if (parts > 1) {
-                    //     partsLabel = `${parts} parts`;
-                    // }
 
                     const RowMenu = (
                         <div className="relative">
@@ -234,6 +243,13 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                         </div>
                     );
 
+                    const envelopeText = doc.part_envelope_text || '';
+                    const companyName = doc.company_name || '';
+                    const partClass = doc.part_class || '';
+                    const complexity = doc.part_complexity || '';
+                    const fitLevel = doc.part_fit_level || '';
+                    const fileName = doc.file_name || '';
+
                     return (
                         <tr
                             key={doc.id}
@@ -241,14 +257,15 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                             onClick={() => onRowClick(doc.id)}
                         >
                             {/* Document */}
-                            <td
-                                className={`px-4 py-3 align-middle border-l-4 ${statusConfig.borderColor} w-[250px]`}
-                            >
-                                <div className="flex items-center gap-3 min-w-0">
+                            <td className={`px-3 py-3 align-middle border-l-4 text-xs ${statusConfig.borderColor}`}>
+                                <div
+                                    className={`flex items-center gap-3 min-w-0 ${COLUMN_WIDTHS.file_name}`}
+                                    title={fileName}
+                                >
                                     {thumbnailUrl ? (
                                         <img
                                             src={thumbnailUrl}
-                                            alt={doc.file_name}
+                                            alt={fileName}
                                             className="w-8 h-8 object-cover rounded flex-shrink-0"
                                         />
                                     ) : (
@@ -258,58 +275,81 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                         />
                                     )}
                                     <span className="truncate block text-gray-900 font-medium">
-                                            {doc.file_name}
-                                        </span>
+                      {fileName}
+                    </span>
                                 </div>
                             </td>
 
                             {/* Company */}
-                            <td className="px-4 py-3 align-middle text-gray-600 truncate w-[120px] text-xs">
-                                {doc.company_name || '—'}
+                            <td className="px-3 py-3 align-middle text-gray-600 text-xs">
+                                <div
+                                    className={`${COLUMN_WIDTHS.company_name} truncate`}
+                                    title={companyName}
+                                >
+                                    {companyName}
+                                </div>
                             </td>
 
                             {/* Class */}
-                            <td className="px-4 py-3 align-middle text-gray-600 truncate w-[100px] text-xs">
-                                {doc.part_class || '—'}
+                            <td className="px-3 py-3 align-middle text-gray-600 text-xs">
+                                <div className={`${COLUMN_WIDTHS.part_class} truncate`} title={partClass}>
+                                    {partClass}
+                                </div>
                             </td>
 
+                            {/* Envelope */}
+                            <td className="px-3 py-3 align-middle text-gray-600 text-xs">
+                                <div
+                                    className={`${COLUMN_WIDTHS.envelope} truncate`}
+                                    title={envelopeText}
+                                >
+                                    {envelopeText}
+                                </div>
+                            </td>
 
                             {/* Complexity */}
-                            <td className="px-4 py-3 align-middle text-gray-600 w-[110px] text-xs">
-                                {doc.part_complexity || '—'}
+                            <td className="px-3 py-3 align-middle text-gray-600 text-xs">
+                                <div
+                                    className={`${COLUMN_WIDTHS.part_complexity} truncate`}
+                                    title={complexity}
+                                >
+                                    {complexity}
+                                </div>
                             </td>
 
                             {/* Fit */}
-                            <td className="px-4 py-3 align-middle text-gray-600 w-[90px] text-xs">
-                                {doc.part_fit_level || '—'}
+                            <td className="px-3 py-3 align-middle text-gray-600 text-xs">
+                                <div
+                                    className={`${COLUMN_WIDTHS.part_fit_level} truncate`}
+                                    title={fitLevel}
+                                >
+                                    {fitLevel}
+                                </div>
                             </td>
-
-                            {/*/!* PARTS COUNT *!/*/}
-                            {/*<td className="px-4 py-3 align-middle text-gray-600 w-[40px] text-xs">*/}
-                            {/*    {doc.detected_parts_count}*/}
-                            {/*</td>*/}
 
                             {/* Created */}
-                            <td className="px-4 py-3 align-middle text-gray-500 w-[100px] text-xs">
-                                {formatDate(doc.created_at)}
+                            <td className="px-3 py-3 align-middle text-gray-500 text-xs">
+                                <div className={`${COLUMN_WIDTHS.created_at} whitespace-nowrap`}>
+                                    {formatDate(doc.created_at)}
+                                </div>
                             </td>
-
 
                             {/* Status */}
-                            <td className="px-4 py-3 align-middle text-center w-[40px]">
-                                <StatusIcon
-                                    className={`w-4 h-4 inline-block ${statusConfig.iconColor}`}
-                                    strokeWidth={2}
-                                />
+                            <td className="px-3 py-3 align-middle text-center">
+                                <div className={COLUMN_WIDTHS.status} title={statusConfig.label}>
+                                    <StatusIcon
+                                        className={`w-4 h-4 inline-block ${statusConfig.iconColor}`}
+                                        strokeWidth={2}
+                                    />
+                                </div>
                             </td>
-
 
                             {/* Menu */}
                             <td
-                                className="px-4 py-3 align-middle text-right w-[40px]"
+                                className="px-3 py-3 align-middle text-right"
                                 onClick={(e) => e.stopPropagation()}
                             >
-                                {RowMenu}
+                                <div className={COLUMN_WIDTHS.menu}>{RowMenu}</div>
                             </td>
                         </tr>
                     );
