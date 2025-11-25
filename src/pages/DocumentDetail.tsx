@@ -368,7 +368,7 @@ const DocumentDetail: React.FC = () => {
     };
 
     return (
-        <div className="p-6 max-w-[1800px] mx-auto">
+        <div className="p-6 max-w-[1800px] mx-auto bg-gradient-to-br from-slate-50 via-white to-slate-50 min-h-screen">
             {renderFullscreenModal()}
 
             {/* Header */}
@@ -376,13 +376,14 @@ const DocumentDetail: React.FC = () => {
                 <div className="flex items-center gap-4">
                     <Link
                         to="/"
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
                     >
-                        <ArrowLeft className="w-5 h-5 text-gray-600" strokeWidth={1.5}/>
+                        <ArrowLeft className="w-5 h-5 text-gray-600 group-hover:-translate-x-1 transition-transform"
+                                   strokeWidth={2}/>
                     </Link>
                     <div>
-                        <h1 className="text-2xl font-semibold text-gray-900">{document.file_name}</h1>
-                        <p className="text-sm text-gray-500">
+                        <h1 className="text-2xl font-bold text-gray-900">{document.file_name}</h1>
+                        <p className="text-sm text-gray-600">
                             {parts.length} {parts.length === 1 ? 'part' : 'parts'} detected
                         </p>
                     </div>
@@ -394,16 +395,16 @@ const DocumentDetail: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => setIsExportMenuOpen(prev => !prev)}
-                            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 shadow-sm"
+                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 shadow-sm transition-colors"
                         >
-                            <Download className="w-4 h-4" strokeWidth={1.5}/>
+                            <Download className="w-4 h-4" strokeWidth={2}/>
                             <span>Export</span>
-                            <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={1.5}/>
+                            <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2}/>
                         </button>
 
                         {isExportMenuOpen && (
                             <div
-                                className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20">
+                                className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-xl shadow-xl py-1 z-20">
                                 <button
                                     type="button"
                                     onClick={() => {
@@ -415,7 +416,7 @@ const DocumentDetail: React.FC = () => {
                                         );
                                         setIsExportMenuOpen(false);
                                     }}
-                                    className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
                                 >
                                     Export to XLSX
                                 </button>
@@ -431,11 +432,10 @@ const DocumentDetail: React.FC = () => {
                                         );
                                         setIsExportMenuOpen(false);
                                     }}
-                                    className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
                                 >
                                     Export to TXT
                                 </button>
-
 
                                 <button
                                     type="button"
@@ -446,7 +446,7 @@ const DocumentDetail: React.FC = () => {
                                         );
                                         setIsExportMenuOpen(false);
                                     }}
-                                    className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
                                 >
                                     Export to JSON
                                 </button>
@@ -459,19 +459,19 @@ const DocumentDetail: React.FC = () => {
             {/* Main Content */}
             <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
                 {/* Left: Part Data - 40% */}
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 xl:col-span-2">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4 px-2">Report</h2>
+                <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 xl:col-span-2">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Report</h2>
 
                     {/* Part Selector */}
                     {parts.length > 0 && (
-                        <div className="mb-4 px-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <div className="mb-6">
+                            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
                                 Select Part
                             </label>
                             <select
                                 value={selectedPartId || ''}
                                 onChange={(e) => setSelectedPartId(e.target.value)}
-                                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-sm"
+                                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-sm"
                             >
                                 {parts.map((part) => (
                                     <option key={part.id} value={part.id}>
@@ -493,10 +493,11 @@ const DocumentDetail: React.FC = () => {
                         const internalNotes = reportJson.internal_notes;
 
                         return (
-                            <div className="space-y-4 px-2">
+                            <div className="space-y-4">
                                 {/* Quick Summary */}
                                 {overview?.quick_summary && (
-                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <div
+                                        className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-lg p-4">
                                         <h3 className="text-sm font-semibold text-blue-900 mb-2">Summary</h3>
                                         <p className="text-sm text-blue-800 leading-relaxed">{overview.quick_summary}</p>
                                     </div>
@@ -505,33 +506,37 @@ const DocumentDetail: React.FC = () => {
                                 {/* Key Metrics Grid */}
                                 <div className="grid grid-cols-2 gap-3">
                                     {assessment?.overall_complexity && (
-                                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
                                             <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Complexity</dt>
-                                            <dd className={`text-sm font-semibold capitalize ${
-                                                assessment.overall_complexity === 'EXTREME' ? 'text-red-600' :
-                                                    assessment.overall_complexity === 'HIGH' ? 'text-orange-600' :
-                                                        assessment.overall_complexity === 'MEDIUM' ? 'text-yellow-600' :
-                                                            assessment.overall_complexity === 'LOW' ? 'text-green-600' :
-                                                                'text-gray-900'
-                                            }`}>{assessment.overall_complexity.toLowerCase()}</dd>
+                                            <dd className={`inline-flex px-2.5 py-1 rounded-md border text-xs font-semibold ${
+                                                assessment.overall_complexity === 'EXTREME' || assessment.overall_complexity === 'HIGH'
+                                                    ? 'bg-rose-50 text-rose-800 border-rose-300' :
+                                                    assessment.overall_complexity === 'MEDIUM'
+                                                        ? 'bg-amber-50 text-amber-800 border-amber-300' :
+                                                        assessment.overall_complexity === 'LOW'
+                                                            ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
+                                                            'bg-gray-50 text-gray-700 border-gray-300'
+                                            }`}>{assessment.overall_complexity}</dd>
                                         </div>
                                     )}
                                     {assessment?.manufacturing_risk_level && (
-                                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
                                             <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Risk
                                                 Level
                                             </dt>
-                                            <dd className={`text-sm font-semibold capitalize ${
-                                                assessment.manufacturing_risk_level === 'EXTREME' ? 'text-red-600' :
-                                                    assessment.manufacturing_risk_level === 'HIGH' ? 'text-orange-600' :
-                                                        assessment.manufacturing_risk_level === 'MEDIUM' ? 'text-yellow-600' :
-                                                            assessment.manufacturing_risk_level === 'LOW' ? 'text-green-600' :
-                                                                'text-gray-900'
-                                            }`}>{assessment.manufacturing_risk_level.toLowerCase()}</dd>
+                                            <dd className={`inline-flex px-2.5 py-1 rounded-md border text-xs font-semibold ${
+                                                assessment.manufacturing_risk_level === 'EXTREME' || assessment.manufacturing_risk_level === 'HIGH'
+                                                    ? 'bg-rose-50 text-rose-800 border-rose-300' :
+                                                    assessment.manufacturing_risk_level === 'MEDIUM'
+                                                        ? 'bg-amber-50 text-amber-800 border-amber-300' :
+                                                        assessment.manufacturing_risk_level === 'LOW'
+                                                            ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
+                                                            'bg-gray-50 text-gray-700 border-gray-300'
+                                            }`}>{assessment.manufacturing_risk_level}</dd>
                                         </div>
                                     )}
                                     {overview?.highlight_summary && Array.isArray(overview.highlight_summary) && (
-                                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 col-span-2">
+                                        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 col-span-2">
                                             <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Highlights</dt>
                                             <dd className="text-xs text-gray-900">
                                                 <ul className="list-disc list-inside space-y-1">
@@ -543,26 +548,33 @@ const DocumentDetail: React.FC = () => {
                                         </div>
                                     )}
                                     {assessment?.shop_alignment && (
-                                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 col-span-2">
+                                        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 col-span-2">
                                             <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Shop
                                                 Alignment
                                             </dt>
                                             <dd className="text-sm">
-                                                <div>
-                                                    <span className="font-semibold">Fit: </span>
-                                                    <span className={`font-semibold ${
-                                                        assessment.shop_alignment.fit_level === 'GOOD' ? 'text-green-600' :
-                                                            assessment.shop_alignment.fit_level === 'PARTIAL' ? 'text-yellow-600' :
-                                                                assessment.shop_alignment.fit_level === 'COOPERATION' ? 'text-orange-600' :
-                                                                    assessment.shop_alignment.fit_level === 'LOW' ? 'text-red-600' :
-                                                                        'text-gray-500'
-                                                    }`}>{assessment.shop_alignment.fit_level}</span>
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="text-gray-700">Fit:</span>
+                                                    <span
+                                                        className={`inline-flex px-2.5 py-1 rounded-md border text-xs font-medium ${
+                                                            assessment.shop_alignment.fit_level === 'GOOD'
+                                                                ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
+                                                                assessment.shop_alignment.fit_level === 'PARTIAL'
+                                                                    ? 'bg-blue-50 text-blue-800 border-blue-300' :
+                                                                    assessment.shop_alignment.fit_level === 'COOPERATION'
+                                                                        ? 'bg-purple-50 text-purple-800 border-purple-300' :
+                                                                        assessment.shop_alignment.fit_level === 'LOW'
+                                                                            ? 'bg-amber-50 text-amber-800 border-amber-300' :
+                                                                            'bg-gray-50 text-gray-600 border-gray-300'
+                                                        }`}>
+                            {assessment.shop_alignment.fit_level}
+                          </span>
                                                 </div>
                                                 <div
-                                                    className="text-xs mt-1 text-gray-900">{assessment.shop_alignment.fit_summary}</div>
+                                                    className="text-xs text-gray-900">{assessment.shop_alignment.fit_summary}</div>
                                                 {assessment?.shop_alignment?.fit_level === 'UNKNOWN' && (
                                                     <div
-                                                        className="mt-3 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                                                        className="mt-3 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-2 py-1.5">
                                                         Note: Fill your organization profile in Settings to get a
                                                         personalized fit recommendation for your shop.
                                                     </div>
@@ -579,7 +591,7 @@ const DocumentDetail: React.FC = () => {
                                         <div className="border border-gray-200 rounded-lg overflow-hidden">
                                             <button
                                                 onClick={() => toggleSection('risks')}
-                                                className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
+                                                className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors"
                                             >
                                                 <span className="text-sm font-semibold text-gray-900">Key Risks & Opportunities</span>
                                                 {expandedSections['risks'] ? (
@@ -622,20 +634,18 @@ const DocumentDetail: React.FC = () => {
                                         <div className="border border-gray-200 rounded-lg overflow-hidden">
                                             <button
                                                 onClick={() => toggleSection('cost')}
-                                                className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
+                                                className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors"
                                             >
                         <span className="text-sm font-semibold text-gray-900">
                           Cost Drivers
                           <span className="ml-1 italic text-[11px] text-gray-500">(Quote Centric)</span>
                         </span>
-
                                                 {expandedSections['cost'] ? (
                                                     <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2}/>
                                                 ) : (
                                                     <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2}/>
                                                 )}
                                             </button>
-
                                             {expandedSections['cost'] && (
                                                 <div className="p-4 bg-white space-y-3">
                                                     {costDrivers.map((driver: any, idx: number) => (
@@ -651,14 +661,12 @@ const DocumentDetail: React.FC = () => {
                                                             <div className="flex items-center gap-2 mb-1">
                                                                 <span
                                                                     className="text-sm font-semibold text-gray-900">{driver.factor}</span>
-                                                                <span
-                                                                    className={`text-xs px-2 py-0.5 rounded ${
-                                                                        driver.impact === 'EXTREME' ? 'bg-red-100 text-red-800'
-                                                                            : driver.impact === 'HIGH' ? 'bg-orange-100 text-yellow-800'
-                                                                                : driver.impact === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800'
-                                                                                    : 'bg-green-100 text-green-800'
-                                                                    }`}
-                                                                >
+                                                                <span className={`text-xs px-2 py-0.5 rounded ${
+                                                                    driver.impact === 'EXTREME' ? 'bg-red-100 text-red-800'
+                                                                        : driver.impact === 'HIGH' ? 'bg-orange-100 text-yellow-800'
+                                                                            : driver.impact === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800'
+                                                                                : 'bg-green-100 text-green-800'
+                                                                }`}>
                                   {driver.impact}
                                 </span>
                                                             </div>
@@ -675,20 +683,18 @@ const DocumentDetail: React.FC = () => {
                                         <div className="border border-gray-200 rounded-lg overflow-hidden">
                                             <button
                                                 onClick={() => toggleSection('critical')}
-                                                className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
+                                                className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors"
                                             >
                         <span className="text-sm font-semibold text-gray-900">
                           Critical Points
                           <span className="ml-1 italic text-[11px] text-gray-500">(Production Centric)</span>
                         </span>
-
                                                 {expandedSections['critical'] ? (
                                                     <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2}/>
                                                 ) : (
                                                     <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2}/>
                                                 )}
                                             </button>
-
                                             {expandedSections['critical'] && (
                                                 <div className="p-4 bg-white space-y-3">
                                                     {criticalPoints.map((point: any, idx: number) => (
@@ -705,14 +711,12 @@ const DocumentDetail: React.FC = () => {
                                 <span className="text-sm font-semibold text-gray-900 capitalize">
                                   {point.type.replace(/_/g, ' ')}
                                 </span>
-                                                                <span
-                                                                    className={`text-xs px-2 py-0.5 rounded ${
-                                                                        point.importance === 'EXTREME' ? 'bg-red-100 text-red-800'
-                                                                            : point.importance === 'HIGH' ? 'bg-orange-100 text-yellow-800'
-                                                                                : point.importance === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800'
-                                                                                    : 'bg-green-100 text-green-800'
-                                                                    }`}
-                                                                >
+                                                                <span className={`text-xs px-2 py-0.5 rounded ${
+                                                                    point.importance === 'EXTREME' ? 'bg-red-100 text-red-800'
+                                                                        : point.importance === 'HIGH' ? 'bg-orange-100 text-yellow-800'
+                                                                            : point.importance === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800'
+                                                                                : 'bg-green-100 text-green-800'
+                                                                }`}>
                                   {point.importance}
                                 </span>
                                                             </div>
@@ -729,7 +733,7 @@ const DocumentDetail: React.FC = () => {
                                         <div className="border border-gray-200 rounded-lg overflow-hidden">
                                             <button
                                                 onClick={() => toggleSection('processing')}
-                                                className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
+                                                className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors"
                                             >
                                                 <span
                                                     className="text-sm font-semibold text-gray-900">Processing Hints</span>
@@ -790,7 +794,7 @@ const DocumentDetail: React.FC = () => {
                                         <div className="border border-gray-200 rounded-lg overflow-hidden">
                                             <button
                                                 onClick={() => toggleSection('notes')}
-                                                className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
+                                                className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors"
                                             >
                                                 <span
                                                     className="text-sm font-semibold text-gray-900">Internal Notes</span>
@@ -823,44 +827,44 @@ const DocumentDetail: React.FC = () => {
                 </div>
 
                 {/* Right: Part Render with Zoom - 60% */}
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 xl:col-span-3">
-                    <div className="flex items-center justify-end mb-4 px-2">
+                <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 xl:col-span-3">
+                    <div className="flex items-center justify-end mb-4">
                         {/* Zoom Controls */}
                         {partRenderUrl && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-1.5">
                                 <button
                                     onClick={handleZoomOut}
                                     disabled={zoom <= 25}
-                                    className="p-1 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300 rounded-lg transition-colors"
+                                    className="p-2 bg-white hover:bg-gray-100 disabled:bg-slate-50 disabled:text-gray-300 rounded-md transition-colors shadow-sm"
                                     title="Zoom out"
                                 >
-                                    <ZoomOut className="w-4 h-4" strokeWidth={1.5}/>
+                                    <ZoomOut className="w-4 h-4" strokeWidth={2}/>
                                 </button>
-                                <span className="text-sm text-gray-600 min-w-[4rem] text-center">
+                                <span className="text-sm font-medium text-gray-700 min-w-[4rem] text-center">
                   {zoom}%
                 </span>
                                 <button
                                     onClick={handleZoomIn}
                                     disabled={zoom >= 300}
-                                    className="p-1 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300 rounded-lg transition-colors"
+                                    className="p-2 bg-white hover:bg-gray-100 disabled:bg-slate-50 disabled:text-gray-300 rounded-md transition-colors shadow-sm"
                                     title="Zoom in"
                                 >
-                                    <ZoomIn className="w-4 h-4" strokeWidth={1.5}/>
+                                    <ZoomIn className="w-4 h-4" strokeWidth={2}/>
                                 </button>
                                 <button
                                     onClick={handleResetZoom}
-                                    className="p-1 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                                    className="p-2 bg-white hover:bg-gray-100 rounded-md transition-colors shadow-sm"
                                     title="Reset zoom"
                                 >
-                                    <RotateCw className="w-4 h-4" strokeWidth={1.5}/>
+                                    <RotateCw className="w-4 h-4" strokeWidth={2}/>
                                 </button>
-                                <div className="w-px h-6 bg-gray-200 mx-1"/>
+                                <div className="w-px h-6 bg-gray-300 mx-1"/>
                                 <button
                                     onClick={toggleFullscreen}
-                                    className="p-1 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                                    className="p-2 bg-white hover:bg-gray-100 rounded-md transition-colors shadow-sm"
                                     title="Fullscreen"
                                 >
-                                    <Maximize2 className="w-4 h-4" strokeWidth={1.5}/>
+                                    <Maximize2 className="w-4 h-4" strokeWidth={2}/>
                                 </button>
                             </div>
                         )}
@@ -902,7 +906,6 @@ const DocumentDetail: React.FC = () => {
                                     className="transition-transform duration-100"
                                     draggable={false}
                                 />
-
                             </div>
                         ) : selectedPartId ? (
                             <div
