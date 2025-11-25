@@ -16,7 +16,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                              onToggleCollapse,
                                          }) => {
     const mainNavItems = [
-        {path: '/', label: 'Documents', icon: FileText},
+        {path: '/Documents', label: 'Documents', icon: FileText},
     ];
 
     const settingsNavItems = [

@@ -1,8 +1,19 @@
-import React, {useState} from 'react';
-import {AlertCircle, CheckCircle, FileText, Loader, MoreHorizontal, Upload, XCircle,} from 'lucide-react';
+import React from 'react';
+import {
+    AlertCircle,
+    CheckCircle2,
+    ChevronDown,
+    ChevronUp,
+    Download,
+    FileText,
+    Loader2,
+    MoreVertical,
+    RefreshCw,
+    Trash2
+} from 'lucide-react';
 import type {SortField} from '../../pages/Documents';
 
-type DocumentsTableProps = {
+interface DocumentsTableProps {
     documents: any[];
     thumbnailUrls: Record<string, string>;
     loading: boolean;
@@ -10,82 +21,13 @@ type DocumentsTableProps = {
     uploadProgress: number;
     sortField: SortField;
     sortDirection: 'asc' | 'desc';
-
     onSortChange: (field: SortField) => void;
     onUploadClick: () => void;
     onRerun: (docId: string) => void;
     onDownload: (doc: any) => void;
     onDelete: (doc: any) => void;
-    onRowClick: (docId: string) => void;
-};
-
-// Jedno místo, kde nastavíš šířky sloupců
-const COLUMN_WIDTHS = {
-    file_name: 'w-[300px] max-w-[320px]',
-    company_name: 'w-[140px] max-w-[140px]',
-    part_class: 'w-[60px] max-w-[60px]',
-    envelope: 'w-[100px] max-w-[100px]',
-    part_complexity: 'w-[60px] max-w-[60px]',
-    part_fit_level: 'w-[80px] max-w-[80px]',
-    created_at: 'w-[60px] max-w-[60px]',
-    status: 'w-[20px] max-w-[20px]',
-    menu: 'w-[20px] max-w-[20px]',
-};
-
-const getStatusConfig = (status: string) => {
-    switch (status) {
-        case 'queued':
-            return {
-                label: 'Queued',
-                icon: Loader,
-                iconColor: 'text-gray-500',
-                borderColor: 'border-l-gray-400',
-            };
-        case 'processing':
-            return {
-                label: 'Processing',
-                icon: Loader,
-                iconColor: 'text-blue-500',
-                borderColor: 'border-l-blue-500',
-            };
-        case 'success':
-            return {
-                label: 'Completed',
-                icon: CheckCircle,
-                iconColor: 'text-emerald-500',
-                borderColor: 'border-l-emerald-500',
-            };
-        case 'failed':
-            return {
-                label: 'Failed',
-                icon: XCircle,
-                iconColor: 'text-rose-500',
-                borderColor: 'border-l-rose-500',
-            };
-        default:
-            return {
-                label: 'Unknown',
-                icon: AlertCircle,
-                iconColor: 'text-gray-400',
-                borderColor: 'border-l-gray-400',
-            };
-    }
-};
-
-const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMs = now.getTime() - date.getTime();
-    const diffInHours = diffInMs / (1000 * 60 * 60);
-
-    if (diffInHours < 24) {
-        return `${Math.floor(diffInHours)}h ago`;
-    } else if (diffInHours < 168) {
-        return `${Math.floor(diffInHours / 24)}d ago`;
-    } else {
-        return date.toLocaleDateString();
-    }
-};
+    onRowClick: (id: string) => void;
+}
 
 const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                            documents,
@@ -102,260 +44,388 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                            onDelete,
                                                            onRowClick,
                                                        }) => {
-    const [rowMenuOpenId, setRowMenuOpenId] = useState<string | null>(null);
+    const [openMenuId, setOpenMenuId] = React.useState<string | null>(null);
 
-    const renderSortableHeader = (label: string, field: SortField) => {
+    // Helper for sortable column headers
+    const SortableHeader: React.FC<{
+        field: SortField;
+        children: React.ReactNode;
+        className?: string;
+    }> = ({field, children, className = ''}) => {
         const isActive = sortField === field;
-
         return (
-            <th className="px-3 py-2 font-semibold text-[11px] text-gray-500">
-                <button
-                    type="button"
-                    onClick={() => onSortChange(field)}
-                    className="flex items-center gap-1 group select-none w-full text-left"
-                >
-                    <span className="truncate">{label}</span>
-                    {isActive && (
-                        <span className="text-[10px] text-gray-500">
-              {sortDirection === 'asc' ? '▲' : '▼'}
-            </span>
+            <th
+                onClick={() => onSortChange(field)}
+                className={`px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-slate-50 transition-colors select-none ${className}`}
+            >
+                <div className="flex items-center gap-1.5">
+                    {children}
+                    {isActive ? (
+                        sortDirection === 'asc' ? (
+                            <ChevronUp className="w-4 h-4 text-blue-600" strokeWidth={2}/>
+                        ) : (
+                            <ChevronDown className="w-4 h-4 text-blue-600" strokeWidth={2}/>
+                        )
+                    ) : (
+                        <div className="w-4 h-4 opacity-0 group-hover:opacity-30">
+                            <ChevronDown className="w-4 h-4" strokeWidth={2}/>
+                        </div>
                     )}
-                </button>
+                </div>
             </th>
         );
     };
 
+    // Status badge configuration
+    const getStatusConfig = (status: string | null) => {
+        switch (status) {
+            case 'success':
+                return {
+                    icon: CheckCircle2,
+                    label: 'Processed',
+                    className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                    iconColor: 'text-emerald-600',
+                };
+            case 'processing':
+            case 'queued':
+                return {
+                    icon: Loader2,
+                    label: 'Processing',
+                    className: 'bg-blue-50 text-blue-700 border-blue-200',
+                    iconColor: 'text-blue-600',
+                    animate: true,
+                };
+            case 'failed':
+                return {
+                    icon: AlertCircle,
+                    label: 'Error',
+                    className: 'bg-rose-50 text-rose-700 border-rose-200',
+                    iconColor: 'text-rose-600',
+                };
+            default:
+                return {
+                    icon: FileText,
+                    label: 'Unknown',
+                    className: 'bg-gray-50 text-gray-600 border-gray-200',
+                    iconColor: 'text-gray-500',
+                };
+        }
+    };
+
+    // Complexity badge configuration
+    const getComplexityConfig = (complexity: string | null) => {
+        const val = complexity?.toUpperCase();
+        switch (val) {
+            case 'HIGH':
+            case 'EXTREME':
+                return {
+                    label: val,
+                    className: 'bg-rose-50 text-rose-800 border-rose-300 font-semibold',
+                };
+            case 'MEDIUM':
+                return {
+                    label: 'MEDIUM',
+                    className: 'bg-amber-50 text-amber-800 border-amber-300 font-medium',
+                };
+            case 'LOW':
+                return {
+                    label: 'LOW',
+                    className: 'bg-emerald-50 text-emerald-800 border-emerald-300 font-medium',
+                };
+            default:
+                return null;
+        }
+    };
+
+    // Fit level badge configuration
+    const getFitConfig = (fit: string | null) => {
+        const val = fit?.toUpperCase();
+        switch (val) {
+            case 'GOOD':
+                return {
+                    label: 'GOOD',
+                    className: 'bg-emerald-50 text-emerald-800 border-emerald-300 font-medium',
+                };
+            case 'PARTIAL':
+                return {
+                    label: 'PARTIAL',
+                    className: 'bg-blue-50 text-blue-800 border-blue-300 font-medium',
+                };
+            case 'COOPERATION':
+                return {
+                    label: 'COOP',
+                    className: 'bg-purple-50 text-purple-800 border-purple-300 font-medium',
+                };
+            case 'LOW':
+                return {
+                    label: 'LOW',
+                    className: 'bg-amber-50 text-amber-800 border-amber-300 font-medium',
+                };
+            case 'UNKNOWN':
+                return {
+                    label: 'UNKNOWN',
+                    className: 'bg-gray-50 text-gray-600 border-gray-300',
+                };
+            default:
+                return null;
+        }
+    };
+
     if (loading) {
         return (
-            <div className="flex items-center justify-center py-12">
-                <Loader className="w-8 h-8 text-gray-400 animate-spin" strokeWidth={1.5}/>
+            <div className="flex flex-col items-center justify-center py-20">
+                <div
+                    className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                <p className="text-sm font-medium text-slate-600">Loading documents...</p>
             </div>
         );
     }
 
-    if (documents.length === 0) {
+    if (documents.length === 0 && !uploading) {
         return (
-            <div className="text-center py-12">
-                <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" strokeWidth={1.5}/>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No documents yet</h3>
-                <p className="text-sm text-gray-500 mb-6">
-                    Upload your first document to get started
+            <div
+                className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border-2 border-dashed border-gray-300">
+                <FileText className="w-16 h-16 text-gray-300 mb-4" strokeWidth={1.5}/>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No documents yet</h3>
+                <p className="text-sm text-gray-600 mb-6">
+                    Upload your first technical drawing to start analyzing
                 </p>
                 <button
                     onClick={onUploadClick}
-                    disabled={uploading}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg shadow-sm transition-all disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-all"
                 >
-                    <Upload className="w-4 h-4" strokeWidth={1.5}/>
-                    <span className="text-sm font-medium">
-            {uploading ? 'Uploading...' : 'Upload Documents'}
-          </span>
+                    <FileText className="w-4 h-4" strokeWidth={2}/>
+                    Upload Documents
                 </button>
             </div>
         );
     }
 
     return (
-        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
-            {/* table-auto + šířky řešíme uvnitř buněk, ne přes table layout */}
-            <table className="min-w-full text-left text-sm table-auto">
-                <thead className="sticky bg-gray-50 text-[11px] tracking-wide text-gray-500">
-                <tr>
-                    {renderSortableHeader('Document', 'file_name')}
-                    {renderSortableHeader('Company', 'company_name')}
-                    {renderSortableHeader('Class', 'part_class')}
-                    <th className="px-3 py-2 font-semibold text-[11px] text-gray-500">
-                        <span className="truncate">Est. blank dims</span>
-                    </th>
-                    {renderSortableHeader('Complexity', 'part_complexity')}
-                    {renderSortableHeader('Fit', 'part_fit_level')}
-                    {renderSortableHeader('Created', 'created_at')}
-                    {renderSortableHeader('Status', 'last_status')}
-                    <th className="px-3 py-2 font-semibold text-[11px] text-right text-gray-500">
-                        {/* Menu */}
-                    </th>
-                </tr>
-                </thead>
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+                <table className="w-full table-fixed">
+                    <colgroup>
+                        <col style={{width: '64px'}}/>
+                        {/* Thumbnail */}
+                        <col style={{width: '20%'}}/>
+                        {/* File Name */}
+                        <col style={{width: '15%'}}/>
+                        {/* Company */}
+                        <col style={{width: '10%'}}/>
+                        {/* Class */}
+                        <col style={{width: '10%'}}/>
+                        {/* Envelope */}
+                        <col style={{width: '10%'}}/>
+                        {/* Complexity */}
+                        <col style={{width: '10%'}}/>
+                        {/* Fit */}
+                        <col style={{width: '64px'}}/>
+                        {/* Status */}
+                        <col style={{width: '100px'}}/>
+                        {/* Date */}
+                        <col style={{width: '48px'}}/>
+                        {/* Actions */}
+                    </colgroup>
+                    <thead className="bg-slate-50 border-b border-gray-200">
+                    <tr>
+                        <th className="px-3 py-3"></th>
+                        <SortableHeader field="file_name">File Name</SortableHeader>
+                        <SortableHeader field="company_name">Company</SortableHeader>
+                        <SortableHeader field="part_class">Class</SortableHeader>
+                        <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Envelope
+                        </th>
+                        <SortableHeader field="part_complexity">Complexity</SortableHeader>
+                        <SortableHeader field="part_fit_level">Fit</SortableHeader>
+                        <SortableHeader field="last_status" className="text-center">Status</SortableHeader>
+                        <SortableHeader field="created_at">Date</SortableHeader>
+                        <th className="px-3 py-3"></th>
+                    </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                    {documents.map((doc) => {
+                        const statusConfig = getStatusConfig(doc.last_status);
+                        const complexityConfig = getComplexityConfig(doc.part_complexity);
+                        const fitConfig = getFitConfig(doc.part_fit_level);
+                        const StatusIcon = statusConfig.icon;
+                        const thumbnailUrl = thumbnailUrls[doc.id];
 
-                <tbody className="divide-y divide-gray-100 text-xs md:text-sm">
-                {documents.map((doc) => {
-                    const statusConfig = getStatusConfig(doc.last_status);
-                    const StatusIcon = statusConfig.icon;
-                    const thumbnailUrl = thumbnailUrls[doc.id];
-
-                    const RowMenu = (
-                        <div className="relative">
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setRowMenuOpenId((prev) => (prev === doc.id ? null : doc.id));
-                                }}
-                                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                        return (
+                            <tr
+                                key={doc.id}
+                                onClick={() => onRowClick(doc.id)}
+                                className="hover:bg-blue-50/30 cursor-pointer transition-colors group"
                             >
-                                <MoreHorizontal className="w-4 h-4 text-gray-500"/>
-                            </button>
-                            {rowMenuOpenId === doc.id && (
-                                <>
+                                {/* Thumbnail */}
+                                <td className="px-3 py-3">
                                     <div
-                                        className="fixed inset-0 z-40"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setRowMenuOpenId(null);
-                                        }}
-                                    />
-                                    <div
-                                        className="absolute right-0 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onRerun(doc.id);
-                                                setRowMenuOpenId(null);
-                                            }}
-                                            className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
-                                        >
-                                            Re-run Report
-                                        </button>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onDownload(doc);
-                                                setRowMenuOpenId(null);
-                                            }}
-                                            className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
-                                        >
-                                            Download
-                                        </button>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onDelete(doc);
-                                                setRowMenuOpenId(null);
-                                            }}
-                                            className="w-full text-left px-3 py-1.5 text-sm text-rose-600 hover:bg-rose-50"
-                                        >
-                                            Delete file
-                                        </button>
+                                        className="w-12 h-12 rounded-md overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0">
+                                        {thumbnailUrl ? (
+                                            <img
+                                                src={thumbnailUrl}
+                                                alt={doc.file_name || 'Document'}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center">
+                                                <FileText className="w-5 h-5 text-slate-400" strokeWidth={1.5}/>
+                                            </div>
+                                        )}
                                     </div>
-                                </>
-                            )}
-                        </div>
-                    );
+                                </td>
 
-                    const envelopeText = doc.part_envelope_text || '';
-                    const companyName = doc.company_name || '';
-                    const partClass = doc.part_class || '';
-                    const complexity = doc.part_complexity || '';
-                    const fitLevel = doc.part_fit_level || '';
-                    const fileName = doc.file_name || '';
+                                {/* File Name */}
+                                <td className="px-3 py-3">
+                                    <div
+                                        className="font-medium text-xs text-gray-900 truncate group-hover:text-blue-700 transition-colors"
+                                        title={doc.file_name || 'Unnamed'}>
+                                        {doc.file_name || 'Unnamed'}
+                                    </div>
+                                </td>
 
-                    return (
-                        <tr
-                            key={doc.id}
-                            className="group cursor-pointer hover:bg-gray-50"
-                            onClick={() => onRowClick(doc.id)}
-                        >
-                            {/* Document */}
-                            <td className={`px-3 py-3 align-middle border-l-4 text-xs ${statusConfig.borderColor}`}>
-                                <div
-                                    className={`flex items-center gap-3 min-w-0 ${COLUMN_WIDTHS.file_name}`}
-                                    title={fileName}
-                                >
-                                    {thumbnailUrl ? (
-                                        <img
-                                            src={thumbnailUrl}
-                                            alt={fileName}
-                                            className="w-8 h-8 object-cover rounded flex-shrink-0"
-                                        />
+                                {/* Company */}
+                                <td className="px-3 py-3">
+                                    <div className="text-xs text-gray-700 truncate" title={doc.company_name || ''}>
+                                        {doc.company_name || '—'}
+                                    </div>
+                                </td>
+
+
+                                {/* Class */}
+                                <td className="px-3 py-3">
+                                    {doc.part_class ? (
+                                        <span
+                                            className="inline-flex px-2 py-0.5 bg-slate-100 border border-slate-200 text-slate-700 rounded-md text-xs font-medium whitespace-nowrap"
+                                            title={doc.part_class}>
+                        <span className="truncate max-w-[80px]">{doc.part_class}</span>
+                      </span>
                                     ) : (
-                                        <FileText
-                                            className="w-8 h-8 text-blue-500 flex-shrink-0"
-                                            strokeWidth={1.5}
-                                        />
+                                        <span className="text-xs text-gray-400">—</span>
                                     )}
-                                    <span className="truncate block text-gray-900 font-medium">
-                      {fileName}
-                    </span>
-                                </div>
-                            </td>
+                                </td>
 
-                            {/* Company */}
-                            <td className="px-3 py-3 align-middle text-gray-600 text-xs">
-                                <div
-                                    className={`${COLUMN_WIDTHS.company_name} truncate`}
-                                    title={companyName}
-                                >
-                                    {companyName}
-                                </div>
-                            </td>
+                                {/* Envelope */}
+                                <td className="px-3 py-3">
+                                    <div className="text-xs text-gray-600 font-mono truncate"
+                                         title={doc.part_envelope_text || ''}>
+                                        {doc.part_envelope_text || '—'}
+                                    </div>
+                                </td>
 
-                            {/* Class */}
-                            <td className="px-3 py-3 align-middle text-gray-600 text-xs">
-                                <div className={`${COLUMN_WIDTHS.part_class} truncate`} title={partClass}>
-                                    {partClass}
-                                </div>
-                            </td>
+                                {/* Complexity */}
+                                <td className="px-3 py-3">
+                                    {complexityConfig ? (
+                                        <span
+                                            className={`inline-flex px-2 py-0.5 rounded-md border text-xs whitespace-nowrap ${complexityConfig.className}`}>
+                        {complexityConfig.label}
+                      </span>
+                                    ) : (
+                                        <span className="text-xs text-gray-400">—</span>
+                                    )}
+                                </td>
 
-                            {/* Envelope */}
-                            <td className="px-3 py-3 align-middle text-gray-600 text-xs">
-                                <div
-                                    className={`${COLUMN_WIDTHS.envelope} truncate`}
-                                    title={envelopeText}
-                                >
-                                    {envelopeText}
-                                </div>
-                            </td>
+                                {/* Fit */}
+                                <td className="px-3 py-3">
+                                    {fitConfig ? (
+                                        <span
+                                            className={`inline-flex px-2 py-0.5 rounded-md border text-xs whitespace-nowrap ${fitConfig.className}`}>
+                        {fitConfig.label}
+                      </span>
+                                    ) : (
+                                        <span className="text-xs text-gray-400">—</span>
+                                    )}
+                                </td>
 
-                            {/* Complexity */}
-                            <td className="px-3 py-3 align-middle text-gray-600 text-xs">
-                                <div
-                                    className={`${COLUMN_WIDTHS.part_complexity} truncate`}
-                                    title={complexity}
-                                >
-                                    {complexity}
-                                </div>
-                            </td>
+                                {/* Status - ONLY ICON without background */}
+                                <td className="px-3 py-3">
+                                    <div className="flex justify-center">
+                                        <StatusIcon
+                                            className={`w-5 h-5 ${statusConfig.iconColor} ${statusConfig.animate ? 'animate-spin' : ''}`}
+                                            strokeWidth={2}
+                                            // title={statusConfig.label}
+                                        />
+                                    </div>
+                                </td>
 
-                            {/* Fit */}
-                            <td className="px-3 py-3 align-middle text-gray-600 text-xs">
-                                <div
-                                    className={`${COLUMN_WIDTHS.part_fit_level} truncate`}
-                                    title={fitLevel}
-                                >
-                                    {fitLevel}
-                                </div>
-                            </td>
+                                {/* Date */}
+                                <td className="px-3 py-3">
+                                    <div className="text-xs text-gray-600 whitespace-nowrap">
+                                        {doc.created_at ? new Date(doc.created_at).toLocaleDateString() : '—'}
+                                    </div>
+                                </td>
 
-                            {/* Created */}
-                            <td className="px-3 py-3 align-middle text-gray-500 text-xs">
-                                <div className={`${COLUMN_WIDTHS.created_at} whitespace-nowrap`}>
-                                    {formatDate(doc.created_at)}
-                                </div>
-                            </td>
+                                {/* Actions menu */}
+                                <td className="px-3 py-3">
+                                    <div className="relative">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setOpenMenuId(openMenuId === doc.id ? null : doc.id);
+                                            }}
+                                            className="p-1.5 hover:bg-slate-100 rounded-md transition-colors"
+                                        >
+                                            <MoreVertical className="w-4 h-4 text-gray-400 group-hover:text-gray-600"
+                                                          strokeWidth={1.5}/>
+                                        </button>
 
-                            {/* Status */}
-                            <td className="px-3 py-3 align-middle text-center">
-                                <div className={COLUMN_WIDTHS.status} title={statusConfig.label}>
-                                    <StatusIcon
-                                        className={`w-4 h-4 inline-block ${statusConfig.iconColor}`}
-                                        strokeWidth={2}
-                                    />
-                                </div>
-                            </td>
-
-                            {/* Menu */}
-                            <td
-                                className="px-3 py-3 align-middle text-right"
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                <div className={COLUMN_WIDTHS.menu}>{RowMenu}</div>
-                            </td>
-                        </tr>
-                    );
-                })}
-                </tbody>
-            </table>
+                                        {openMenuId === doc.id && (
+                                            <>
+                                                <div
+                                                    className="fixed inset-0 z-10"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setOpenMenuId(null);
+                                                    }}
+                                                />
+                                                <div
+                                                    className="absolute right-0 top-full mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-20 overflow-hidden">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onDownload(doc);
+                                                            setOpenMenuId(null);
+                                                        }}
+                                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center gap-2"
+                                                    >
+                                                        <Download className="w-4 h-4" strokeWidth={1.5}/>
+                                                        Download
+                                                    </button>
+                                                    {doc.last_status === 'failed' && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                onRerun(doc.id);
+                                                                setOpenMenuId(null);
+                                                            }}
+                                                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center gap-2"
+                                                        >
+                                                            <RefreshCw className="w-4 h-4" strokeWidth={1.5}/>
+                                                            Re-run Analysis
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onDelete(doc);
+                                                            setOpenMenuId(null);
+                                                        }}
+                                                        className="w-full px-4 py-2 text-left text-sm text-rose-700 hover:bg-rose-50 transition-colors flex items-center gap-2 border-t border-gray-100"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" strokeWidth={1.5}/>
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+                        );
+                    })}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };

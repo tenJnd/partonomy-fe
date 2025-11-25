@@ -362,27 +362,23 @@ const Documents: React.FC = () => {
 
     return (
         <div
-            className="min-h-screen relative"
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-        >
-            {isDragging && (
-                <div className="pointer-events-none fixed inset-0 flex items-center justify-center z-40">
-                    <div
-                        className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg text-sm font-medium opacity-90">
-                        Drop files to upload
-                    </div>
-                </div>
-            )}
+      className="min-h-screen relative bg-gradient-to-br from-slate-50 via-white to-slate-50"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {isDragging && (
+        <div className="pointer-events-none fixed inset-0 flex items-center justify-center z-50 bg-blue-600/5 backdrop-blur-sm">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-xl shadow-xl text-base font-semibold flex items-center gap-3">
+            <Upload className="w-5 h-5" strokeWidth={2}/>
+            Drop files to upload
+          </div>
+        </div>
+      )}
 
-            <div
-                className={`p-6 max-w-7xl mx-auto transition-all duration-150 ${
-                    isDragging ? 'blur-sm pointer-events-none' : ''
-                }`}
-            >
-                {/* Header */}
-                <div className="flex items-center justify-between mb-8">
+      <div className="p-6 mx-auto" style={{ maxWidth: '1800px' }}>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
                     <h1 className="text-2xl font-semibold text-gray-900">Documents</h1>
                     <button
                         onClick={handleUploadClick}
