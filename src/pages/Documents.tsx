@@ -438,7 +438,7 @@ const Documents: React.FC = () => {
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-sm"
+                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
                         <option value="all">All Status</option>
                         <option value="processed">Processed</option>
@@ -450,7 +450,7 @@ const Documents: React.FC = () => {
                     <select
                         value={timeFilter}
                         onChange={(e) => setTimeFilter(e.target.value as TimeFilter)}
-                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-sm"
+                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
                         <option value="all">All Time</option>
                         <option value="7d">Last 7 days</option>
@@ -462,7 +462,7 @@ const Documents: React.FC = () => {
                     <select
                         value={complexityFilter}
                         onChange={(e) => setComplexityFilter(e.target.value as ComplexityFilter)}
-                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-sm"
+                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
                         <option value="all">All Complexity</option>
                         <option value="low">Low</option>
@@ -475,7 +475,7 @@ const Documents: React.FC = () => {
                     <select
                         value={fitFilter}
                         onChange={(e) => setFitFilter(e.target.value as FitFilter)}
-                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-sm"
+                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
                         <option value="all">All Fit</option>
                         <option value="good">Good</option>
@@ -489,7 +489,7 @@ const Documents: React.FC = () => {
                     <select
                         value={companyFilter}
                         onChange={(e) => setCompanyFilter(e.target.value)}
-                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-sm"
+                        className="h-[38px] w-[130px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
                         <option value="all">All Companies</option>
                         {uniqueCompanies.map((c) => (
@@ -503,7 +503,7 @@ const Documents: React.FC = () => {
                     <select
                         value={classFilter}
                         onChange={(e) => setClassFilter(e.target.value)}
-                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-sm"
+                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
                         <option value="all">All Classes</option>
                         {uniqueClasses.map((c) => (
@@ -516,7 +516,7 @@ const Documents: React.FC = () => {
 
                     <button
                         onClick={resetFilters}
-                        className="h-[38px] px-3 bg-gray-100 border border-gray-200 rounded-lg shadow-sm hover:bg-gray-200 text-sm text-gray-700"
+                        className="h-[38px] px-3 bg-gray-100 border border-gray-200 rounded-lg shadow-sm hover:bg-gray-200 text-sm text-gray-700 text-xs"
                     >
                         Reset filters
                     </button>
