@@ -1,44 +1,32 @@
-import React, {useMemo, useRef, useState} from 'react';
-import {useNavigate} from 'react-router-dom';
-import {AlertCircle, Upload} from 'lucide-react';
-import {useAuth} from '../contexts/AuthContext';
-import {supabase} from '../lib/supabase';
+
+import React, { useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AlertCircle, Upload } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 import DeleteDocumentModal from '../components/DeleteDocumentModal';
-import {useDocuments} from '../hooks/useDocuments';
-import {useDocumentUpload} from '../hooks/useDocumentUpload';
+import { useParts } from '../hooks/useParts';
+import { useDocumentUpload } from '../hooks/useDocumentUpload';
 import DocumentsTable from '../components/documents/DocumentsTable';
+import type { SortField } from '../components/documents/DocumentsTable';
 
 type StatusFilter = 'all' | 'processed' | 'processing' | 'error';
 type TimeFilter = 'all' | '7d' | '30d' | '90d';
-
-export type SortField =
-    | 'file_name'
-    | 'company_name'
-    | 'part_class'
-    | 'part_complexity'
-    | 'part_fit_level'
-    | 'created_at'
-    | 'last_status';
-
-type SortDirection = 'asc' | 'desc';
-
 type ComplexityFilter = 'all' | 'LOW' | 'MEDIUM' | 'HIGH' | 'EXTREME';
 type FitFilter = 'all' | 'GOOD' | 'PARTIAL' | 'COOPERATION' | 'LOW' | 'UNKNOWN';
 
 const Documents: React.FC = () => {
-    const {currentOrg, user} = useAuth();
+    const { currentOrg, user } = useAuth();
     const navigate = useNavigate();
 
     const {
-        documents,
-        thumbnailUrls,
+        parts,
         loading,
         loadingMore,
         hasMore,
         loadMore,
-        setDocuments,
-        setThumbnailUrls,
-    } = useDocuments(currentOrg, 50); // 50 záznamů na stránku
+        setParts,
+    } = useParts(currentOrg, 50);
 
     const {
         uploading,
@@ -59,8 +47,8 @@ const Documents: React.FC = () => {
     const [companyFilter, setCompanyFilter] = useState<string>('all');
     const [classFilter, setClassFilter] = useState<string>('all');
 
-    const [sortField, setSortField] = useState<SortField>('created_at');
-    const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+    const [sortField, setSortField] = useState<SortField>('last_updated');
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -79,7 +67,6 @@ const Documents: React.FC = () => {
         }
     };
 
-    // Drag & Drop handlers – NA CELÉ STRÁNCE
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragging(true);
@@ -102,11 +89,9 @@ const Documents: React.FC = () => {
         await uploadFiles(Array.from(files));
     };
 
-    // ACTION HANDLERS (menu)
-
     const handleRerunDocument = async (docId: string) => {
         try {
-            const {error} = await supabase
+            const { error } = await supabase
                 .from('documents')
                 .update({
                     last_status: 'queued',
@@ -133,7 +118,7 @@ const Documents: React.FC = () => {
         if (!docToDelete) return;
 
         try {
-            const {error} = await supabase
+            const { error } = await supabase
                 .from('documents')
                 .delete()
                 .eq('id', docToDelete.id);
@@ -144,13 +129,7 @@ const Documents: React.FC = () => {
                 return;
             }
 
-            // Lokálně smažeme dokument i thumbnail
-            setDocuments((prev) => prev.filter((d) => d.id !== docToDelete.id));
-            setThumbnailUrls((prev) => {
-                const next = {...prev};
-                delete next[docToDelete.id];
-                return next;
-            });
+            setParts((prev) => prev.filter((p) => p.document?.id !== docToDelete.id));
         } catch (err: any) {
             console.error('[Documents] Error deleting document:', err);
             setUploadError(err.message || 'Failed to delete document');
@@ -167,7 +146,7 @@ const Documents: React.FC = () => {
                 return;
             }
 
-            const {data, error} = await supabase.storage
+            const { data, error } = await supabase.storage
                 .from(doc.raw_bucket)
                 .createSignedUrl(doc.raw_storage_key, 60);
 
@@ -189,7 +168,6 @@ const Documents: React.FC = () => {
         }
     };
 
-    // ŘAZENÍ – změna sortField / sortDirection
     const handleSortChange = (field: SortField) => {
         setSortDirection((prevDir) =>
             field === sortField ? (prevDir === 'asc' ? 'desc' : 'asc') : 'asc',
@@ -206,45 +184,44 @@ const Documents: React.FC = () => {
         setClassFilter('all');
     };
 
-    // Distinct values pro company a class
-    const {uniqueCompanies, uniqueClasses} = useMemo(() => {
+    // Distinct values for company and class filters
+    const { uniqueCompanies, uniqueClasses } = useMemo(() => {
         const companySet = new Set<string>();
         const classSet = new Set<string>();
 
-        for (const doc of documents) {
-            if (doc.company_name) {
-                companySet.add(doc.company_name as string);
+        for (const part of parts) {
+            if (part.company_name) {
+                companySet.add(part.company_name);
             }
-            if (doc.part_class) {
-                classSet.add(doc.part_class as string);
+            if (part.primary_class) {
+                classSet.add(part.primary_class);
             }
         }
 
         const companies = Array.from(companySet).sort((a, b) =>
-            a.localeCompare(b, undefined, {sensitivity: 'base'}),
+            a.localeCompare(b, undefined, { sensitivity: 'base' }),
         );
         const classes = Array.from(classSet).sort((a, b) =>
-            a.localeCompare(b, undefined, {sensitivity: 'base'}),
+            a.localeCompare(b, undefined, { sensitivity: 'base' }),
         );
 
-        return {uniqueCompanies: companies, uniqueClasses: classes};
-    }, [documents]);
+        return { uniqueCompanies: companies, uniqueClasses: classes };
+    }, [parts]);
 
-    // Derivované: filtrování + řazení
-    const filteredSortedDocuments = useMemo(() => {
-        let result = [...documents];
+    // FILTERING + SORTING
+    const filteredSortedParts = useMemo(() => {
+        let result = [...parts];
 
         // Status filter
         if (statusFilter !== 'all') {
-            result = result.filter((doc) => {
-                const s = doc.last_status as string | null;
+            result = result.filter((part) => {
+                const s = part.document?.last_status;
                 if (!s) return false;
 
                 if (statusFilter === 'processed') {
                     return s === 'success';
                 }
                 if (statusFilter === 'processing') {
-                    // processing + queued bereme jako "in progress"
                     return s === 'processing' || s === 'queued';
                 }
                 if (statusFilter === 'error') {
@@ -254,7 +231,7 @@ const Documents: React.FC = () => {
             });
         }
 
-        // Time filter
+        // Time filter (based on last_updated)
         if (timeFilter !== 'all') {
             const now = new Date();
             const days =
@@ -262,9 +239,9 @@ const Documents: React.FC = () => {
 
             if (days > 0) {
                 const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-                result = result.filter((doc) => {
-                    const created = doc.created_at ? new Date(doc.created_at) : null;
-                    return created ? created >= cutoff : false;
+                result = result.filter((part) => {
+                    const updated = part.last_updated ? new Date(part.last_updated) : null;
+                    return updated ? updated >= cutoff : false;
                 });
             }
         }
@@ -272,29 +249,25 @@ const Documents: React.FC = () => {
         // Complexity filter
         if (complexityFilter !== 'all') {
             result = result.filter(
-                (doc) => (doc.part_complexity as string | null) === complexityFilter,
+                (part) => part.overall_complexity?.toUpperCase() === complexityFilter,
             );
         }
 
         // Fit filter
         if (fitFilter !== 'all') {
             result = result.filter(
-                (doc) => (doc.part_fit_level as string | null) === fitFilter,
+                (part) => part.fit_level?.toUpperCase() === fitFilter,
             );
         }
 
-        // Company filter (dynamický)
+        // Company filter
         if (companyFilter !== 'all') {
-            result = result.filter(
-                (doc) => (doc.company_name as string | null) === companyFilter,
-            );
+            result = result.filter((part) => part.company_name === companyFilter);
         }
 
-        // Class filter (dynamický)
+        // Class filter
         if (classFilter !== 'all') {
-            result = result.filter(
-                (doc) => (doc.part_class as string | null) === classFilter,
-            );
+            result = result.filter((part) => part.primary_class === classFilter);
         }
 
         // Sorting
@@ -316,40 +289,50 @@ const Documents: React.FC = () => {
         };
 
         result.sort((a, b) => {
-            let aVal: any;
-            let bVal: any;
+                let aVal: any;
+                let bVal: any;
 
-            switch (sortField) {
-                case 'created_at':
-                    aVal = a.created_at ? new Date(a.created_at).getTime() : 0;
-                    bVal = b.created_at ? new Date(b.created_at).getTime() : 0;
-                    break;
-                case 'last_status':
-                    aVal = statusOrder(a.last_status);
-                    bVal = statusOrder(b.last_status);
-                    break;
-                case 'file_name':
-                case 'company_name':
-                case 'part_class':
-                case 'part_complexity':
-                case 'part_fit_level':
-                    aVal = (a[sortField] || '').toString().toLowerCase();
-                    bVal = (b[sortField] || '').toString().toLowerCase();
-                    break;
-                default:
-                    aVal = 0;
-                    bVal = 0;
-            }
+                switch (sortField) {
+                    case 'last_updated':
+                        aVal = a.last_updated ? new Date(a.last_updated).getTime() : 0;
+                        bVal = b.last_updated ? new Date(b.last_updated).getTime() : 0;
+                        break;
+                    case 'last_status':
+                        aVal = statusOrder(a.document?.last_status);
+                        bVal = statusOrder(b.document?.last_status);
+                        break;
+                    case 'file_name':
+                        aVal = (a.document?.file_name || '').toString().toLowerCase();
+                        bVal = (b.document?.file_name || '').toString().toLowerCase();
+                        break;
+                    case 'company_name':
+                        aVal = (a.company_name || '').toString().toLowerCase();
+                        bVal = (b.company_name || '').toString().toLowerCase();
+                        break;
+                    case 'primary_class':
+                        aVal = (a.primary_class || '').toString().toLowerCase();
+                        bVal = (b.primary_class || '').toString().toLowerCase();
+                        break;
+                    case 'overall_complexity':
+                        aVal = (a.overall_complexity || '').toString().toLowerCase();
+                        bVal = (b.overall_complexity || '').toString().toLowerCase();
+                        break;
+                    case 'fit_level':
+                        aVal = (a.fit_level || '').toString().toLowerCase();
+                        bVal = (b.fit_level || '').toString().toLowerCase();
+                        break;
+                    default:
+                        aVal = 0;
+                        bVal = 0;
+                }
 
-            if (aVal < bVal) return -1 * direction;
-            if (aVal > bVal) return 1 * direction;
-            return 0;
-        });
-
-
+                if (aVal < bVal) return -1 * direction;
+                if (aVal > bVal) return 1 * direction;
+                return 0;
+            });
         return result;
     }, [
-        documents,
+        parts,
         statusFilter,
         timeFilter,
         complexityFilter,
@@ -360,39 +343,41 @@ const Documents: React.FC = () => {
         sortDirection,
     ]);
 
+    const handleRowClick = (documentId: string, partId: string) => {
+        navigate(`/documents/${documentId}?partId=${partId}`);
+    };
+
     return (
         <div
-      className="min-h-screen relative bg-gradient-to-br from-slate-50 via-white to-slate-50"
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      {isDragging && (
-        <div className="pointer-events-none fixed inset-0 flex items-center justify-center z-50 bg-blue-600/5 backdrop-blur-sm">
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-xl shadow-xl text-base font-semibold flex items-center gap-3">
-            <Upload className="w-5 h-5" strokeWidth={2}/>
-            Drop files to upload
-          </div>
-        </div>
-      )}
+            className="min-h-screen relative bg-gradient-to-br from-slate-50 via-white to-slate-50"
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+        >
+            {isDragging && (
+                <div className="pointer-events-none fixed inset-0 flex items-center justify-center z-50 bg-blue-600/5 backdrop-blur-sm">
+                    <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-xl shadow-xl text-base font-semibold flex items-center gap-3">
+                        <Upload className="w-5 h-5" strokeWidth={2} />
+                        Drop files to upload
+                    </div>
+                </div>
+            )}
 
-      <div className="p-6 mx-auto" style={{ maxWidth: '1800px' }}>
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+            <div className="p-6 mx-auto" style={{ maxWidth: '1800px' }}>
+                <div className="flex items-center justify-between mb-6">
                     <h1 className="text-2xl font-semibold text-gray-900">Documents</h1>
                     <button
                         onClick={handleUploadClick}
                         disabled={uploading}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg shadow-sm transition-all active:scale-[0.98] disabled:cursor-not-allowed"
                     >
-                        <Upload className="w-4 h-4" strokeWidth={1.5}/>
+                        <Upload className="w-4 h-4" strokeWidth={1.5} />
                         <span className="text-sm font-medium">
-              {uploading ? 'Uploading...' : 'Upload Documents'}
-            </span>
+                            {uploading ? 'Uploading...' : 'Upload Documents'}
+                        </span>
                     </button>
                 </div>
 
-                {/* Hidden File Input – multiple */}
                 <input
                     ref={fileInputRef}
                     type="file"
@@ -402,35 +387,31 @@ const Documents: React.FC = () => {
                     className="hidden"
                 />
 
-                {/* Upload Error Display */}
                 {uploadError && (
                     <div className="mb-4 p-4 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-3">
-                        <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0" strokeWidth={1.5}/>
+                        <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0" strokeWidth={1.5} />
                         <p className="text-sm text-rose-700">{uploadError}</p>
                     </div>
                 )}
 
-                {/* Upload Progress Display (globální) */}
-                {uploading && filteredSortedDocuments.length > 0 && (
+                {uploading && filteredSortedParts.length > 0 && (
                     <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                         <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-blue-900">
-                Uploading documents...
-              </span>
+                            <span className="text-sm font-medium text-blue-900">
+                                Uploading documents...
+                            </span>
                             <span className="text-sm text-blue-700">{uploadProgress}%</span>
                         </div>
                         <div className="w-full bg-blue-200 rounded-full h-2">
                             <div
                                 className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                style={{width: `${uploadProgress}%`}}
+                                style={{ width: `${uploadProgress}%` }}
                             />
                         </div>
                     </div>
                 )}
 
-                {/* Filters Bar */}
                 <div className="flex items-center gap-3 mb-6 flex-wrap">
-                    {/* Status filter */}
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
@@ -442,7 +423,6 @@ const Documents: React.FC = () => {
                         <option value="error">Error</option>
                     </select>
 
-                    {/* Time filter */}
                     <select
                         value={timeFilter}
                         onChange={(e) => setTimeFilter(e.target.value as TimeFilter)}
@@ -454,34 +434,31 @@ const Documents: React.FC = () => {
                         <option value="90d">Last 90 days</option>
                     </select>
 
-                    {/* Complexity filter */}
                     <select
                         value={complexityFilter}
                         onChange={(e) => setComplexityFilter(e.target.value as ComplexityFilter)}
                         className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
                         <option value="all">All Complexity</option>
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                        <option value="extreme">Extreme</option>
+                        <option value="LOW">Low</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="HIGH">High</option>
+                        <option value="EXTREME">Extreme</option>
                     </select>
 
-                    {/* Fit filter */}
                     <select
                         value={fitFilter}
                         onChange={(e) => setFitFilter(e.target.value as FitFilter)}
                         className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
                         <option value="all">All Fit</option>
-                        <option value="good">Good</option>
-                        <option value="partial">Partial</option>
-                        <option value="cooperation">Cooperation</option>
-                        <option value="low">Low</option>
-                        <option value="unknown">Unknown</option>
+                        <option value="GOOD">Good</option>
+                        <option value="PARTIAL">Partial</option>
+                        <option value="COOPERATION">Cooperation</option>
+                        <option value="LOW">Low</option>
+                        <option value="UNKNOWN">Unknown</option>
                     </select>
 
-                    {/* Company filter – dynamické hodnoty */}
                     <select
                         value={companyFilter}
                         onChange={(e) => setCompanyFilter(e.target.value)}
@@ -495,7 +472,6 @@ const Documents: React.FC = () => {
                         ))}
                     </select>
 
-                    {/* Class filter – dynamické hodnoty */}
                     <select
                         value={classFilter}
                         onChange={(e) => setClassFilter(e.target.value)}
@@ -509,21 +485,17 @@ const Documents: React.FC = () => {
                         ))}
                     </select>
 
-
                     <button
                         onClick={resetFilters}
                         className="h-[38px] px-3 bg-gray-100 border border-gray-200 rounded-lg shadow-sm hover:bg-gray-200 text-sm text-gray-700 text-xs"
                     >
                         Reset filters
                     </button>
-
                 </div>
 
-                {/* Documents Table */}
                 <DocumentsTable
-                    documents={filteredSortedDocuments}
-                    thumbnailUrls={thumbnailUrls}
-                    loading={loading && documents.length === 0}
+                    parts={filteredSortedParts}
+                    loading={loading && parts.length === 0}
                     uploading={uploading}
                     uploadProgress={uploadProgress}
                     sortField={sortField}
@@ -533,10 +505,9 @@ const Documents: React.FC = () => {
                     onRerun={handleRerunDocument}
                     onDownload={handleDownloadDocument}
                     onDelete={openDeleteModal}
-                    onRowClick={(id) => navigate(`/documents/${id}`)}
+                    onRowClick={handleRowClick}
                 />
 
-                {/* Load more button */}
                 {hasMore && !loading && (
                     <div className="flex justify-center mt-4">
                         <button
@@ -550,7 +521,6 @@ const Documents: React.FC = () => {
                 )}
             </div>
 
-            {/* Delete modal */}
             <DeleteDocumentModal
                 open={deleteModalOpen}
                 onClose={() => {

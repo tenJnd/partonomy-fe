@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Link, useParams} from 'react-router-dom';
+import {Link, useParams, useSearchParams} from 'react-router-dom';
 import {
     AlertCircle,
     ArrowLeft,
@@ -27,6 +27,8 @@ type Part = Database['public']['Tables']['parts']['Row'];
 
 const DocumentDetail: React.FC = () => {
     const {documentId} = useParams<{ documentId: string }>();
+    const [searchParams] = useSearchParams();
+    const partIdFromUrl = searchParams.get('partId');
     const {currentOrg} = useAuth();
     const [document, setDocument] = useState<Document | null>(null);
     const [parts, setParts] = useState<Part[]>([]);
@@ -99,8 +101,10 @@ const DocumentDetail: React.FC = () => {
                         .filter((p): p is Part => p !== null);
                     setParts(fetchedParts);
 
-                    // Auto-select first part if available
-                    if (fetchedParts.length > 0) {
+                    // Auto-select part from URL or first part
+                    if (partIdFromUrl && fetchedParts.some(p => p.id === partIdFromUrl)) {
+                        setSelectedPartId(partIdFromUrl);
+                    } else if (fetchedParts.length > 0) {
                         setSelectedPartId(fetchedParts[0].id);
                     }
                 }
@@ -112,7 +116,7 @@ const DocumentDetail: React.FC = () => {
         };
 
         fetchData();
-    }, [documentId, currentOrg]);
+    }, [documentId, currentOrg, partIdFromUrl]);
 
     // Fetch part render URL when selected part changes
     useEffect(() => {
