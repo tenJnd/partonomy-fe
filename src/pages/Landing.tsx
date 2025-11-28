@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import {useEffect, useState} from "react";
 import {BarChart3, CheckCircle2, ChevronRight, Clock, FileText, TrendingUp, Upload, Zap} from "lucide-react";
 
 const Landing = () => {
