@@ -1,9 +1,13 @@
 import {useEffect, useState} from "react";
 import {BarChart3, CheckCircle2, ChevronRight, Clock, FileText, TrendingUp, Upload, Zap} from "lucide-react";
+import {useAuth} from "../contexts/AuthContext";
+import {useNavigate} from "react-router-dom";
 
 const Landing = () => {
     const [scrollY, setScrollY] = useState(0);
     const [activeDemo, setActiveDemo] = useState(0);
+    const {user} = useAuth();
+    const navigate = useNavigate();
 
     useEffect(() => {
         const handleScroll = () => setScrollY(window.scrollY);
@@ -17,6 +21,14 @@ const Landing = () => {
         }, 3000);
         return () => clearInterval(interval);
     }, []);
+
+    const handleGetStarted = () => {
+        navigate("/documents");
+    };
+
+    const handleLogin = () => {
+        navigate("/login");
+    };
 
     const demoDocuments = [
         {
@@ -92,12 +104,14 @@ const Landing = () => {
 
                     <div className="flex items-center gap-3">
                         <button
+                            onClick={handleLogin}
                             className="hidden sm:block px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors">
                             Přihlásit
                         </button>
                         <button
+                            onClick={handleGetStarted}
                             className="group px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/40 hover:-translate-y-0.5">
-                            Vyzkoušet zdarma
+                            {user ? "Přejít do aplikace" : "Vyzkoušet zdarma"}
                             <ChevronRight
                                 className="inline-block ml-1 w-4 h-4 group-hover:translate-x-1 transition-transform"/>
                         </button>
@@ -153,12 +167,14 @@ const Landing = () => {
 
                                 <div className="flex flex-wrap items-center gap-4">
                                     <button
+                                        onClick={handleGetStarted}
                                         className="group px-8 py-4 text-base font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-xl shadow-blue-600/30 hover:shadow-2xl hover:shadow-blue-600/40 hover:-translate-y-1">
-                                        Nahrát první výkres
+                                        {user ? "Přejít do aplikace" : "Nahrát první výkres"}
                                         <Upload
                                             className="inline-block ml-2 w-5 h-5 group-hover:translate-y-0.5 transition-transform"/>
                                     </button>
                                     <button
+                                        onClick={handleLogin}
                                         className="px-8 py-4 text-base font-medium text-slate-700 hover:text-slate-900 transition-colors group">
                                         Přihlásit se do účtu
                                         <ChevronRight
@@ -477,6 +493,7 @@ const Landing = () => {
                                 </ul>
 
                                 <button
+                                    onClick={handleGetStarted}
                                     className="w-full py-4 px-6 rounded-xl font-semibold text-slate-900 bg-slate-100 hover:bg-slate-200 transition-colors"
                                 >
                                     Začít se Starterem
@@ -519,6 +536,7 @@ const Landing = () => {
                                 </ul>
 
                                 <button
+                                    onClick={handleGetStarted}
                                     className="w-full py-4 px-6 rounded-xl font-semibold text-blue-700 bg-white hover:bg-blue-50 transition-colors shadow-lg"
                                 >
                                     Přejít na Pro
@@ -550,9 +568,10 @@ const Landing = () => {
                             První měsíc zdarma, žádná kreditka, žádné závazky.
                         </p>
                         <button
+                            onClick={handleGetStarted}
                             className="group px-10 py-5 text-lg font-bold text-slate-900 bg-white rounded-xl hover:bg-blue-50 transition-all shadow-2xl hover:shadow-blue-500/50 hover:-translate-y-1"
                         >
-                            Začít zdarma
+                            {user ? "Přejít do aplikace" : "Začít zdarma"}
                             <ChevronRight
                                 className="inline-block ml-2 w-6 h-6 group-hover:translate-x-2 transition-transform"
                             />
