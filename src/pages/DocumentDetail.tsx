@@ -5,6 +5,8 @@ import {
   ArrowLeft,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Download,
   Loader,
   Maximize2,
@@ -40,10 +42,10 @@ const DocumentDetail: React.FC = () => {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [imageAspectRatio, setImageAspectRatio] = useState<number | null>(null);
   const [containerWidth, setContainerWidth] = useState<number>(800);
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({cost: true, processing: true});
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 
-  // NEW: tabs for report panel
+  // Tabs v levém panelu
   const [activeReportTab, setActiveReportTab] = useState<'report' | 'bom' | 'revisions'>('report');
 
   const imageRef = useRef<HTMLImageElement>(null);
@@ -274,6 +276,27 @@ const DocumentDetail: React.FC = () => {
   const selectedPart = parts.find(p => p.id === selectedPartId);
   const selectedPartReport = selectedPart?.report_json as any | undefined;
 
+  // Part navigation (šipky) – handlery
+  const handlePrevPartClick = () => {
+    if (!selectedPart) return;
+    const idx = parts.findIndex(p => p.id === selectedPart.id);
+    if (idx > 0) {
+      setSelectedPartId(parts[idx - 1].id);
+    }
+  };
+
+  const handleNextPartClick = () => {
+    if (!selectedPart) return;
+    const idx = parts.findIndex(p => p.id === selectedPart.id);
+    if (idx >= 0 && idx < parts.length - 1) {
+      setSelectedPartId(parts[idx + 1].id);
+    }
+  };
+
+  const currentPartIndex = selectedPart ? parts.findIndex(p => p.id === selectedPart.id) : -1;
+  const hasPrevPart = currentPartIndex > 0;
+  const hasNextPart = currentPartIndex >= 0 && currentPartIndex < parts.length - 1;
+
   // Fullscreen modal
   const renderFullscreenModal = () => {
     if (!isFullscreen) return null;
@@ -368,7 +391,7 @@ const DocumentDetail: React.FC = () => {
       {renderFullscreenModal()}
 
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 mb-6">
+      <div className="flex items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-4">
           <Link
             to="/Documents"
@@ -453,70 +476,87 @@ const DocumentDetail: React.FC = () => {
         )}
       </div>
 
+      {/* Part navigation (šipky) pod headerem, společné pro levou i pravou část */}
+      {parts.length > 0 && selectedPart && (
+  <div className="mb-4 flex justify-center">
+    <div className="flex items-center gap-3 text-sm text-gray-700">
+
+      <button
+        type="button"
+        onClick={handlePrevPartClick}
+        disabled={!hasPrevPart}
+        className="p-1 disabled:opacity-30 hover:text-gray-800 transition"
+        title="Previous part"
+      >
+        <ChevronLeft className="w-4 h-4" strokeWidth={2} />
+      </button>
+
+      <span className="font-medium text-gray-900">
+        {selectedPart.display_name || selectedPart.part_number || 'Part'}
+      </span>
+
+      <button
+        type="button"
+        onClick={handleNextPartClick}
+        disabled={!hasNextPart}
+        className="p-1 disabled:opacity-30 hover:text-gray-800 transition"
+        title="Next part"
+      >
+        <ChevronRight className="w-4 h-4" strokeWidth={2} />
+      </button>
+
+      <span className="text-xs text-gray-500 ml-1">
+        {currentPartIndex + 1} / {parts.length}
+      </span>
+    </div>
+  </div>
+)}
+
+
+
       {/* Main Content */}
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
         {/* Left: Part Data - 40% */}
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 xl:col-span-2">
-          <div className="flex items-center justify-between gap-4 mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Report</h2>
+          {/* Tabs (bez nadpisu Report, jen karty) */}
+          {/* Tab Header */}
+<div className="border-b border-gray-200 mb-4">
+  <div className="flex items-center gap-6 -mb-px">
+    <button
+      onClick={() => setActiveReportTab('report')}
+      className={`px-1 pb-2 text-sm font-medium border-b-2 transition-colors ${
+        activeReportTab === 'report'
+          ? 'border-blue-600 text-blue-700'
+          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+      }`}
+    >
+      Report
+    </button>
 
-            {/* Tabs */}
-            <div className="inline-flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-full p-1 text-xs">
-              <button
-                type="button"
-                onClick={() => setActiveReportTab('report')}
-                className={`px-3 py-1 rounded-full transition-colors ${
-                  activeReportTab === 'report'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-800'
-                }`}
-              >
-                Report
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveReportTab('bom')}
-                className={`px-3 py-1 rounded-full transition-colors ${
-                  activeReportTab === 'bom'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-800'
-                }`}
-              >
-                BOM
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveReportTab('revisions')}
-                className={`px-3 py-1 rounded-full transition-colors ${
-                  activeReportTab === 'revisions'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-800'
-                }`}
-              >
-                Revision history
-              </button>
-            </div>
-          </div>
+    <button
+      onClick={() => setActiveReportTab('bom')}
+      className={`px-1 pb-2 text-sm font-medium border-b-2 transition-colors ${
+        activeReportTab === 'bom'
+          ? 'border-blue-600 text-blue-700'
+          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+      }`}
+    >
+      Bill of Materials
+    </button>
 
-          {/* Part Selector */}
-          {parts.length > 0 && (
-            <div className="mb-6">
-              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                Select Part
-              </label>
-              <select
-                value={selectedPartId || ''}
-                onChange={(e) => setSelectedPartId(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-sm"
-              >
-                {parts.map((part) => (
-                  <option key={part.id} value={part.id}>
-                    {part.display_name || part.part_number || part.id}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+    <button
+      onClick={() => setActiveReportTab('revisions')}
+      className={`px-1 pb-2 text-sm font-medium border-b-2 transition-colors ${
+        activeReportTab === 'revisions'
+          ? 'border-blue-600 text-blue-700'
+          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+      }`}
+    >
+      Revision History
+    </button>
+  </div>
+</div>
+
 
           {/* Part Analysis Content / Tabs */}
           {selectedPart && (selectedPart.report_json as any) ? (() => {
@@ -535,7 +575,7 @@ const DocumentDetail: React.FC = () => {
             if (activeReportTab === 'bom') {
               return (
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-900">Bill of Materials</h3>
+                  {/*<h3 className="text-sm font-semibold text-gray-900">Bill of Materials</h3>*/}
                   {bom && bom.length > 0 ? (
                     <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
                       <div className="overflow-x-auto">
@@ -594,7 +634,7 @@ const DocumentDetail: React.FC = () => {
             if (activeReportTab === 'revisions') {
               return (
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-900">Revision history</h3>
+                  {/*<h3 className="text-sm font-semibold text-gray-900">Revision history</h3>*/}
                   {revisionHistory && revisionHistory.length > 0 ? (
                     <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
                       <div className="overflow-x-auto">
@@ -743,62 +783,7 @@ const DocumentDetail: React.FC = () => {
 
                 {/* Collapsible Sections */}
                 <div className="space-y-2">
-                  {/* Key Risks & Opportunities */}
-                  {(assessment?.key_risks || assessment?.key_opportunities) && (
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
-                      <button
-                        onClick={() => toggleSection('risks')}
-                        className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors"
-                      >
-                        <span className="text-sm font-semibold text-gray-900">
-                          Key Risks & Opportunities
-                        </span>
-                        {expandedSections['risks'] ? (
-                          <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2} />
-                        ) : (
-                          <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2} />
-                        )}
-                      </button>
-                      {expandedSections['risks'] && (
-                        <div className="p-4 bg-white space-y-4">
-                          {assessment.key_risks && Array.isArray(assessment.key_risks) && (
-                            <div>
-                              <dt className="text-xs font-semibold text-red-600 uppercase tracking-wider mb-2">
-                                Risks
-                              </dt>
-                              <ul className="space-y-2">
-                                {assessment.key_risks.map((risk: string, idx: number) => (
-                                  <li
-                                    key={idx}
-                                    className="text-sm text-gray-900 pl-4 border-l-2 border-red-300"
-                                  >
-                                    {risk}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                          {assessment.key_opportunities && Array.isArray(assessment.key_opportunities) && (
-                            <div>
-                              <dt className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-2">
-                                Opportunities
-                              </dt>
-                              <ul className="space-y-2">
-                                {assessment.key_opportunities.map((opp: string, idx: number) => (
-                                  <li
-                                    key={idx}
-                                    className="text-sm text-gray-900 pl-4 border-l-2 border-green-300"
-                                  >
-                                    {opp}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
+
 
                   {/* Cost Drivers */}
                   {costDrivers && Array.isArray(costDrivers) && (
@@ -853,66 +838,6 @@ const DocumentDetail: React.FC = () => {
                                 </span>
                               </div>
                               <p className="text-xs text-gray-600">{driver.details}</p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Critical Points */}
-                  {criticalPoints && Array.isArray(criticalPoints) && (
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
-                      <button
-                        onClick={() => toggleSection('critical')}
-                        className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors"
-                      >
-                        <span className="text-sm font-semibold text-gray-900">
-                          Critical Points
-                          <span className="ml-1 italic text-[11px] text-gray-500">
-                            (Production Centric)
-                          </span>
-                        </span>
-                        {expandedSections['critical'] ? (
-                          <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2} />
-                        ) : (
-                          <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2} />
-                        )}
-                      </button>
-                      {expandedSections['critical'] && (
-                        <div className="p-4 bg-white space-y-3">
-                          {criticalPoints.map((point: any, idx: number) => (
-                            <div
-                              key={idx}
-                              className={`border-l-2 pl-3 ${
-                                point.importance === 'EXTREME'
-                                  ? 'border-red-400'
-                                  : point.importance === 'HIGH'
-                                    ? 'border-orange-400'
-                                    : point.importance === 'MEDIUM'
-                                      ? 'border-yellow-400'
-                                      : 'border-green-400'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-sm font-semibold text-gray-900 capitalize">
-                                  {point.type.replace(/_/g, ' ')}
-                                </span>
-                                <span
-                                  className={`text-xs px-2 py-0.5 rounded ${
-                                    point.importance === 'EXTREME'
-                                      ? 'bg-red-100 text-red-800'
-                                      : point.importance === 'HIGH'
-                                        ? 'bg-orange-100 text-yellow-800'
-                                        : point.importance === 'MEDIUM'
-                                          ? 'bg-yellow-100 text-yellow-800'
-                                          : 'bg-green-100 text-green-800'
-                                  }`}
-                                >
-                                  {point.importance}
-                                </span>
-                              </div>
-                              <p className="text-xs text-gray-600">{point.description}</p>
                             </div>
                           ))}
                         </div>
@@ -978,6 +903,123 @@ const DocumentDetail: React.FC = () => {
                                 {processHints.inspection_focus.map((item: string, idx: number) => (
                                   <li key={idx} className="text-xs text-gray-900">
                                     • {item}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Critical Points */}
+                  {criticalPoints && Array.isArray(criticalPoints) && (
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => toggleSection('critical')}
+                        className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors"
+                      >
+                        <span className="text-sm font-semibold text-gray-900">
+                          Critical Points
+                          <span className="ml-1 italic text-[11px] text-gray-500">
+                            (Production Centric)
+                          </span>
+                        </span>
+                        {expandedSections['critical'] ? (
+                          <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2} />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2} />
+                        )}
+                      </button>
+                      {expandedSections['critical'] && (
+                        <div className="p-4 bg-white space-y-3">
+                          {criticalPoints.map((point: any, idx: number) => (
+                            <div
+                              key={idx}
+                              className={`border-l-2 pl-3 ${
+                                point.importance === 'EXTREME'
+                                  ? 'border-red-400'
+                                  : point.importance === 'HIGH'
+                                    ? 'border-orange-400'
+                                    : point.importance === 'MEDIUM'
+                                      ? 'border-yellow-400'
+                                      : 'border-green-400'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-sm font-semibold text-gray-900 capitalize">
+                                  {point.type.replace(/_/g, ' ')}
+                                </span>
+                                <span
+                                  className={`text-xs px-2 py-0.5 rounded ${
+                                    point.importance === 'EXTREME'
+                                      ? 'bg-red-100 text-red-800'
+                                      : point.importance === 'HIGH'
+                                        ? 'bg-orange-100 text-yellow-800'
+                                        : point.importance === 'MEDIUM'
+                                          ? 'bg-yellow-100 text-yellow-800'
+                                          : 'bg-green-100 text-green-800'
+                                  }`}
+                                >
+                                  {point.importance}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-600">{point.description}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Key Risks & Opportunities */}
+                  {(assessment?.key_risks || assessment?.key_opportunities) && (
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => toggleSection('risks')}
+                        className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors"
+                      >
+                        <span className="text-sm font-semibold text-gray-900">
+                          Key Risks & Opportunities
+                        </span>
+                        {expandedSections['risks'] ? (
+                          <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2} />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2} />
+                        )}
+                      </button>
+                      {expandedSections['risks'] && (
+                        <div className="p-4 bg-white space-y-4">
+                          {assessment.key_risks && Array.isArray(assessment.key_risks) && (
+                            <div>
+                              <dt className="text-xs font-semibold text-red-600 uppercase tracking-wider mb-2">
+                                Risks
+                              </dt>
+                              <ul className="space-y-2">
+                                {assessment.key_risks.map((risk: string, idx: number) => (
+                                  <li
+                                    key={idx}
+                                    className="text-sm text-gray-900 pl-4 border-l-2 border-red-300"
+                                  >
+                                    {risk}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {assessment.key_opportunities && Array.isArray(assessment.key_opportunities) && (
+                            <div>
+                              <dt className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-2">
+                                Opportunities
+                              </dt>
+                              <ul className="space-y-2">
+                                {assessment.key_opportunities.map((opp: string, idx: number) => (
+                                  <li
+                                    key={idx}
+                                    className="text-sm text-gray-900 pl-4 border-l-2 border-green-300"
+                                  >
+                                    {opp}
                                   </li>
                                 ))}
                               </ul>
