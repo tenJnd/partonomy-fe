@@ -14,6 +14,7 @@ export interface OrgBilling {
     code: TierEnum;
     name: string;
     max_jobs_per_period: number | null;
+    max_users: number | null;
   } | null;
 }
 
@@ -45,7 +46,8 @@ export function useOrgBilling() {
           tier:organization_tiers (
             code,
             name,
-            max_jobs_per_period
+            max_jobs_per_period,
+            max_users
           )
         `
         )

@@ -1,5 +1,6 @@
 // src/utils/billing.ts
 import type {OrgBilling} from "../hooks/useOrgBilling";
+import type {OrgUsageRow} from "../hooks/useOrgUsage";
 import {formatTierLabel} from "./tiers";
 
 export interface TrialInfo {
@@ -29,11 +30,12 @@ export const getTrialInfo = (billing: OrgBilling | null): TrialInfo => {
     return {isTrial: true, daysLeft, trialEnd};
 };
 
-const isInactiveStatus = (status?: string | null): boolean => {
+export const isInactiveStatus = (status?: string | null): boolean => {
     if (!status) return false;
-    return ["canceled", "past_due", "unpaid", "inactive"].includes(status);
+    return ["canceled", "past_due", "unpaid", "inactive"].includes(
+        status.toLowerCase()
+    );
 };
-
 // ---------------------------------------------
 // BADGE TEXT (TopBar)
 // ---------------------------------------------
@@ -48,7 +50,7 @@ export const getBillingBadgeText = (billing: OrgBilling | null): string => {
     const {isTrial, daysLeft} = getTrialInfo(billing);
 
     if (isTrial && daysLeft !== null) {
-        return `${tierLabel} ${daysLeft} ${
+        return `${tierLabel} verze · končí za ${daysLeft} ${
             daysLeft === 1 ? "den" : "dní"
         }`;
     }
@@ -72,7 +74,7 @@ export const getBillingPlanTitle = (billing: OrgBilling | null): string => {
     const {isTrial, daysLeft} = getTrialInfo(billing);
 
     if (isTrial && daysLeft !== null) {
-        return `${tierLabel} ${daysLeft} ${
+        return `${tierLabel} verze · končí za ${daysLeft} ${
             daysLeft === 1 ? "den" : "dní"
         }`;
     }
@@ -100,4 +102,37 @@ export const getBillingPlanDescription = (
     }
 
     return "Current subscription plan for this organization.";
+};
+
+
+// ---------------------------------------------
+// USAGE LIMIT INFO – pro Documents & další
+// ---------------------------------------------
+export interface UsageLimitInfo {
+    jobsUsed: number;
+    maxJobs: number | null;
+    isOverLimit: boolean;
+}
+
+/**
+ * Vrátí efektivní limit pro aktuální plán (TRIAL / STARTER / PRO),
+ * kolik jobů bylo použito a jestli je limit překročen.
+ *
+ * Trial je samostatný tier, takže maxJobs bereme z billing.tier.max_jobs_per_period.
+ */
+export const getUsageLimitInfo = (
+    billing: OrgBilling | null,
+    usage: OrgUsageRow | null
+): UsageLimitInfo => {
+    const jobsUsed = usage?.jobs_used ?? 0;
+    const maxJobs = billing?.tier?.max_jobs_per_period ?? null;
+
+    const isOverLimit =
+        maxJobs != null && maxJobs > 0 ? jobsUsed >= maxJobs : false;
+
+    return {
+        jobsUsed,
+        maxJobs,
+        isOverLimit,
+    };
 };

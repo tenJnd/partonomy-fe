@@ -1,14 +1,31 @@
 import React, {useState} from 'react';
-import {Building2, Save} from 'lucide-react';
+import {AlertCircle, Building2, Save} from 'lucide-react';
 import {useAuth} from '../contexts/AuthContext';
 import {supabase} from '../lib/supabase';
 import SettingsShell from '../components/SettingsShell';
 import MembersList from '../components/MembersList';
 import InviteModal from '../components/InviteModal';
+import {useOrgBilling} from "../hooks/useOrgBilling";
+import {useOrgMembersCount} from "../hooks/useOrgMembersCount";
+import {formatTierLabel} from "../utils/tiers";
 
 const OrganizationSettings: React.FC = () => {
     const {currentOrg, user} = useAuth();
     const canManageOrg = currentOrg?.role === 'owner' || currentOrg?.role === 'admin';
+
+    const {billing} = useOrgBilling();
+    const {count: membersCount, loading: membersLoading} = useOrgMembersCount(
+        currentOrg?.org_id
+    );
+
+    const maxUsers = billing?.tier?.max_users ?? null;
+
+// můžou se přidávat další uživatelé?
+    const canInviteMore =
+        canManageOrg &&
+        !membersLoading &&
+        (maxUsers == null || membersCount < maxUsers);
+
 
     const [orgName, setOrgName] = useState(currentOrg?.organization.name || '');
     const [saving, setSaving] = useState(false);
@@ -106,13 +123,35 @@ const OrganizationSettings: React.FC = () => {
                             currentUserId={user.id}
                         />
 
-                        <div className="pt-4 border-t border-gray-100 flex justify-center">
+                        <div className="pt-4 border-t border-gray-100 flex flex-col items-center gap-2">
                             <button
-                                onClick={() => setInviteModalOpen(true)}
-                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
+                                onClick={() => canInviteMore && setInviteModalOpen(true)}
+                                disabled={!canInviteMore}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                                    canInviteMore
+                                        ? "bg-blue-600 hover:bg-blue-700 text-white"
+                                        : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                }`}
                             >
                                 Invite Member
                             </button>
+
+                            {maxUsers != null && membersCount >= maxUsers && (
+                                <div
+                                    className="mb-2 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
+                                    <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" strokeWidth={1.5}/>
+                                    <div>
+                                        <p className="text-sm font-semibold text-amber-800">
+                                            You’ve reached the member limit for your{" "}
+                                            {billing?.tier ? formatTierLabel(billing.tier.code) : "current"} plan.
+                                        </p>
+                                        <p className="text-xs text-amber-700 mt-1">
+                                            Current members: {membersCount} / {maxUsers}. To invite more teammates,
+                                            upgrade your plan in the Billing section.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

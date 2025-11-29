@@ -1,14 +1,17 @@
-
-import React, { useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Upload } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
+import React, {useMemo, useRef, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
+import {AlertCircle, Upload} from 'lucide-react';
+import {useAuth} from '../contexts/AuthContext';
+import {supabase} from '../lib/supabase';
 import DeleteDocumentModal from '../components/DeleteDocumentModal';
-import { useParts } from '../hooks/useParts';
-import { useDocumentUpload } from '../hooks/useDocumentUpload';
+import {useParts} from '../hooks/useParts';
+import {useDocumentUpload} from '../hooks/useDocumentUpload';
+import type {SortField} from '../components/documents/DocumentsTable';
 import DocumentsTable from '../components/documents/DocumentsTable';
-import type { SortField } from '../components/documents/DocumentsTable';
+import {useOrgBilling} from "../hooks/useOrgBilling";
+import {useOrgUsage} from "../hooks/useOrgUsage";
+import {getUsageLimitInfo, isInactiveStatus} from "../utils/billing";
+import {formatTierLabel} from "../utils/tiers.ts";
 
 type StatusFilter = 'all' | 'processed' | 'processing' | 'error';
 type TimeFilter = 'all' | '7d' | '30d' | '90d';
@@ -16,7 +19,7 @@ type ComplexityFilter = 'all' | 'LOW' | 'MEDIUM' | 'HIGH' | 'EXTREME';
 type FitFilter = 'all' | 'GOOD' | 'PARTIAL' | 'COOPERATION' | 'LOW' | 'UNKNOWN';
 
 const Documents: React.FC = () => {
-    const { currentOrg, user } = useAuth();
+    const {currentOrg, user} = useAuth();
     const navigate = useNavigate();
 
     const {
@@ -52,20 +55,59 @@ const Documents: React.FC = () => {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const {billing} = useOrgBilling();
+    const {usage} = useOrgUsage(currentOrg?.org_id);
+
+    // usage + limit info
+    const {jobsUsed, maxJobs, isOverLimit} = getUsageLimitInfo(
+        billing ?? null,
+        usage ?? null
+    );
+
+    // kdy blokujeme upload globálně
+    const uploadsBlocked =
+        !currentOrg ||
+        isInactiveStatus(billing?.status) ||
+        isOverLimit;
+
     const handleUploadClick = () => {
+        if (uploadsBlocked) {
+            setUploadError(
+                maxJobs
+                    ? `You have reached the limit of your plan (${jobsUsed}/${maxJobs} jobs). Upgrade your plan to upload more documents.`
+                    : "Uploads are currently disabled for this organization."
+            );
+            return;
+        }
+
         fileInputRef.current?.click();
     };
+
 
     const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (!files || files.length === 0) return;
 
+        if (uploadsBlocked) {
+            setUploadError(
+                maxJobs
+                    ? `You have reached the limit of your plan (${jobsUsed}/${maxJobs} jobs). Upgrade your plan to upload more documents.`
+                    : "Uploads are currently disabled for this organization."
+            );
+            // reset input, jinak by tam soubory zůstaly
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
+            return;
+        }
+
         await uploadFiles(Array.from(files));
 
         if (fileInputRef.current) {
-            fileInputRef.current.value = '';
+            fileInputRef.current.value = "";
         }
     };
+
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -86,12 +128,22 @@ const Documents: React.FC = () => {
         const files = e.dataTransfer.files;
         if (!files || files.length === 0) return;
 
+        if (uploadsBlocked) {
+            setUploadError(
+                maxJobs
+                    ? `You have reached the limit of your plan (${jobsUsed}/${maxJobs} jobs). Upgrade your plan to upload more documents.`
+                    : "Uploads are currently disabled for this organization."
+            );
+            return;
+        }
+
         await uploadFiles(Array.from(files));
     };
 
+
     const handleRerunDocument = async (docId: string) => {
         try {
-            const { error } = await supabase
+            const {error} = await supabase
                 .from('documents')
                 .update({
                     last_status: 'queued',
@@ -118,7 +170,7 @@ const Documents: React.FC = () => {
         if (!docToDelete) return;
 
         try {
-            const { error } = await supabase
+            const {error} = await supabase
                 .from('documents')
                 .delete()
                 .eq('id', docToDelete.id);
@@ -146,7 +198,7 @@ const Documents: React.FC = () => {
                 return;
             }
 
-            const { data, error } = await supabase.storage
+            const {data, error} = await supabase.storage
                 .from(doc.raw_bucket)
                 .createSignedUrl(doc.raw_storage_key, 60);
 
@@ -185,7 +237,7 @@ const Documents: React.FC = () => {
     };
 
     // Distinct values for company and class filters
-    const { uniqueCompanies, uniqueClasses } = useMemo(() => {
+    const {uniqueCompanies, uniqueClasses} = useMemo(() => {
         const companySet = new Set<string>();
         const classSet = new Set<string>();
 
@@ -199,13 +251,13 @@ const Documents: React.FC = () => {
         }
 
         const companies = Array.from(companySet).sort((a, b) =>
-            a.localeCompare(b, undefined, { sensitivity: 'base' }),
+            a.localeCompare(b, undefined, {sensitivity: 'base'}),
         );
         const classes = Array.from(classSet).sort((a, b) =>
-            a.localeCompare(b, undefined, { sensitivity: 'base' }),
+            a.localeCompare(b, undefined, {sensitivity: 'base'}),
         );
 
-        return { uniqueCompanies: companies, uniqueClasses: classes };
+        return {uniqueCompanies: companies, uniqueClasses: classes};
     }, [parts]);
 
     // FILTERING + SORTING
@@ -289,47 +341,47 @@ const Documents: React.FC = () => {
         };
 
         result.sort((a, b) => {
-                let aVal: any;
-                let bVal: any;
+            let aVal: any;
+            let bVal: any;
 
-                switch (sortField) {
-                    case 'last_updated':
-                        aVal = a.last_updated ? new Date(a.last_updated).getTime() : 0;
-                        bVal = b.last_updated ? new Date(b.last_updated).getTime() : 0;
-                        break;
-                    case 'last_status':
-                        aVal = statusOrder(a.document?.last_status);
-                        bVal = statusOrder(b.document?.last_status);
-                        break;
-                    case 'file_name':
-                        aVal = (a.document?.file_name || '').toString().toLowerCase();
-                        bVal = (b.document?.file_name || '').toString().toLowerCase();
-                        break;
-                    case 'company_name':
-                        aVal = (a.company_name || '').toString().toLowerCase();
-                        bVal = (b.company_name || '').toString().toLowerCase();
-                        break;
-                    case 'primary_class':
-                        aVal = (a.primary_class || '').toString().toLowerCase();
-                        bVal = (b.primary_class || '').toString().toLowerCase();
-                        break;
-                    case 'overall_complexity':
-                        aVal = (a.overall_complexity || '').toString().toLowerCase();
-                        bVal = (b.overall_complexity || '').toString().toLowerCase();
-                        break;
-                    case 'fit_level':
-                        aVal = (a.fit_level || '').toString().toLowerCase();
-                        bVal = (b.fit_level || '').toString().toLowerCase();
-                        break;
-                    default:
-                        aVal = 0;
-                        bVal = 0;
-                }
+            switch (sortField) {
+                case 'last_updated':
+                    aVal = a.last_updated ? new Date(a.last_updated).getTime() : 0;
+                    bVal = b.last_updated ? new Date(b.last_updated).getTime() : 0;
+                    break;
+                case 'last_status':
+                    aVal = statusOrder(a.document?.last_status);
+                    bVal = statusOrder(b.document?.last_status);
+                    break;
+                case 'file_name':
+                    aVal = (a.document?.file_name || '').toString().toLowerCase();
+                    bVal = (b.document?.file_name || '').toString().toLowerCase();
+                    break;
+                case 'company_name':
+                    aVal = (a.company_name || '').toString().toLowerCase();
+                    bVal = (b.company_name || '').toString().toLowerCase();
+                    break;
+                case 'primary_class':
+                    aVal = (a.primary_class || '').toString().toLowerCase();
+                    bVal = (b.primary_class || '').toString().toLowerCase();
+                    break;
+                case 'overall_complexity':
+                    aVal = (a.overall_complexity || '').toString().toLowerCase();
+                    bVal = (b.overall_complexity || '').toString().toLowerCase();
+                    break;
+                case 'fit_level':
+                    aVal = (a.fit_level || '').toString().toLowerCase();
+                    bVal = (b.fit_level || '').toString().toLowerCase();
+                    break;
+                default:
+                    aVal = 0;
+                    bVal = 0;
+            }
 
-                if (aVal < bVal) return -1 * direction;
-                if (aVal > bVal) return 1 * direction;
-                return 0;
-            });
+            if (aVal < bVal) return -1 * direction;
+            if (aVal > bVal) return 1 * direction;
+            return 0;
+        });
         return result;
     }, [
         parts,
@@ -355,26 +407,32 @@ const Documents: React.FC = () => {
             onDrop={handleDrop}
         >
             {isDragging && (
-                <div className="pointer-events-none fixed inset-0 flex items-center justify-center z-50 bg-blue-600/5 backdrop-blur-sm">
-                    <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-xl shadow-xl text-base font-semibold flex items-center gap-3">
-                        <Upload className="w-5 h-5" strokeWidth={2} />
+                <div
+                    className="pointer-events-none fixed inset-0 flex items-center justify-center z-50 bg-blue-600/5 backdrop-blur-sm">
+                    <div
+                        className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-xl shadow-xl text-base font-semibold flex items-center gap-3">
+                        <Upload className="w-5 h-5" strokeWidth={2}/>
                         Drop files to upload
                     </div>
                 </div>
             )}
 
-            <div className="p-6 mx-auto" style={{ maxWidth: '1800px' }}>
+            <div className="p-6 mx-auto" style={{maxWidth: '1800px'}}>
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-2xl font-semibold text-gray-900">Documents</h1>
                     <button
                         onClick={handleUploadClick}
-                        disabled={uploading}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg shadow-sm transition-all active:scale-[0.98] disabled:cursor-not-allowed"
+                        disabled={uploading || uploadsBlocked}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-sm transition-all active:scale-[0.98] disabled:cursor-not-allowed ${
+                            uploadsBlocked
+                                ? "bg-gray-300 text-gray-600"
+                                : "bg-blue-600 hover:bg-blue-700 text-white"
+                        }`}
                     >
-                        <Upload className="w-4 h-4" strokeWidth={1.5} />
+                        <Upload className="w-4 h-4" strokeWidth={1.5}/>
                         <span className="text-sm font-medium">
-                            {uploading ? 'Uploading...' : 'Upload Documents'}
-                        </span>
+                        {uploading ? "Uploading..." : "Upload Documents"}
+                      </span>
                     </button>
                 </div>
 
@@ -389,7 +447,7 @@ const Documents: React.FC = () => {
 
                 {uploadError && (
                     <div className="mb-4 p-4 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-3">
-                        <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0" strokeWidth={1.5} />
+                        <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0" strokeWidth={1.5}/>
                         <p className="text-sm text-rose-700">{uploadError}</p>
                     </div>
                 )}
@@ -405,8 +463,24 @@ const Documents: React.FC = () => {
                         <div className="w-full bg-blue-200 rounded-full h-2">
                             <div
                                 className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${uploadProgress}%` }}
+                                style={{width: `${uploadProgress}%`}}
                             />
+                        </div>
+                    </div>
+                )}
+
+                {(isOverLimit && maxJobs != null) && (
+                    <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" strokeWidth={1.5}/>
+                        <div>
+                            <p className="text-sm font-semibold text-amber-800">
+                                You’ve reached the limit of
+                                your {billing?.tier ? formatTierLabel(billing.tier.code) : "current"} plan.
+                            </p>
+                            <p className="text-xs text-amber-700 mt-1">
+                                Processed {jobsUsed} / {maxJobs} jobs in this billing period.
+                                To upload more documents, upgrade your plan in Billing.
+                            </p>
                         </div>
                     </div>
                 )}
