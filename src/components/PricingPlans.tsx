@@ -1,0 +1,262 @@
+// src/components/PricingPlans.tsx
+import React from "react";
+import {CheckCircle2} from "lucide-react";
+import {OrgBilling} from "../hooks/useOrgBilling";
+import {TierEnum} from "../lib/database.types";
+import {getTrialInfo} from "../utils/billing";
+
+type PricingMode = "landing" | "billing";
+
+interface PricingPlansProps {
+    mode: PricingMode;
+    billing?: OrgBilling | null;
+    canManageOrg?: boolean;
+    // Landing CTA
+    onStartFree?: () => void;
+    // Billing CTAs (Stripe checkout handlers)
+    onSelectStarter?: () => void;
+    onSelectPro?: () => void;
+}
+
+const PricingPlans: React.FC<PricingPlansProps> = ({
+                                                       mode,
+                                                       billing,
+                                                       canManageOrg = true,
+                                                       onStartFree,
+                                                       onSelectStarter,
+                                                       onSelectPro,
+                                                   }) => {
+    const currentTier = billing?.tier?.code ?? null;
+    const {isTrial, daysLeft} = getTrialInfo(billing ?? null);
+
+    const isStarterCurrent =
+        !isTrial && currentTier === ("STARTER" as TierEnum);
+    const isProCurrent =
+        !isTrial && currentTier === ("PRO" as TierEnum);
+
+    // --- BUTTON LABELS (billing mode) ---
+    const starterButtonLabel = (() => {
+        if (mode === "landing") return "";
+
+        if (isTrial) {
+            return daysLeft !== null
+                ? `Vybrat Starter`
+                : "Vybrat Starter";
+        }
+
+        if (isStarterCurrent) return "Aktuální plán";
+        if (isProCurrent) return "Downgrade na Starter"; // případně zakážeš
+
+        return "Vybrat Starter";
+    })();
+
+    const proButtonLabel = (() => {
+        if (mode === "landing") return "";
+
+        if (isTrial) {
+            return daysLeft !== null
+                ? `Vybrat Pro`
+                : "Vybrat Pro";
+        }
+
+        if (isProCurrent) return "Aktuální plán";
+        if (isStarterCurrent) return "Upgrade na Pro";
+
+        return "Vybrat Pro";
+    })();
+
+    const starterDisabled =
+        mode === "billing" &&
+        (!canManageOrg || isStarterCurrent || !onSelectStarter);
+
+    const proDisabled =
+        mode === "billing" &&
+        (!canManageOrg || (!isTrial && isProCurrent) || !onSelectPro);
+
+    return (
+        <section id={mode === "landing" ? "pricing" : undefined} className="py-20 bg-white">
+            <div className="mx-auto max-w-7xl px-6">
+                {/* Header jen na Landing */}
+                {mode === "landing" && (
+                    <div className="text-center mb-16">
+                        <h2 className="text-4xl font-bold text-slate-900 mb-4">
+                            Jednoduchý ceník
+                        </h2>
+                        <p className="text-lg text-slate-600">
+                            Začněte zdarma, plaťte podle potřeby
+                        </p>
+                        <p className="text-sm text-slate-500 mt-2">
+                            Platíte jen za <span className="font-semibold">uživatele</span> a{" "}
+                            <span className="font-semibold">
+                                počet zpracovaných výkresů/stránek
+                            </span>
+                            . Žádné skryté moduly, žádné konzultační balíčky.
+                        </p>
+                    </div>
+                )}
+
+                <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                    {/* Starter plan */}
+                    <div
+                        className="relative p-8 rounded-2xl bg-gradient-to-br from-slate-50 to-white border-2 border-slate-200 hover:border-slate-300 transition-all hover:shadow-xl h-full flex flex-col"
+                    >
+                        {mode === "billing" && isStarterCurrent && !isTrial && (
+                            <div
+                                className="absolute -top-4 left-4 px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-full">
+                                Aktuální plán
+                            </div>
+                        )}
+
+                        {/* obsah karty */}
+                        <div>
+                            <div className="mb-6">
+                                <h3 className="text-2xl font-bold text-slate-900 mb-2">
+                                    Starter
+                                </h3>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-5xl font-bold text-slate-900">$99</span>
+                                    <span className="text-slate-600">/ 80 výkresů</span>
+                                </div>
+                                <p className="mt-4 text-slate-600">
+                                    Ideální pro menší dílny a pilotní provoz
+                                </p>
+                                {mode === "billing" && isTrial && daysLeft !== null && (
+                                    <p className="mt-2 text-xs text-slate-500">
+                                        Běží trial ({daysLeft}{" "}
+                                        {daysLeft === 1 ? "den zbývá" : "dní zbývá"}). Zvolený plán
+                                        začne po skončení trialu.
+                                    </p>
+                                )}
+                            </div>
+
+                            <ul className="space-y-4">
+                                {[
+                                    "80 výkresů/stránek měsíčně",
+                                    "1 uživatel",
+                                    "Analýza výkresů z rastrových PDF/obrázků",
+                                    "Přehledný seznam zpracovaných dokumentů",
+                                    "Rychlé shrnutí a report pro každý díl",
+                                    "Email podpora",
+                                ].map((item, idx) => (
+                                    <li key={idx} className="flex items-start gap-3">
+                                        <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"/>
+                                        <span className="text-slate-700">{item}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        {/* footer s buttonem přilepený dole */}
+                        {mode === "billing" && (
+                            <div className="mt-auto pt-8">
+                                <button
+                                    onClick={onSelectStarter}
+                                    className={`w-full py-4 px-6 rounded-xl font-semibold transition-colors ${
+                                        starterDisabled
+                                            ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                                            : "text-slate-900 bg-slate-100 hover:bg-slate-200"
+                                    }`}
+                                    disabled={starterDisabled}
+                                >
+                                    {starterButtonLabel}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Pro plan */}
+                    <div
+                        className="relative p-8 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 border-2 border-blue-500 shadow-2xl shadow-blue-600/30 transform md:scale-105 h-full flex flex-col"
+                    >
+                        <div
+                            className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-amber-400 to-amber-500 text-amber-900 text-sm font-bold rounded-full">
+                            Nejoblíbenější
+                        </div>
+
+                        {mode === "billing" && isProCurrent && !isTrial && (
+                            <div
+                                className="absolute -top-4 right-4 px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-full">
+                                Aktuální plán
+                            </div>
+                        )}
+
+                        {/* obsah karty */}
+                        <div>
+                            <div className="mb-6">
+                                <h3 className="text-2xl font-bold text-white mb-2">Pro</h3>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-5xl font-bold text-white">$449</span>
+                                    <span className="text-blue-100">/ 500 výkresů</span>
+                                </div>
+                                <p className="mt-4 text-blue-100">
+                                    Pro firmy s desítkami až stovkami výkresů měsíčně
+                                </p>
+                                {mode === "billing" && isTrial && daysLeft !== null && (
+                                    <p className="mt-2 text-xs text-blue-100/80">
+                                        Běží trial ({daysLeft}{" "}
+                                        {daysLeft === 1 ? "den zbývá" : "dní zbývá"}). Zvolený plán
+                                        začne po skončení trialu.
+                                    </p>
+                                )}
+                            </div>
+
+                            <ul className="space-y-4">
+                                {[
+                                    "Vše ze Starter plánu",
+                                    "500 výkresů/stránek měsíčně",
+                                    "10 uživatelů",
+                                    "Prioritní podpora",
+                                ].map((item, idx) => (
+                                    <li key={idx} className="flex items-start gap-3">
+                                        <CheckCircle2 className="w-5 h-5 text-blue-200 mt-0.5 flex-shrink-0"/>
+                                        <span className="text-white">{item}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        {/* footer s buttonem přilepený dole */}
+                        {mode === "billing" && (
+                            <div className="mt-auto pt-8">
+                                <button
+                                    onClick={onSelectPro}
+                                    className={`w-full py-4 px-6 rounded-xl font-semibold shadow-lg transition-colors ${
+                                        proDisabled
+                                            ? "bg-white/40 text-blue-200 cursor-not-allowed"
+                                            : "text-blue-700 bg-white hover:bg-blue-50"
+                                    }`}
+                                    disabled={proDisabled}
+                                >
+                                    {proButtonLabel}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Landing CTA – jedno tlačítko dole */}
+                {mode === "landing" && (
+                    <div className="text-center mt-12">
+                        <button
+                            onClick={onStartFree}
+                            className="inline-flex items-center justify-center px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-md transition-all active:scale-[0.98]"
+                        >
+                            Začít zdarma
+                        </button>
+                        <p className="text-sm text-slate-600 mt-4">
+                            Potřebujete větší objem nebo on-premise řešení?{" "}
+                            <a
+                                href="#"
+                                className="text-blue-600 hover:text-blue-700 font-medium"
+                            >
+                                Kontaktujte nás →
+                            </a>
+                        </p>
+                    </div>
+                )}
+            </div>
+        </section>
+    );
+};
+
+export default PricingPlans;

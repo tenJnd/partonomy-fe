@@ -2,6 +2,7 @@ import {useEffect, useState} from "react";
 import {BarChart3, CheckCircle2, ChevronRight, Clock, FileText, TrendingUp, Upload, Zap} from "lucide-react";
 import {useAuth} from "../contexts/AuthContext";
 import {useNavigate} from "react-router-dom";
+import PricingPlans from "../components/PricingPlans";
 
 const Landing = () => {
     const [scrollY, setScrollY] = useState(0);
@@ -449,109 +450,10 @@ const Landing = () => {
                 </section>
 
                 {/* Pricing with enhanced cards */}
-                <section id="pricing" className="py-20 bg-white">
-                    <div className="mx-auto max-w-7xl px-6">
-                        <div className="text-center mb-16">
-                            <h2 className="text-4xl font-bold text-slate-900 mb-4">Jednoduchý ceník</h2>
-                            <p className="text-lg text-slate-600">Začněte zdarma, plaťte podle potřeby</p>
-                            <p className="text-sm text-slate-500 mt-2">
-                                Platíte jen za <span className="font-semibold">uživatele</span> a <span
-                                className="font-semibold">počet zpracovaných výkresů/stránek</span>. Žádné skryté
-                                moduly, žádné konzultační balíčky.
-                            </p>
-                        </div>
-
-                        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-                            {/* Starter plan */}
-                            <div
-                                className="relative p-8 rounded-2xl bg-gradient-to-br from-slate-50 to-white border-2 border-slate-200 hover:border-slate-300 transition-all hover:shadow-xl">
-                                <div className="mb-6">
-                                    <h3 className="text-2xl font-bold text-slate-900 mb-2">Starter</h3>
-                                    <div className="flex items-baseline gap-2">
-                                        <span className="text-5xl font-bold text-slate-900">$99</span>
-                                        <span className="text-slate-600">/ 80 výkresů</span>
-                                    </div>
-                                    <p className="mt-4 text-slate-600">
-                                        Ideální pro menší dílny a pilotní provoz
-                                    </p>
-                                </div>
-
-                                <ul className="space-y-4 mb-8">
-                                    {[
-                                        "80 výkresů/stránek měsíčně",
-                                        "1 uživatel",
-                                        "Analýza výkresů z rastrových PDF/obrázků",
-                                        "Přehledný seznam zpracovaných dokumentů",
-                                        "Rychlé shrnutí a report pro každý díl",
-                                        "Email podpora"
-                                    ].map((item, idx) => (
-                                        <li key={idx} className="flex items-start gap-3">
-                                            <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"/>
-                                            <span className="text-slate-700">{item}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-
-                                <button
-                                    onClick={handleGetStarted}
-                                    className="w-full py-4 px-6 rounded-xl font-semibold text-slate-900 bg-slate-100 hover:bg-slate-200 transition-colors"
-                                >
-                                    Začít se Starterem
-                                </button>
-                            </div>
-
-                            {/* Pro plan - featured */}
-                            <div
-                                className="relative p-8 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 border-2 border-blue-500 shadow-2xl shadow-blue-600/30 transform md:scale-105">
-                                <div
-                                    className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-amber-400 to-amber-500 text-amber-900 text-sm font-bold rounded-full">
-                                    Nejoblíbenější
-                                </div>
-
-                                <div className="mb-6">
-                                    <h3 className="text-2xl font-bold text-white mb-2">Pro</h3>
-                                    <div className="flex items-baseline gap-2">
-                                        <span className="text-5xl font-bold text-white">$449</span>
-                                        <span className="text-blue-100">/ 500 výkresů</span>
-                                    </div>
-                                    <p className="mt-4 text-blue-100">
-                                        Pro firmy s desítkami až stovkami výkresů měsíčně
-                                    </p>
-                                </div>
-
-                                <ul className="space-y-4 mb-8">
-                                    {[
-                                        "Vše ze Starter plánu",
-                                        "500 výkresů/stránek měsíčně",
-                                        "10 uživatelů",
-                                        // "API a SharePoint konektory",
-                                        "Prioritní podpora",
-                                        // "Custom branding"
-                                    ].map((item, idx) => (
-                                        <li key={idx} className="flex items-start gap-3">
-                                            <CheckCircle2 className="w-5 h-5 text-blue-200 mt-0.5 flex-shrink-0"/>
-                                            <span className="text-white">{item}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-
-                                <button
-                                    onClick={handleGetStarted}
-                                    className="w-full py-4 px-6 rounded-xl font-semibold text-blue-700 bg-white hover:bg-blue-50 transition-colors shadow-lg"
-                                >
-                                    Přejít na Pro
-                                </button>
-                            </div>
-                        </div>
-
-                        <p className="text-center mt-12 text-sm text-slate-600">
-                            Potřebujete větší objem nebo on-premise řešení?{" "}
-                            <a href="#" className="text-blue-600 hover:text-blue-700 font-medium">
-                                Kontaktujte nás →
-                            </a>
-                        </p>
-                    </div>
-                </section>
+                <PricingPlans
+  mode="landing"
+  onStartFree={handleGetStarted}
+/>
 
                 {/* CTA Section */}
                 <section className="py-20 bg-gradient-to-br from-slate-900 to-slate-800 relative overflow-hidden">

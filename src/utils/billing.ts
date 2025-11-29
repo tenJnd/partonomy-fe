@@ -48,7 +48,7 @@ export const getBillingBadgeText = (billing: OrgBilling | null): string => {
     const {isTrial, daysLeft} = getTrialInfo(billing);
 
     if (isTrial && daysLeft !== null) {
-        return `${tierLabel} trial · ${daysLeft} ${
+        return `${tierLabel} ${daysLeft} ${
             daysLeft === 1 ? "den" : "dní"
         }`;
     }
@@ -72,7 +72,7 @@ export const getBillingPlanTitle = (billing: OrgBilling | null): string => {
     const {isTrial, daysLeft} = getTrialInfo(billing);
 
     if (isTrial && daysLeft !== null) {
-        return `${tierLabel} trial · ${daysLeft} ${
+        return `${tierLabel} ${daysLeft} ${
             daysLeft === 1 ? "den" : "dní"
         }`;
     }

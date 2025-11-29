@@ -18,7 +18,7 @@ export type DocumentStatusEnum = 'queued' | 'processing' | 'success' | 'error';
 export type ComplexityEnum = 'LOW' | 'MEDIUM' | 'HIGH' | 'EXTREME';
 export type RiskEnum = 'LOW' | 'MEDIUM' | 'HIGH' | 'EXTREME';
 export type FitLevelEnum = 'GOOD' | 'PARTIAL' | 'COOPERATION' | 'LOW' | 'UNKNOWN';
-export type TierEnum = 'FREE' | 'STARTER' | 'PRO' | 'ENTERPRISE'
+export type TierEnum = 'FREE' | 'TRIAL' | 'STARTER' | 'PRO' | 'ENTERPRISE'
 
 export interface Database {
     public: {
