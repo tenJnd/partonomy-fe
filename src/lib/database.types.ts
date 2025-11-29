@@ -18,6 +18,7 @@ export type DocumentStatusEnum = 'queued' | 'processing' | 'success' | 'error';
 export type ComplexityEnum = 'LOW' | 'MEDIUM' | 'HIGH' | 'EXTREME';
 export type RiskEnum = 'LOW' | 'MEDIUM' | 'HIGH' | 'EXTREME';
 export type FitLevelEnum = 'GOOD' | 'PARTIAL' | 'COOPERATION' | 'LOW' | 'UNKNOWN';
+export type TierEnum = 'FREE' | 'STARTER' | 'PRO' | 'ENTERPRISE'
 
 export interface Database {
     public: {
@@ -197,6 +198,7 @@ export interface Database {
             complexity_enum: ComplexityEnum
             risk_enum: RiskEnum
             fit_level_enum: FitLevelEnum
+            tier_enum: TierEnum
         }
     }
 }
