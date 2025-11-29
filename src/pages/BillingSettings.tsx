@@ -7,13 +7,21 @@ import {useOrgBilling} from "../hooks/useOrgBilling";
 import {useOrgUsage} from "../hooks/useOrgUsage";
 import {getBillingPlanDescription, getBillingPlanTitle,} from "../utils/billing";
 import PricingPlans from "../components/PricingPlans";
+import {useStripeCheckout} from "../hooks/useStripeCheckout";
 
 const BillingSettings: React.FC = () => {
     const {currentOrg} = useAuth();
-    const canManageOrg = currentOrg?.role === "owner" || currentOrg?.role === "admin";
+    const canManageOrg =
+        currentOrg?.role === "owner" || currentOrg?.role === "admin";
 
+    // 🔹 Hooks – vždy nahoře, bez podmínek
     const {billing, loading: billingLoading} = useOrgBilling();
     const {usage, loading: usageLoading} = useOrgUsage(currentOrg?.org_id);
+    const {
+        startCheckout,
+        loading: checkoutLoading,
+        error: checkoutError,
+    } = useStripeCheckout();
 
     if (!currentOrg) {
         return <div className="p-6 max-w-4xl mx-auto">Loading...</div>;
@@ -120,27 +128,28 @@ const BillingSettings: React.FC = () => {
                                         style={{width: `${usagePercent ?? 0}%`}}
                                     />
                                 </div>
-                                {/*<p className="text-xs text-gray-400">*/}
-                                {/*    Period: {periodLabel}*/}
-                                {/*</p>*/}
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* UPGRADE / PRICING */}
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                        <div>
-                            <h2 className="text-lg font-semibold text-gray-900">
-                                Upgrade or change plan
-                            </h2>
-                            <p className="text-sm text-gray-500 mt-1">
-                                Choose the plan that best fits your volume and team size.
-                            </p>
-                        </div>
+                {/* Checkout error */}
+                {checkoutError && (
+                    <div className="mb-2 p-3 rounded-lg border border-rose-200 bg-rose-50 text-xs text-rose-700">
+                        {checkoutError}
                     </div>
+                )}
 
+                {/* Pricing / upgrade section */}
+                <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-100">
+                        <h2 className="text-lg font-semibold text-gray-900">
+                            Choose your plan
+                        </h2>
+                        <p className="text-sm text-gray-500 mt-1">
+                            Select the plan and billing period that best fits your needs.
+                        </p>
+                    </div>
                     <div className="p-6">
                         {billingLoading ? (
                             <div className="text-sm text-gray-500">
@@ -150,15 +159,13 @@ const BillingSettings: React.FC = () => {
                             <PricingPlans
                                 mode="billing"
                                 billing={billing}
-                                canManageOrg={canManageOrg}
-                                onSelectStarter={() => {
-                                    // TODO: edge function -> Stripe checkout pro STARTER
-                                    console.log("Stripe checkout: STARTER");
-                                }}
-                                onSelectPro={() => {
-                                    // TODO: edge function -> Stripe checkout pro PRO
-                                    console.log("Stripe checkout: PRO");
-                                }}
+                                canManageOrg={canManageOrg && !checkoutLoading}
+                                onSelectStarter={({period, currency}) =>
+                                    startCheckout({tier: "STARTER", period, currency})
+                                }
+                                onSelectPro={({period, currency}) =>
+                                    startCheckout({tier: "PRO", period, currency})
+                                }
                             />
                         )}
                     </div>
