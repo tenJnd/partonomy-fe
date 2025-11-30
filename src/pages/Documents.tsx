@@ -419,11 +419,11 @@ const Documents: React.FC = () => {
 
             <div className="p-6 mx-auto" style={{maxWidth: '1800px'}}>
                 <div className="flex items-center justify-between mb-6">
-                    <h1 className="text-2xl font-semibold text-gray-900">Documents</h1>
+                    {/*<h1 className="text-2xl font-semibold text-gray-900">Documents</h1>*/}
                     <button
                         onClick={handleUploadClick}
                         disabled={uploading || uploadsBlocked}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-sm transition-all active:scale-[0.98] disabled:cursor-not-allowed ${
+                        className={`ml-auto flex items-center gap-2 px-4 py-2 rounded-lg shadow-sm transition-all active:scale-[0.98] disabled:cursor-not-allowed ${
                             uploadsBlocked
                                 ? "bg-gray-300 text-gray-600"
                                 : "bg-blue-600 hover:bg-blue-700 text-white"
