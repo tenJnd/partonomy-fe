@@ -87,7 +87,7 @@ const Landing = () => {
                         </div>
                         <span
                             className="text-lg font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-              Partonomy
+              Partonomy.ai
             </span>
                     </div>
 

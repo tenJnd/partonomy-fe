@@ -51,7 +51,25 @@ const TopBar: React.FC = () => {
             className="h-14 bg-white border-b border-gray-200 shadow-sm flex items-center justify-between px-6 relative z-50">
             {/* Left */}
             <div className="flex items-center gap-6">
-                <div className="text-xl font-semibold text-gray-900">Partonomy</div>
+                {/* Logo stejné jako na landing page */}
+                <button
+                    type="button"
+                    onClick={() => navigate("/documents")}
+                    className="flex items-center gap-3 group"
+                >
+                    <div className="relative">
+                        <div
+                            className="absolute inset-0 bg-blue-600 blur-md opacity-40 rounded-lg group-hover:opacity-60 transition-opacity"/>
+                        <div
+                            className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 text-sm font-bold text-white shadow-lg">
+                            P
+                        </div>
+                    </div>
+                    <span
+                        className="text-lg font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+            Partonomy.ai
+          </span>
+                </button>
 
                 {/* Tier / trial badge */}
                 <div className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
