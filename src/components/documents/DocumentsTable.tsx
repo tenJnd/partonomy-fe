@@ -213,16 +213,16 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
             <div className="overflow-x-auto">
                 <table className="w-full table-fixed">
                     <colgroup>
-                        <col style={{ width: '16%' }} /> {/* File Name */}
-                        <col style={{ width: '6%' }} />  {/* Page */}
-                        <col style={{ width: '11%' }} /> {/* Company */}
-                        <col style={{ width: '10%' }} /> {/* Class */}
+                        <col style={{ width: '25%' }} /> {/* File Name */}
+                        <col style={{ width: '4%' }} />  {/* Page */}
+                        <col style={{ width: '10%' }} /> {/* Company */}
+                        <col style={{ width: '8%' }} /> {/* Class */}
                         <col style={{ width: '9%' }} />  {/* Material */}
                         <col style={{ width: '12%' }} /> {/* Envelope */}
-                        <col style={{ width: '9%' }} />  {/* Complexity */}
-                        <col style={{ width: '9%' }} />  {/* Fit */}
-                        <col style={{ width: '10%' }} /> {/* Modified */}
-                        <col style={{ width: '64px' }} /> {/* Status */}
+                        <col style={{ width: '8%' }} />  {/* Complexity */}
+                        <col style={{ width: '8%' }} />  {/* Fit */}
+                        <col style={{ width: '8%' }} /> {/* Modified */}
+                        <col style={{ width: '48px' }} /> {/* Status */}
                         <col style={{ width: '48px' }} /> {/* Actions */}
                     </colgroup>
                     <thead className="bg-slate-50 border-b border-gray-200">

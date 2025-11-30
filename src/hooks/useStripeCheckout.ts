@@ -5,7 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 
 export type BillingPeriod = "monthly" | "yearly";
 export type Currency = "USD" | "EUR";
-export type PaidTier = "STARTER" | "PRO";
+export type PaidTier = "starter" | "pro";
 
 interface CheckoutArgs {
   tier: PaidTier;

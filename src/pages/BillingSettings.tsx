@@ -1,6 +1,6 @@
 // src/pages/BillingSettings.tsx
 import React from "react";
-import {Activity, CreditCard} from "lucide-react";
+import {Activity, CreditCard, ExternalLink} from "lucide-react";
 import {useAuth} from "../contexts/AuthContext";
 import SettingsShell from "../components/SettingsShell";
 import {useOrgBilling} from "../hooks/useOrgBilling";
@@ -8,6 +8,7 @@ import {useOrgUsage} from "../hooks/useOrgUsage";
 import {getBillingPlanDescription, getBillingPlanTitle,} from "../utils/billing";
 import PricingPlans from "../components/PricingPlans";
 import {useStripeCheckout} from "../hooks/useStripeCheckout";
+import {useStripeBillingPortal} from "../hooks/useStripeBillingPortal";
 
 const BillingSettings: React.FC = () => {
     const {currentOrg} = useAuth();
@@ -22,6 +23,11 @@ const BillingSettings: React.FC = () => {
         loading: checkoutLoading,
         error: checkoutError,
     } = useStripeCheckout();
+    const {
+        openPortal,
+        loading: portalLoading,
+        // error: portalError,
+    } = useStripeBillingPortal();
 
     if (!currentOrg) {
         return <div className="p-6 max-w-4xl mx-auto">Loading...</div>;
@@ -44,6 +50,7 @@ const BillingSettings: React.FC = () => {
                 usage.period_end
             ).toLocaleDateString()}`
             : "Current period";
+
 
     return (
         <SettingsShell
@@ -71,16 +78,30 @@ const BillingSettings: React.FC = () => {
                                 Loading billing info...
                             </div>
                         ) : (
-                            <div className="text-center">
+                            <div className="text-center space-y-3">
                                 <div
-                                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-sm font-medium mb-3">
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
                                     <CreditCard className="w-4 h-4" strokeWidth={1.5}/>
                                     {planTitle}
                                 </div>
+
                                 <p className="text-sm text-gray-500">{planDescription}</p>
+
+                                {canManageOrg && (
+                                    <button
+                                        type="button"
+                                        onClick={openPortal}
+                                        disabled={portalLoading}
+                                        className="inline-flex items-center gap-2 mt-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                                    >
+                                        <ExternalLink className="w-4 h-4" strokeWidth={1.5}/>
+                                        {portalLoading ? "Opening billing portal..." : "Manage billing"}
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>
+
                 </div>
 
                 {/* USAGE */}
@@ -161,10 +182,10 @@ const BillingSettings: React.FC = () => {
                                 billing={billing}
                                 canManageOrg={canManageOrg && !checkoutLoading}
                                 onSelectStarter={({period, currency}) =>
-                                    startCheckout({tier: "STARTER", period, currency})
+                                    startCheckout({tier: "starter", period, currency})
                                 }
                                 onSelectPro={({period, currency}) =>
-                                    startCheckout({tier: "PRO", period, currency})
+                                    startCheckout({tier: "pro", period, currency})
                                 }
                             />
                         )}
