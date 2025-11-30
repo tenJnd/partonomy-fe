@@ -1,6 +1,6 @@
 // src/pages/BillingSettings.tsx
 import React from "react";
-import {Activity, CreditCard, ExternalLink} from "lucide-react";
+import {Activity, CreditCard, ExternalLink, Loader2} from "lucide-react";
 import {useAuth} from "../contexts/AuthContext";
 import SettingsShell from "../components/SettingsShell";
 import {useOrgBilling} from "../hooks/useOrgBilling";
@@ -9,6 +9,7 @@ import {getBillingPlanDescription, getBillingPlanTitle,} from "../utils/billing"
 import PricingPlans from "../components/PricingPlans";
 import {useStripeCheckout} from "../hooks/useStripeCheckout";
 import {useStripeBillingPortal} from "../hooks/useStripeBillingPortal";
+import ErrorAlert from "../components/ErrorAlert";
 
 const BillingSettings: React.FC = () => {
     const {currentOrg} = useAuth();
@@ -26,7 +27,7 @@ const BillingSettings: React.FC = () => {
     const {
         openPortal,
         loading: portalLoading,
-        // error: portalError,
+        error: portalError,
     } = useStripeBillingPortal();
 
     if (!currentOrg) {
@@ -58,6 +59,11 @@ const BillingSettings: React.FC = () => {
             description="Manage subscription plan and usage limits."
             canManageOrg={canManageOrg}
         >
+            {/* Checkout error */}
+            {checkoutError && <ErrorAlert message={checkoutError}/>}
+            {/* PortalError error */}
+            {portalError && <ErrorAlert message={portalError}/>}
+
             <div className="space-y-6">
                 {/* CURRENT PLAN */}
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
@@ -94,7 +100,11 @@ const BillingSettings: React.FC = () => {
                                         disabled={portalLoading}
                                         className="inline-flex items-center gap-2 mt-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
                                     >
-                                        <ExternalLink className="w-4 h-4" strokeWidth={1.5}/>
+                                        {portalLoading ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.5}/>
+                                        ) : (
+                                            <ExternalLink className="w-4 h-4" strokeWidth={1.5}/>
+                                        )}
                                         {portalLoading ? "Opening billing portal..." : "Manage billing"}
                                     </button>
                                 )}
@@ -155,11 +165,7 @@ const BillingSettings: React.FC = () => {
                 </div>
 
                 {/* Checkout error */}
-                {checkoutError && (
-                    <div className="mb-2 p-3 rounded-lg border border-rose-200 bg-rose-50 text-xs text-rose-700">
-                        {checkoutError}
-                    </div>
-                )}
+                {checkoutError && <ErrorAlert message={checkoutError}/>}
 
                 {/* Pricing / upgrade section */}
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
@@ -177,19 +183,33 @@ const BillingSettings: React.FC = () => {
                                 Loading billing info...
                             </div>
                         ) : (
-                            <PricingPlans
-                                mode="billing"
-                                billing={billing}
-                                canManageOrg={canManageOrg && !checkoutLoading}
-                                onSelectStarter={({period, currency}) =>
-                                    startCheckout({tier: "starter", period, currency})
-                                }
-                                onSelectPro={({period, currency}) =>
-                                    startCheckout({tier: "pro", period, currency})
-                                }
-                            />
+                            <div className="relative">
+                                {/* ⬇️ Overlay při vytváření Stripe checkout session */}
+                                {checkoutLoading && (
+                                    <div
+                                        className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm">
+                                        <Loader2 className="w-6 h-6 animate-spin mb-2" strokeWidth={1.5}/>
+                                        <p className="text-sm text-gray-600">
+                                            Redirecting to checkout...
+                                        </p>
+                                    </div>
+                                )}
+
+                                <PricingPlans
+                                    mode="billing"
+                                    billing={billing}
+                                    canManageOrg={canManageOrg && !checkoutLoading} // ⬅️ disable klikání během loadu
+                                    onSelectStarter={({period, currency}) =>
+                                        startCheckout({tier: "starter", period, currency})
+                                    }
+                                    onSelectPro={({period, currency}) =>
+                                        startCheckout({tier: "pro", period, currency})
+                                    }
+                                />
+                            </div>
                         )}
                     </div>
+
                 </div>
             </div>
         </SettingsShell>
