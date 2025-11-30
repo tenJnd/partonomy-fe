@@ -57,8 +57,8 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
     const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("yearly");
     const [currency, setCurrency] = useState<Currency>("USD");
 
-    const isStarterCurrent = !isTrial && currentTier === ("STARTER" as TierEnum);
-    const isProCurrent = !isTrial && currentTier === ("PRO" as TierEnum);
+    const isStarterCurrent = !isTrial && currentTier === ("starter" as TierEnum);
+    const isProCurrent = !isTrial && currentTier === ("pro" as TierEnum);
 
     const starterPrice = PRICING.starter[billingPeriod][currency];
     const starterDrawings = PRICING.starter.drawings;
