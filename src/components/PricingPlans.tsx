@@ -22,26 +22,27 @@ const PRICING = {
     starter: {
         drawings: 80,
         monthly: {
-            USD: 119,
-            EUR: 109,
+            USD: 79,
+            EUR: 75,
         },
         yearly: {
-            USD: 99,
-            EUR: 89,
+            USD: 69,
+            EUR: 65,
         },
     },
     pro: {
-        drawings: 500,
+        drawings: 400,
         monthly: {
-            USD: 499,
-            EUR: 459,
+            USD: 349,
+            EUR: 329,
         },
         yearly: {
-            USD: 449,
-            EUR: 419,
+            USD: 299,
+            EUR: 279,
         },
     },
 } as const;
+
 
 const PricingPlans: React.FC<PricingPlansProps> = ({
                                                        mode,
@@ -251,7 +252,7 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                             <ul className="space-y-4">
                                 {[
                                     "80 výkresů/stránek měsíčně",
-                                    "1 uživatel",
+                                    "2 uživatelé",
                                     "Analýza výkresů z rastrových PDF/obrázků",
                                     "Přehledný seznam zpracovaných dokumentů",
                                     "Rychlé shrnutí a report pro každý díl",
@@ -333,7 +334,7 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                             <ul className="space-y-4">
                                 {[
                                     "Vše ze Starter plánu",
-                                    "500 výkresů/stránek měsíčně",
+                                    "400 výkresů/stránek měsíčně",
                                     "10 uživatelů",
                                     "Prioritní podpora",
                                 ].map((item, idx) => (
