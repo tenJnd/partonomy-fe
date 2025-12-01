@@ -74,7 +74,6 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
             ? "měsíčně, účtováno ročně"
             : "měsíčně, účtováno měsíčně";
 
-    // handlery pro Stripe checkout – vždy pošlou period + currency
     const handleSelectStarter = () => {
         if (!onSelectStarter) return;
         onSelectStarter({period: billingPeriod, currency});
@@ -85,7 +84,6 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
         onSelectPro({period: billingPeriod, currency});
     };
 
-    // --- BUTTON LABELS (billing mode) ---
     const starterButtonLabel = (() => {
         if (mode === "landing") return "";
 
@@ -136,10 +134,11 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                             Začněte zdarma, plaťte podle potřeby
                         </p>
                         <p className="text-xs md:text-sm text-slate-500 mt-2">
-                            Platíte jen za <span className="font-semibold">uživatele</span> a{" "}
+                            Platíte jen za{" "}
+                            <span className="font-semibold">uživatele</span> a{" "}
                             <span className="font-semibold">
-                počet zpracovaných výkresů/stránek
-              </span>
+                                počet zpracovaných výkresů/stránek
+                            </span>
                             . Žádné skryté moduly, žádné konzultační balíčky.
                         </p>
                     </div>
@@ -148,7 +147,6 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                 {/* Společný řádek: billing period + currency */}
                 <div className="flex justify-center mb-12">
                     <div className="inline-flex items-center bg-slate-100 rounded-full p-1 text-xs shadow-sm gap-1">
-                        {/* Popisek vlevo */}
                         <span className="px-3 py-1 text-slate-500 text-xs">účtováno:</span>
 
                         {/* Billing period toggle */}
@@ -164,8 +162,8 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                             >
                                 Ročně{" "}
                                 <span className="ml-1 text-[10px] uppercase tracking-wide text-emerald-600">
-                  Sleva
-                </span>
+                                  Sleva
+                                </span>
                             </button>
                             <button
                                 type="button"
@@ -208,7 +206,14 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                     </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                {/* teď 3 karty vedle sebe na větších displejích */}
+                <div
+                    className={
+                        mode === "landing"
+                            ? "grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto"
+                            : "grid md:grid-cols-2 gap-8 max-w-3xl mx-auto"
+                    }
+                >
                     {/* Starter plan */}
                     <div
                         className="relative p-8 rounded-2xl bg-gradient-to-br from-slate-50 to-white border-2 border-slate-200 hover:border-slate-300 transition-all hover:shadow-xl h-full flex flex-col">
@@ -219,7 +224,6 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                             </div>
                         )}
 
-                        {/* obsah karty */}
                         <div>
                             <div className="mb-6">
                                 <h3 className="text-2xl font-bold text-slate-900 mb-2">
@@ -227,13 +231,13 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                                 </h3>
                                 <div className="flex flex-col gap-1">
                                     <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-bold text-slate-900">
-                      {currencySymbol}
-                        {starterPrice}
-                    </span>
+                                        <span className="text-5xl font-bold text-slate-900">
+                                          {currencySymbol}
+                                            {starterPrice}
+                                        </span>
                                         <span className="text-slate-600">
-                      / {starterDrawings} výkresů
-                    </span>
+                                          / {starterDrawings} výkresů
+                                        </span>
                                     </div>
                                     <span className="text-xs text-slate-500">{periodLabel}</span>
                                 </div>
@@ -266,7 +270,6 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                             </ul>
                         </div>
 
-                        {/* footer s buttonem přilepený dole */}
                         {mode === "billing" && (
                             <div className="mt-auto pt-8">
                                 <button
@@ -299,25 +302,24 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                             </div>
                         )}
 
-                        {/* obsah karty */}
                         <div>
                             <div className="mb-6">
                                 <h3 className="text-2xl font-bold text-white mb-2">Pro</h3>
                                 <div className="flex flex-col gap-1">
                                     <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-bold text-white">
-                      {currencySymbol}
-                        {proPrice}
-                    </span>
+                                    <span className="text-5xl font-bold text-white">
+                                      {currencySymbol}
+                                        {proPrice}
+                                    </span>
                                         <span className="text-blue-100">
-                      / {proDrawings} výkresů
-                    </span>
+                                          / {proDrawings} výkresů
+                                        </span>
                                     </div>
                                     <span className="text-xs text-blue-100/80">
-                    {billingPeriod === "yearly"
-                        ? "měsíčně, účtováno ročně"
-                        : "měsíčně, účtováno měsíčně"}
-                  </span>
+                                        {billingPeriod === "yearly"
+                                            ? "měsíčně, účtováno ročně"
+                                            : "měsíčně, účtováno měsíčně"}
+                                    </span>
                                 </div>
                                 <p className="mt-4 text-blue-100">
                                     Pro firmy s desítkami až stovkami výkresů měsíčně
@@ -346,7 +348,6 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                             </ul>
                         </div>
 
-                        {/* footer s buttonem přilepený dole */}
                         {mode === "billing" && (
                             <div className="mt-auto pt-8">
                                 <button
@@ -363,31 +364,88 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                             </div>
                         )}
                     </div>
+
+                    {/* Custom / větší týmy */}
+                    {mode === "landing" && (
+                        <div
+                            className="relative p-8 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-slate-700 text-white h-full flex flex-col">
+                            <div
+                                className="absolute -top-4 left-1/2 -translate-x-1/2 px-3 py-1 bg-slate-100 text-slate-900 text-xs font-semibold rounded-full">
+                                Speciální podmínky
+                            </div>
+
+
+                            <div>
+                                <div className="mb-6">
+                                    <h3 className="text-2xl font-bold mb-2">Custom</h3>
+                                    <p className="text-sm text-slate-300">
+                                        Pro firmy, kterým nestačí běžné limity nebo způsob účtování.
+                                        Vhodné pro větší týmy, vyšší objem výkresů nebo tam, kde je potřeba
+                                        fakturace a individuální dohoda.
+                                    </p>
+                                    {/*<p className="mt-4 text-slate-300">*/}
+                                    {/*  Domluvíme společně objemy, způsob účtování a podporu tak,*/}
+                                    {/*  aby Partonomy zapadlo do vašeho procesu.*/}
+                                    {/*</p>*/}
+                                </div>
+
+                                <ul className="space-y-4">
+                                    {[
+                                        "Individuální limity na počet výkresů a uživatelů",
+                                        "Možnost klasické fakturace (měsíční / čtvrtletní)",
+                                        "Podmínky na míru",
+                                        "Společné nastavení workflow a profilu dílny",
+                                        "Přednostní přístup k novým funkcím",
+                                    ].map((item, idx) => (
+                                        <li key={idx} className="flex items-start gap-3">
+                                            <CheckCircle2 className="w-5 h-5 text-emerald-300 mt-0.5 flex-shrink-0"/>
+                                            <span className="text-slate-100">{item}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            <div className="mt-auto pt-8">
+                                <button
+                                    type="button"
+                                    className="w-full py-4 px-6 rounded-xl font-semibold bg-slate-100 text-slate-900 hover:bg-white transition-colors"
+                                >
+                                    Domluvit si konzultaci
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                 </div>
 
-                {/* Landing CTA – jedno tlačítko dole */}
-                {mode === "landing" && (
-                    <div className="text-center mt-12">
-                        <button
-                            onClick={onStartFree}
-                            className="inline-flex items-center justify-center px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-md transition-all active:scale-[0.98]"
-                        >
-                            Začít zdarma
-                        </button>
-                        <p className="text-sm text-slate-600 mt-4">
-                            Potřebujete větší objem nebo on-premise řešení?{" "}
-                            <a
-                                href="#"
-                                className="text-blue-600 hover:text-blue-700 font-medium"
+                {/* Landing CTA – můžeš klidně nechat, nebo pak zjednodušit, když už máš Enterprise kartu */}
+                {/* Landing / Billing CTA logic */}
+                <div className="text-center mt-12">
+                    {mode === "landing" ? (
+                        <>
+                            <button
+                                onClick={onStartFree}
+                                className="inline-flex items-center justify-center px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-md transition-all active:scale-[0.98]"
                             >
-                                Kontaktujte nás →
-                            </a>
-                        </p>
-                    </div>
-                )}
+                                Začít zdarma
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <p className="text-sm text-slate-600">
+                                Potřebujete vyšší limity nebo klasickou fakturaci?{" "}
+                                <span className="font-medium text-slate-900">
+                                  Kontaktujte nás.
+                                </span>
+                            </p>
+                        </>
+                    )}
+                </div>
+
             </div>
         </section>
     );
 };
+
 
 export default PricingPlans;
