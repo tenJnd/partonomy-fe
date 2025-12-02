@@ -1,6 +1,6 @@
 // src/components/PartActionsBar.tsx
 import React from "react";
-import {Lock, Star, StarOff} from "lucide-react";
+import {ChevronDown, Lock, Star, StarOff} from "lucide-react";
 import type {PriorityEnum, WorkflowStatusEnum} from "../lib/database.types";
 
 type WorkflowStatus = WorkflowStatusEnum | null;
@@ -8,24 +8,17 @@ type Priority = PriorityEnum | null;
 
 interface PartActionsBarProps {
     partId: string | null;
-    // feature flags z billing
     canUseFavorite: boolean;
     canSetStatus: boolean;
     canSetPriority: boolean;
-
-    // favourite
     isFavorite: boolean;
     onToggleFavorite: () => void | Promise<void>;
     favoriteLoading?: boolean;
-
-    // status
     workflowStatus: WorkflowStatus;
-    onChangeWorkflowStatus: (value: WorkflowStatusEnum) => void;
+    onChangeWorkflowStatus: (value: WorkflowStatusEnum) => void | Promise<void>;
     updatingStatus?: boolean;
-
-    // priority
     priority: Priority;
-    onChangePriority: (value: PriorityEnum) => void;
+    onChangePriority: (value: PriorityEnum) => void | Promise<void>;
     updatingPriority?: boolean;
 }
 
@@ -41,6 +34,36 @@ const PRIORITY_LABELS: Record<PriorityEnum, string> = {
     normal: "Normal",
     high: "High",
     hot: "Hot",
+};
+
+const getStatusClasses = (status: WorkflowStatus): string => {
+    switch (status) {
+        case "new":
+            return "bg-sky-50 border-sky-200 text-sky-800";
+        case "in_progress":
+            return "bg-amber-50 border-amber-200 text-amber-800";
+        case "done":
+            return "bg-emerald-50 border-emerald-200 text-emerald-800";
+        case "ignored":
+            return "bg-slate-50 border-slate-200 text-slate-600";
+        default:
+            return "bg-white border-gray-200 text-gray-800";
+    }
+};
+
+const getPriorityClasses = (priority: Priority): string => {
+    switch (priority) {
+        case "low":
+            return "bg-slate-50 border-slate-200 text-slate-700";
+        case "normal":
+            return "bg-white border-gray-200 text-gray-800";
+        case "high":
+            return "bg-orange-50 border-orange-200 text-orange-800";
+        case "hot":
+            return "bg-rose-50 border-rose-200 text-rose-800";
+        default:
+            return "bg-white border-gray-200 text-gray-800";
+    }
 };
 
 export const PartActionsBar: React.FC<PartActionsBarProps> = ({
@@ -62,8 +85,11 @@ export const PartActionsBar: React.FC<PartActionsBarProps> = ({
     const priorityDisabled = !partId || !canSetPriority || updatingPriority;
     const favoriteDisabled = !partId || !canUseFavorite || favoriteLoading;
 
+    const statusColorClasses = getStatusClasses(workflowStatus);
+    const priorityColorClasses = getPriorityClasses(priority);
+
     return (
-        <div className="flex items-center gap-3">
+        <div className="flex items-end gap-4">
             {/* Favourite */}
             <button
                 type="button"
@@ -72,7 +98,7 @@ export const PartActionsBar: React.FC<PartActionsBarProps> = ({
                     onToggleFavorite();
                 }}
                 disabled={favoriteDisabled}
-                className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-lg border transition
+                className={`inline-flex items-center gap-1.5 px-3 h-9 text-xs rounded-lg border transition
           ${
                     isFavorite
                         ? "bg-amber-50 border-amber-300 text-amber-800"
@@ -80,28 +106,24 @@ export const PartActionsBar: React.FC<PartActionsBarProps> = ({
                 }
           ${!canUseFavorite ? "opacity-60 cursor-not-allowed" : ""}
         `}
-                title={
-                    canUseFavorite
-                        ? isFavorite
-                            ? "Remove from favourites"
-                            : "Add to favourites"
-                        : "Available on higher plans"
-                }
             >
                 {isFavorite ? (
                     <Star className="w-3.5 h-3.5 fill-current" strokeWidth={1.5}/>
                 ) : (
                     <StarOff className="w-3.5 h-3.5" strokeWidth={1.5}/>
                 )}
-                <span>{isFavorite ? "Favourite" : "Favourite"}</span>
+                <span>Favourite</span>
                 {!canUseFavorite && (
                     <Lock className="w-3 h-3 ml-0.5 text-gray-400" strokeWidth={1.5}/>
                 )}
             </button>
 
             {/* Status */}
-            <div className="flex items-center gap-1 text-xs">
-                <span className="text-gray-500">Status</span>
+            <div className="flex flex-col gap-1 text-xs items-center">
+  <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+          Status
+        </span>
+
                 <div className="relative">
                     <select
                         value={workflowStatus ?? ""}
@@ -109,15 +131,14 @@ export const PartActionsBar: React.FC<PartActionsBarProps> = ({
                             onChangeWorkflowStatus(e.target.value as WorkflowStatusEnum)
                         }
                         disabled={statusDisabled}
-                        className={`pl-2 pr-6 py-1 rounded-lg border text-xs bg-white appearance-none
+                        className={`pl-2 pr-7 h-9 rounded-lg text-xs appearance-none bg-clip-padding border
               ${
                             statusDisabled
-                                ? "bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed"
-                                : "text-gray-800 border-gray-200 hover:border-gray-300"
+                                ? "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
+                                : `${statusColorClasses} cursor-pointer`
                         }
             `}
                     >
-                        {/* fallback když je null */}
                         {!workflowStatus && <option value="">—</option>}
                         {Object.entries(STATUS_LABELS).map(([value, label]) => (
                             <option key={value} value={value}>
@@ -125,9 +146,15 @@ export const PartActionsBar: React.FC<PartActionsBarProps> = ({
                             </option>
                         ))}
                     </select>
+
+                    <ChevronDown
+                        className="w-3.5 h-3.5 text-gray-400 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                        strokeWidth={1.5}
+                    />
+
                     {!canSetStatus && (
                         <Lock
-                            className="w-3 h-3 text-gray-400 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                            className="w-3 h-3 text-gray-400 absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none"
                             strokeWidth={1.5}
                         />
                     )}
@@ -135,22 +162,23 @@ export const PartActionsBar: React.FC<PartActionsBarProps> = ({
             </div>
 
             {/* Priority */}
-            <div className="flex items-center gap-1 text-xs">
-                <span className="text-gray-500">Priority</span>
+            <div className="flex flex-col gap-1 text-xs items-center">
+                  <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+                          Priority
+                  </span>
+
                 <div className="relative">
                     <select
                         value={priority ?? ""}
-                        onChange={(e) =>
-                            onChangePriority(e.target.value as PriorityEnum)
-                        }
+                        onChange={(e) => onChangePriority(e.target.value as PriorityEnum)}
                         disabled={priorityDisabled}
-                        className={`pl-2 pr-6 py-1 rounded-lg border text-xs bg-white appearance-none
-              ${
+                        className={`pl-2 pr-7 h-9 rounded-lg text-xs appearance-none bg-clip-padding border
+                        ${
                             priorityDisabled
-                                ? "bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed"
-                                : "text-gray-800 border-gray-200 hover:border-gray-300"
+                                ? "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
+                                : `${priorityColorClasses} cursor-pointer`
                         }
-            `}
+                     `}
                     >
                         {!priority && <option value="">—</option>}
                         {Object.entries(PRIORITY_LABELS).map(([value, label]) => (
@@ -159,9 +187,15 @@ export const PartActionsBar: React.FC<PartActionsBarProps> = ({
                             </option>
                         ))}
                     </select>
+
+                    <ChevronDown
+                        className="w-3.5 h-3.5 text-gray-400 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                        strokeWidth={1.5}
+                    />
+
                     {!canSetPriority && (
                         <Lock
-                            className="w-3 h-3 text-gray-400 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                            className="w-3 h-3 text-gray-400 absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none"
                             strokeWidth={1.5}
                         />
                     )}

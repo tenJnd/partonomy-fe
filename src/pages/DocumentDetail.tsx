@@ -61,7 +61,7 @@ const DocumentDetail: React.FC = () => {
     const [dragStart, setDragStart] = useState({x: 0, y: 0});
     const [imageAspectRatio, setImageAspectRatio] = useState<number | null>(null);
     const [containerWidth, setContainerWidth] = useState<number>(800);
-    const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({cost: true, processing: true});
+    const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({}); // tdy doplnit jestli má být rozpadlé by default {cost: true, processing: true}
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
     const [newComment, setNewComment] = useState("");
     const [newTag, setNewTag] = useState("");
@@ -534,8 +534,8 @@ const DocumentDetail: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Pravá část: favorite + export */}
-                <div className="flex items-center gap-3">
+                {/* Pravá část: favourite + status/priority + export */}
+                <div className="flex items-end gap-4 pb-6">
                     {selectedPart && (
                         <PartActionsBar
                             partId={selectedPart.id}
@@ -554,70 +554,78 @@ const DocumentDetail: React.FC = () => {
                         />
                     )}
 
-
-                    {/* Export dropdown */}
+                    {/* Export ve vlastním "sloupci" – stejné zarovnání jako Status / Priority */}
                     {selectedPartReport && (
-                        <div className="relative">
-                            <button
-                                type="button"
-                                onClick={() => setIsExportMenuOpen(prev => !prev)}
-                                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 shadow-sm transition-colors"
-                            >
-                                <Download className="w-4 h-4" strokeWidth={2}/>
-                                <span>Export</span>
-                                <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2}/>
-                            </button>
+                        <div className="flex flex-col items-start">
+                            {/* buď prázdný label, nebo drobný text */}
+                            <span className="text-[11px] font-medium text-gray-500 uppercase leading-none mb-1">
+                                {/* nech klidně prázdné nebo třeba: */} &nbsp;
+                            </span>
 
-                            {isExportMenuOpen && (
-                                <div
-                                    className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-xl shadow-xl py-1 z-20">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            exportJsonToExcel(
-                                                selectedPartReport,
-                                                selectedPart?.part_number ||
-                                                selectedPart?.display_name ||
-                                                'part_report'
-                                            );
-                                            setIsExportMenuOpen(false);
-                                        }}
-                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                                    >
-                                        Export to XLSX
-                                    </button>
+                            <div className="relative">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsExportMenuOpen(prev => !prev)}
+                                    className="inline-flex items-center gap-2 px-4 h-9 text-sm font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 shadow-sm transition-colors"
+                                >
+                                    <Download className="w-4 h-4" strokeWidth={2}/>
+                                    <span>Export</span>
+                                    <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2}/>
+                                </button>
 
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            exportJsonToText(
-                                                selectedPartReport,
-                                                selectedPart?.part_number ||
-                                                selectedPart?.display_name ||
-                                                'part_report'
-                                            );
-                                            setIsExportMenuOpen(false);
-                                        }}
-                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                                    >
-                                        Export to TXT
-                                    </button>
+                                {isExportMenuOpen && (
+                                    <div
+                                        className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-xl shadow-xl py-1 z-20">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                exportJsonToExcel(
+                                                    selectedPartReport,
+                                                    selectedPart?.part_number ||
+                                                    selectedPart?.display_name ||
+                                                    "part_report"
+                                                );
+                                                setIsExportMenuOpen(false);
+                                            }}
+                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                                        >
+                                            Export to XLSX
+                                        </button>
 
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            exportJson(
-                                                selectedPartReport,
-                                                selectedPart?.part_number || selectedPart?.part_number || 'part_report'
-                                            );
-                                            setIsExportMenuOpen(false);
-                                        }}
-                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                                    >
-                                        Export to JSON
-                                    </button>
-                                </div>
-                            )}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                exportJsonToText(
+                                                    selectedPartReport,
+                                                    selectedPart?.part_number ||
+                                                    selectedPart?.display_name ||
+                                                    "part_report"
+                                                );
+                                                setIsExportMenuOpen(false);
+                                            }}
+                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                                        >
+                                            Export to TXT
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                exportJson(
+                                                    selectedPartReport,
+                                                    selectedPart?.part_number ||
+                                                    selectedPart?.part_number ||
+                                                    "part_report"
+                                                );
+                                                setIsExportMenuOpen(false);
+                                            }}
+                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                                        >
+                                            Export to JSON
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
