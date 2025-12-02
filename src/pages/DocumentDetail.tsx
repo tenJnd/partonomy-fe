@@ -12,6 +12,8 @@ import {
     Maximize2,
     Minimize2,
     RotateCw,
+    Tag,
+    X,
     ZoomIn,
     ZoomOut
 } from 'lucide-react';
@@ -21,6 +23,10 @@ import type {Database} from '../lib/database.types';
 import {exportJsonToExcel} from '../utils/exportJsonToExcel';
 import {exportJsonToText} from '../utils/exportJsonToText';
 import {exportJson} from '../utils/exportJson';
+import {usePartComments} from '../hooks/usePartComments';
+import {useOrgBilling} from "../hooks/useOrgBilling";
+import {usePartTags} from "../hooks/usePartTags";
+
 
 type Document = Database['public']['Tables']['documents']['Row'];
 type Part = Database['public']['Tables']['parts']['Row'];
@@ -30,6 +36,9 @@ const DocumentDetail: React.FC = () => {
     const [searchParams] = useSearchParams();
     const partIdFromUrl = searchParams.get('partId');
     const {currentOrg} = useAuth();
+    const {billing} = useOrgBilling();
+    const canComment = billing?.tier?.can_comment ?? false;
+    const canUseTags = billing?.tier?.can_use_tags ?? false;
     const [document, setDocument] = useState<Document | null>(null);
     const [parts, setParts] = useState<Part[]>([]);
     const [loading, setLoading] = useState(true);
@@ -46,9 +55,12 @@ const DocumentDetail: React.FC = () => {
     const [containerWidth, setContainerWidth] = useState<number>(800);
     const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({cost: true, processing: true});
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+    const [newComment, setNewComment] = useState("");
+    const [newTag, setNewTag] = useState("");
+
 
     // Tabs v levém panelu
-    const [activeReportTab, setActiveReportTab] = useState<'report' | 'bom' | 'revisions'>('report');
+    const [activeReportTab, setActiveReportTab] = useState<'report' | 'bom' | 'revisions' | 'comments'>('report');
 
     const imageRef = useRef<HTMLImageElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -239,11 +251,26 @@ const DocumentDetail: React.FC = () => {
         return () => window.removeEventListener('resize', updateWidth);
     }, []);
 
+    const selectedPart = parts.find(p => p.id === selectedPartId);
+    const selectedPartReport = selectedPart?.report_json as any | undefined;
+    const {
+        comments,
+        loading: commentsLoading,
+        error: commentsError,
+        addComment,
+    } = usePartComments(selectedPartId, currentOrg?.org_id);
+    const {
+        tags,
+        loading: tagsLoading,
+        error: tagsError,
+        addTag,
+        removeTag,
+    } = usePartTags(selectedPartId ?? null, currentOrg?.org_id);
+
     // Calculate container height based on aspect ratio
     const containerHeight = imageAspectRatio && containerWidth
         ? `${containerWidth / imageAspectRatio}px`
         : '600px';
-
     if (loading) {
         return (
             <div className="p-6 max-w-[1800px] mx-auto">
@@ -252,8 +279,8 @@ const DocumentDetail: React.FC = () => {
                 </div>
             </div>
         );
-    }
 
+    }
     if (error || !document) {
         return (
             <div className="p-6 max-w-[1800px] mx-auto">
@@ -275,10 +302,9 @@ const DocumentDetail: React.FC = () => {
                 </div>
             </div>
         );
+
     }
 
-    const selectedPart = parts.find(p => p.id === selectedPartId);
-    const selectedPartReport = selectedPart?.report_json as any | undefined;
 
     // Part navigation (šipky) – handlery
     const handlePrevPartClick = () => {
@@ -523,7 +549,6 @@ const DocumentDetail: React.FC = () => {
                 {/* Left: Part Data - 40% */}
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 xl:col-span-2">
                     {/* Tabs (bez nadpisu Report, jen karty) */}
-                    {/* Tab Header */}
                     <div className="border-b border-gray-200 mb-4">
                         <div className="flex items-center gap-6 -mb-px">
                             <button
@@ -558,6 +583,21 @@ const DocumentDetail: React.FC = () => {
                             >
                                 Revision History
                             </button>
+                            <button
+                                onClick={() => setActiveReportTab("comments")}
+                                className={`px-1 pb-2 text-sm font-medium border-b-2 transition-colors ${
+                                    activeReportTab === "comments"
+                                        ? canComment
+                                            ? "border-blue-600 text-blue-700"
+                                            : "border-amber-500 text-amber-700"
+                                        : canComment
+                                            ? "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                            : "border-transparent text-gray-400 hover:text-gray-500 hover:border-gray-200"
+                                }`}
+                            >
+                                Comments
+                            </button>
+
                         </div>
                     </div>
 
@@ -688,6 +728,122 @@ const DocumentDetail: React.FC = () => {
                                 </div>
                             );
                         }
+
+                        // TAB: Comments
+                        // TAB: Comments
+                        if (activeReportTab === "comments") {
+                            // 🔒 plán nemá komentáře – ukážeme jen upgrade flag
+                            if (!canComment) {
+                                return (
+                                    <div className="flex flex-col gap-4">
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="text-sm font-semibold text-gray-900">Comments</h3>
+                                            <span
+                                                className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase bg-amber-50 text-amber-700 border border-amber-200">
+            Upgrade
+          </span>
+                                        </div>
+
+                                        <div
+                                            className="text-xs text-gray-600 bg-gray-50 border border-dashed border-gray-200 rounded-lg px-3 py-3">
+                                            Team comments are available on paid collaboration plans.
+                                            Go to{" "}
+                                            <Link
+                                                to="/Settings/Billing"
+                                                className="text-blue-600 hover:underline font-medium"
+                                            >
+                                                Billing
+                                            </Link>{" "}
+                                            to upgrade and unlock comments for your team.
+                                        </div>
+                                    </div>
+                                );
+                            }
+
+                            // ✅ plán komentáře má – původní UI
+                            return (
+                                <div className="flex flex-col h-full gap-4">
+                                    {/* Info / errors */}
+                                    {commentsError && (
+                                        <div
+                                            className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+                                            {commentsError}
+                                        </div>
+                                    )}
+
+                                    {/* Seznam komentářů */}
+                                    <div
+                                        className="flex-1 border border-gray-200 rounded-lg bg-white overflow-auto max-h-[320px]">
+                                        {commentsLoading ? (
+                                            <div
+                                                className="flex items-center justify-center py-8 text-gray-500 text-sm">
+                                                <Loader className="w-4 h-4 mr-2 animate-spin" strokeWidth={1.5}/>
+                                                Loading comments…
+                                            </div>
+                                        ) : comments.length === 0 ? (
+                                            <div
+                                                className="flex items-center justify-center py-8 text-gray-400 text-sm">
+                                                No comments for this part yet.
+                                            </div>
+                                        ) : (
+                                            <ul className="divide-y divide-gray-100">
+                                                {comments.map((c) => (
+                                                    <li key={c.id} className="px-4 py-3 text-sm hover:bg-slate-50/70">
+                                                        <div className="flex items-start justify-between gap-3">
+                                                            <div>
+                                                                <div className="flex items-center gap-2 mb-1">
+                                                                      <span className="font-medium text-gray-900">
+                                                                        {c.author_name || "User"}
+                                                                      </span>
+                                                                    {c.created_at && (
+                                                                        <span className="text-[11px] text-gray-500">
+                                                                          {new Date(c.created_at).toLocaleString()}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <p className="text-gray-800 whitespace-pre-line">{c.body}</p>
+                                                            </div>
+                                                        </div>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </div>
+
+                                    {/* Formulář pro nový komentář */}
+                                    <form
+                                        onSubmit={async (e) => {
+                                            e.preventDefault();
+                                            if (!newComment.trim()) return;
+                                            await addComment(newComment);
+                                            setNewComment("");
+                                        }}
+                                        className="space-y-2"
+                                    >
+                                        <label className="text-xs font-medium text-gray-700">
+                                            Add comment
+                                        </label>
+                                        <textarea
+                                            value={newComment}
+                                            onChange={(e) => setNewComment(e.target.value)}
+                                            rows={3}
+                                            className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                            placeholder="Write a note for your team…"
+                                        />
+                                        <div className="flex justify-end">
+                                            <button
+                                                type="submit"
+                                                disabled={!newComment.trim()}
+                                                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-500 transition-colors"
+                                            >
+                                                Add comment
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            );
+                        }
+
 
                         // TAB: Report (default) – původní obsah
                         return (
@@ -1479,6 +1635,103 @@ const DocumentDetail: React.FC = () => {
                             </div>
                         );
                     })()}
+
+                    {/* Tags section */}
+                    {selectedPart && (
+                        <div className="pt-4 mb-4">
+                            <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                    <Tag className="w-4 h-4 text-gray-500" strokeWidth={1.5}/>
+                                    <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                      Tags
+                                    </span>
+                                </div>
+
+                                {!canUseTags && (
+                                    <span
+                                        className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase bg-amber-50 text-amber-700 border border-amber-200">
+                                      Upgrade
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Locked state – jen info + šedý box */}
+                            {!canUseTags ? (
+                                <div
+                                    className="text-xs text-gray-600 bg-gray-50 border border-dashed border-gray-200 rounded-lg px-3 py-2">
+                                    Tags are available on collaboration plans. Go to{" "}
+                                    <Link
+                                        to="/Settings/Billing"
+                                        className="text-blue-600 hover:underline font-medium"
+                                    >
+                                        Billing
+                                    </Link>{" "}
+                                    to upgrade and organize parts with tags.
+                                </div>
+                            ) : (
+                                // Aktivní stav – chips + input
+                                <div className="border border-gray-200 rounded-lg px-3 py-2 bg-slate-50">
+                                    {tagsError && (
+                                        <div className="mb-2 text-[11px] text-red-600">
+                                            {tagsError}
+                                        </div>
+                                    )}
+
+                                    <div className="flex flex-wrap gap-1 mb-2 min-h-[1.5rem]">
+                                        {tagsLoading ? (
+                                            <span className="text-xs text-gray-500">Loading tags…</span>
+                                        ) : tags.length === 0 ? (
+                                            <span className="text-xs text-gray-400">
+              No tags yet. Add your first one below.
+            </span>
+                                        ) : (
+                                            tags.map((t) => (
+                                                <span
+                                                    key={t.id}
+                                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white border border-gray-200 text-xs text-gray-800"
+                                                >
+                {t.label}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeTag(t.id)}
+                                                        className="ml-0.5 p-0.5 hover:bg-gray-100 rounded-full"
+                                                    >
+                  <X className="w-3 h-3 text-gray-500" strokeWidth={1.5}/>
+                </button>
+              </span>
+                                            ))
+                                        )}
+                                    </div>
+
+                                    <form
+                                        onSubmit={async (e) => {
+                                            e.preventDefault();
+                                            const trimmed = newTag.trim();
+                                            if (!trimmed) return;
+                                            await addTag(trimmed);
+                                            setNewTag("");
+                                        }}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <input
+                                            type="text"
+                                            value={newTag}
+                                            onChange={(e) => setNewTag(e.target.value)}
+                                            placeholder="Add tag (e.g. RFQ, Priority A)"
+                                            className="flex-1 text-xs border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={!newTag.trim()}
+                                            className="px-2.5 py-1 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-500 transition-colors"
+                                        >
+                                            Add
+                                        </button>
+                                    </form>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                 </div>
             </div>

@@ -258,9 +258,12 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                                     "80 výkresů/stránek měsíčně",
                                     "2 uživatelé",
                                     "Analýza výkresů z rastrových PDF/obrázků",
-                                    "Přehledný seznam zpracovaných dokumentů",
-                                    "Rychlé shrnutí a report pro každý díl",
-                                    "Email podpora",
+                                    // "Přehledný seznam zpracovaných dokumentů",
+                                    "Report na míru pro každý díl",
+                                    "Parsování kusovníků a historie revizí",
+                                    "Upozornění na změnu revize",
+                                    "Export dat",
+                                    "Email podpora"
                                 ].map((item, idx) => (
                                     <li key={idx} className="flex items-start gap-3">
                                         <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"/>
@@ -322,7 +325,7 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                                     </span>
                                 </div>
                                 <p className="mt-4 text-blue-100">
-                                    Pro firmy s desítkami až stovkami výkresů měsíčně
+                                    Pro firmy s desítkami až stovkami výkresů měsíčně.
                                 </p>
                                 {mode === "billing" && isTrial && daysLeft !== null && (
                                     <p className="mt-2 text-xs text-blue-100/80">
@@ -335,10 +338,11 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
 
                             <ul className="space-y-4">
                                 {[
-                                    "Vše ze Starter plánu",
+                                    "Všechny funkce ze Starter plánu",
                                     "400 výkresů/stránek měsíčně",
                                     "10 uživatelů",
                                     "Prioritní podpora",
+                                    "API (comming soon)"
                                 ].map((item, idx) => (
                                     <li key={idx} className="flex items-start gap-3">
                                         <CheckCircle2 className="w-5 h-5 text-blue-200 mt-0.5 flex-shrink-0"/>
@@ -377,7 +381,7 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
 
                             <div>
                                 <div className="mb-6">
-                                    <h3 className="text-2xl font-bold mb-2">Custom</h3>
+                                    <h3 className="text-2xl font-bold mb-2">Individual</h3>
                                     <p className="text-sm text-slate-300">
                                         Pro firmy, kterým nestačí běžné limity nebo způsob účtování.
                                         Vhodné pro větší týmy, vyšší objem výkresů nebo tam, kde je potřeba

@@ -15,6 +15,11 @@ export interface OrgBilling {
     name: string;
     max_jobs_per_period: number | null;
     max_users: number | null;
+    can_comment: boolean | false;
+    can_set_favourite: boolean | false;
+    can_use_tags: boolean | false;
+    can_set_priority: boolean | false;
+    can_set_status: boolean | false;
   } | null;
 }
 
@@ -47,7 +52,12 @@ export function useOrgBilling() {
             code,
             name,
             max_jobs_per_period,
-            max_users
+            max_users,
+            can_comment,
+            can_set_favourite,
+            can_use_tags,
+            can_set_priority,
+            can_set_status
           )
         `
         )
