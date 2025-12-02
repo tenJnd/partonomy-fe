@@ -14,15 +14,14 @@ export type Json =
 
 export type RoleEnum = "owner" | "admin" | "member";
 export type JobStatusEnum = "queued" | "running" | "success" | "error";
-export type DocumentStatusEnum =
-    | "queued"
-    | "processing"
-    | "success"
-    | "error";
+export type DocumentStatusEnum = "queued" | "processing" | "success" | "error";
 export type ComplexityEnum = "LOW" | "MEDIUM" | "HIGH" | "EXTREME";
 export type RiskEnum = "LOW" | "MEDIUM" | "HIGH" | "EXTREME";
 export type FitLevelEnum = "GOOD" | "PARTIAL" | "COOPERATION" | "LOW" | "UNKNOWN";
 export type TierEnum = "free" | "trial" | "starter" | "pro" | "enterprise";
+export type WorkflowStatusEnum = 'new' | 'in_progress' | 'done' | 'ignored';
+export type PriorityEnum = 'low' | 'normal' | 'high' | 'hot';
+
 
 export interface Database {
     public: {
@@ -171,6 +170,8 @@ export interface Database {
                     render_storage_key: string | null;
                     created_at: string;
                     last_updated: string;
+                    workflow_status: WorkflowStatusEnum | null;
+                    priority: PriorityEnum | null;
                 };
                 Insert: {
                     id?: string;
@@ -187,6 +188,8 @@ export interface Database {
                     render_storage_key?: string | null;
                     created_at?: string;
                     last_updated?: string;
+                    workflow_status?: WorkflowStatusEnum | null;
+                    priority?: PriorityEnum | null;
                 };
                 Update: Partial<
                     Omit<Database["public"]["Tables"]["parts"]["Insert"], "id">
@@ -254,22 +257,39 @@ export interface Database {
                 };
             };
             part_tags: {
-  Row: {
-    id: string;
-    org_id: string;
-    part_id: string;
-    label: string;
-    created_at: string;
-  };
-  Insert: {
-    id?: string;
-    org_id: string;
-    part_id: string;
-    label: string;
-    created_at?: string;
-  };
-  Update: Partial<Omit<Database["public"]["Tables"]["part_tags"]["Insert"], "id">>;
-};
+                Row: {
+                    id: string;
+                    org_id: string;
+                    part_id: string;
+                    label: string;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    org_id: string;
+                    part_id: string;
+                    label: string;
+                    created_at?: string;
+                };
+                Update: Partial<Omit<Database["public"]["Tables"]["part_tags"]["Insert"], "id">>;
+            };
+            part_favorites: {
+                Row: {
+                    id: string;
+                    org_id: string;
+                    part_id: string;
+                    user_id: string;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    org_id: string;
+                    part_id: string;
+                    user_id: string;
+                    created_at?: string;
+                };
+                Update: Partial<Omit<Database["public"]["Tables"]["part_favorites"]["Insert"], "id">>;
+            };
             Views: {
                 [_ in never]: never;
             };
@@ -284,6 +304,8 @@ export interface Database {
                 risk_enum: RiskEnum;
                 fit_level_enum: FitLevelEnum;
                 tier_enum: TierEnum;
+                part_workflow_status_enum: WorkflowStatusEnum,
+                part_priority_enum: PriorityEnum
             };
         };
     }

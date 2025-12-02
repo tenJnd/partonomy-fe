@@ -20,6 +20,8 @@ export interface PartWithDocument {
   fit_level: string | null;
   created_at: string;
   last_updated: string;
+  workflow_status: string | null;
+  priority: string | null
   document: {
     id: string;
     file_name: string;
@@ -53,6 +55,8 @@ function mapDocumentPartsRowToPartWithDocument(item: any): PartWithDocument | nu
     fit_level: partData.fit_level ?? null,
     created_at: partData.created_at,
     last_updated: partData.last_updated,
+    workflow_status: partData.workflow_status,
+    priority: partData.priority,
     document: docData
       ? {
           id: docData.id,
@@ -378,6 +382,8 @@ export function useParts(currentOrg: CurrentOrg, pageSize: number = 50) {
       fit_level: null,
       created_at: doc.created_at,
       last_updated: doc.created_at,
+      workflow_status: null,
+      priority: null,
       document: {
         id: doc.id,
         file_name: doc.file_name,

@@ -133,14 +133,14 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                         <p className="text-sm md:text-lg text-slate-600">
                             Začněte zdarma, plaťte podle potřeby
                         </p>
-                        <p className="text-xs md:text-sm text-slate-500 mt-2">
-                            Platíte jen za{" "}
-                            <span className="font-semibold">uživatele</span> a{" "}
-                            <span className="font-semibold">
-                                počet zpracovaných výkresů/stránek
-                            </span>
-                            . Žádné skryté moduly, žádné konzultační balíčky.
-                        </p>
+                        {/*<p className="text-xs md:text-sm text-slate-500 mt-2">*/}
+                        {/*    Platíte jen za{" "}*/}
+                        {/*    <span className="font-semibold">uživatele</span> a{" "}*/}
+                        {/*    <span className="font-semibold">*/}
+                        {/*        počet zpracovaných výkresů/stránek*/}
+                        {/*    </span>*/}
+                        {/*    . Žádné skryté moduly, žádné konzultační balíčky.*/}
+                        {/*</p>*/}
                     </div>
                 )}
 
@@ -255,7 +255,7 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
 
                             <ul className="space-y-4">
                                 {[
-                                    "80 výkresů/stránek měsíčně",
+                                    "80 výkresů měsíčně",
                                     "2 uživatelé",
                                     "Analýza výkresů z rastrových PDF/obrázků",
                                     // "Přehledný seznam zpracovaných dokumentů",
@@ -338,9 +338,17 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
 
                             <ul className="space-y-4">
                                 {[
-                                    "Všechny funkce ze Starter plánu",
-                                    "400 výkresů/stránek měsíčně",
+                                    "Vše ze Starter plánu",
+                                    "400 výkresů měsíčně",
                                     "10 uživatelů",
+
+                                    // — týmové funkce —
+                                    "Týmová spolupráce (komentáře k dílům)",
+                                    "Oblíbené položky a vlastní workflow statusy",
+                                    "Interní tagy pro organizaci",
+                                    "Prioritizace dílů",
+
+                                    // — další benefity —
                                     "Prioritní podpora",
                                     "API (comming soon)"
                                 ].map((item, idx) => (
@@ -387,10 +395,10 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                                         Vhodné pro větší týmy, vyšší objem výkresů nebo tam, kde je potřeba
                                         fakturace a individuální dohoda.
                                     </p>
-                                    {/*<p className="mt-4 text-slate-300">*/}
-                                    {/*  Domluvíme společně objemy, způsob účtování a podporu tak,*/}
-                                    {/*  aby Partonomy zapadlo do vašeho procesu.*/}
-                                    {/*</p>*/}
+                                    <p className="mt-4 text-slate-300">
+                                        Domluvíme společně objemy, způsob účtování a podporu tak,
+                                        aby Partonomy zapadlo do vašeho procesu.
+                                    </p>
                                 </div>
 
                                 <ul className="space-y-4">

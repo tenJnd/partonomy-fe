@@ -19,13 +19,15 @@ import {
 } from 'lucide-react';
 import {supabase} from '../lib/supabase';
 import {useAuth} from '../contexts/AuthContext';
-import type {Database} from '../lib/database.types';
+import type {Database, PriorityEnum, WorkflowStatusEnum} from '../lib/database.types';
 import {exportJsonToExcel} from '../utils/exportJsonToExcel';
 import {exportJsonToText} from '../utils/exportJsonToText';
 import {exportJson} from '../utils/exportJson';
 import {usePartComments} from '../hooks/usePartComments';
-import {useOrgBilling} from "../hooks/useOrgBilling";
 import {usePartTags} from "../hooks/usePartTags";
+import {useOrgBilling} from "../hooks/useOrgBilling";
+import {usePartFavorite} from "../hooks/usePartFavorite";
+import {PartActionsBar} from "../components/PartActionsBar";
 
 
 type Document = Database['public']['Tables']['documents']['Row'];
@@ -35,10 +37,16 @@ const DocumentDetail: React.FC = () => {
     const {documentId} = useParams<{ documentId: string }>();
     const [searchParams] = useSearchParams();
     const partIdFromUrl = searchParams.get('partId');
+    const {user} = useAuth();
     const {currentOrg} = useAuth();
     const {billing} = useOrgBilling();
+
     const canComment = billing?.tier?.can_comment ?? false;
     const canUseTags = billing?.tier?.can_use_tags ?? false;
+    const canSetFavourite = billing?.tier?.can_set_favourite ?? false;
+    const canSetStatus = !!billing?.tier?.can_set_status;
+    const canSetPriority = !!billing?.tier?.can_set_priority;
+
     const [document, setDocument] = useState<Document | null>(null);
     const [parts, setParts] = useState<Part[]>([]);
     const [loading, setLoading] = useState(true);
@@ -57,6 +65,10 @@ const DocumentDetail: React.FC = () => {
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
     const [newComment, setNewComment] = useState("");
     const [newTag, setNewTag] = useState("");
+    const [workflowStatus, setWorkflowStatus] = useState<WorkflowStatusEnum | null>(null);
+    const [priority, setPriority] = useState<PriorityEnum | null>(null);
+    const [updatingStatus, setUpdatingStatus] = useState(false);
+    const [updatingPriority, setUpdatingPriority] = useState(false);
 
 
     // Tabs v levém panelu
@@ -100,9 +112,9 @@ const DocumentDetail: React.FC = () => {
                 const {data: partsData, error: partsError} = await supabase
                     .from('document_parts')
                     .select(`
-            part_id,
-            parts (*)
-          `)
+                            part_id,
+                            parts (*)
+                    `)
                     .eq('document_id', documentId);
 
                 if (partsError) {
@@ -172,6 +184,7 @@ const DocumentDetail: React.FC = () => {
 
         fetchPartRender();
     }, [selectedPartId, parts]);
+
 
     const handleZoomIn = () => {
         setZoom(prev => Math.min(prev + 25, 500));
@@ -266,6 +279,87 @@ const DocumentDetail: React.FC = () => {
         addTag,
         removeTag,
     } = usePartTags(selectedPartId ?? null, currentOrg?.org_id);
+    const {
+        isFavorite,
+        loading: favoriteLoading,
+        // error: favoriteError,
+        toggleFavorite,
+    } = usePartFavorite(
+        selectedPartId ?? null,
+        currentOrg?.org_id ?? null,
+        user?.id ?? null
+    );
+
+    useEffect(() => {
+        if (selectedPart) {
+            setWorkflowStatus(
+                (selectedPart as any).workflow_status ?? null
+            );
+            setPriority(
+                (selectedPart as any).priority ?? null
+            );
+        } else {
+            setWorkflowStatus(null);
+            setPriority(null);
+        }
+    }, [selectedPart?.id]);
+
+    const handleWorkflowStatusChange = async (value: WorkflowStatusEnum) => {
+        if (!selectedPart || !currentOrg) return;
+        if (!canSetStatus) return;
+
+        setUpdatingStatus(true);
+        setWorkflowStatus(value);
+
+        const {error} = await supabase
+            .from("parts")
+            .update({workflow_status: value})
+            .eq("id", selectedPart.id)
+            .eq("org_id", currentOrg.org_id);
+
+        if (error) {
+            console.error("[DocumentDetail] Error updating workflow_status:", error);
+            // případně revert:
+            // setWorkflowStatus(selectedPart.workflow_status ?? null);
+        } else {
+            setParts((prev) =>
+                prev.map((p) =>
+                    p.id === selectedPart.id ? {...p, workflow_status: value} : p
+                )
+            );
+        }
+
+        setUpdatingStatus(false);
+    };
+
+    const handlePriorityChange = async (value: PriorityEnum) => {
+        if (!selectedPart || !currentOrg) return;
+        if (!canSetPriority) return;
+
+        setUpdatingPriority(true);
+        setPriority(value);
+
+        const {error} = await supabase
+            .from("parts")
+            .update({priority: value})
+            .eq("id", selectedPart.id)
+            .eq("org_id", currentOrg.org_id);
+
+        if (error) {
+            console.error("[DocumentDetail] Error updating priority:", error);
+            // případně revert:
+            // setPriority(selectedPart.priority ?? null);
+        } else {
+            setParts((prev) =>
+                prev.map((p) =>
+                    p.id === selectedPart.id ? {...p, priority: value} : p
+                )
+            );
+        }
+
+        setUpdatingPriority(false);
+    };
+
 
     // Calculate container height based on aspect ratio
     const containerHeight = imageAspectRatio && containerWidth
@@ -440,71 +534,93 @@ const DocumentDetail: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Export dropdown */}
-                {selectedPartReport && (
-                    <div className="relative">
-                        <button
-                            type="button"
-                            onClick={() => setIsExportMenuOpen(prev => !prev)}
-                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 shadow-sm transition-colors"
-                        >
-                            <Download className="w-4 h-4" strokeWidth={2}/>
-                            <span>Export</span>
-                            <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2}/>
-                        </button>
+                {/* Pravá část: favorite + export */}
+                <div className="flex items-center gap-3">
+                    {selectedPart && (
+                        <PartActionsBar
+                            partId={selectedPart.id}
+                            canUseFavorite={canSetFavourite}
+                            canSetStatus={canSetStatus}
+                            canSetPriority={canSetPriority}
+                            isFavorite={isFavorite}
+                            onToggleFavorite={toggleFavorite}
+                            favoriteLoading={favoriteLoading}
+                            workflowStatus={workflowStatus}
+                            onChangeWorkflowStatus={handleWorkflowStatusChange}
+                            updatingStatus={updatingStatus}
+                            priority={priority}
+                            onChangePriority={handlePriorityChange}
+                            updatingPriority={updatingPriority}
+                        />
+                    )}
 
-                        {isExportMenuOpen && (
-                            <div
-                                className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-xl shadow-xl py-1 z-20">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        exportJsonToExcel(
-                                            selectedPartReport,
-                                            selectedPart?.part_number ||
-                                            selectedPart?.display_name ||
-                                            'part_report'
-                                        );
-                                        setIsExportMenuOpen(false);
-                                    }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                                >
-                                    Export to XLSX
-                                </button>
 
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        exportJsonToText(
-                                            selectedPartReport,
-                                            selectedPart?.part_number ||
-                                            selectedPart?.display_name ||
-                                            'part_report'
-                                        );
-                                        setIsExportMenuOpen(false);
-                                    }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                                >
-                                    Export to TXT
-                                </button>
+                    {/* Export dropdown */}
+                    {selectedPartReport && (
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={() => setIsExportMenuOpen(prev => !prev)}
+                                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 shadow-sm transition-colors"
+                            >
+                                <Download className="w-4 h-4" strokeWidth={2}/>
+                                <span>Export</span>
+                                <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2}/>
+                            </button>
 
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        exportJson(
-                                            selectedPartReport,
-                                            selectedPart?.part_number || selectedPart?.part_number || 'part_report'
-                                        );
-                                        setIsExportMenuOpen(false);
-                                    }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                                >
-                                    Export to JSON
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                )}
+                            {isExportMenuOpen && (
+                                <div
+                                    className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-xl shadow-xl py-1 z-20">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            exportJsonToExcel(
+                                                selectedPartReport,
+                                                selectedPart?.part_number ||
+                                                selectedPart?.display_name ||
+                                                'part_report'
+                                            );
+                                            setIsExportMenuOpen(false);
+                                        }}
+                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                                    >
+                                        Export to XLSX
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            exportJsonToText(
+                                                selectedPartReport,
+                                                selectedPart?.part_number ||
+                                                selectedPart?.display_name ||
+                                                'part_report'
+                                            );
+                                            setIsExportMenuOpen(false);
+                                        }}
+                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                                    >
+                                        Export to TXT
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            exportJson(
+                                                selectedPartReport,
+                                                selectedPart?.part_number || selectedPart?.part_number || 'part_report'
+                                            );
+                                            setIsExportMenuOpen(false);
+                                        }}
+                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                                    >
+                                        Export to JSON
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Part navigation (šipky) pod headerem, společné pro levou i pravou část */}
@@ -523,8 +639,8 @@ const DocumentDetail: React.FC = () => {
                         </button>
 
                         <span className="font-medium text-gray-900">
-        {selectedPart.display_name || selectedPart.part_number || 'Part'}
-      </span>
+                          {selectedPart.display_name || selectedPart.part_number || 'Part'}
+                        </span>
 
                         <button
                             type="button"
@@ -537,8 +653,8 @@ const DocumentDetail: React.FC = () => {
                         </button>
 
                         <span className="text-xs text-gray-500 ml-1">
-        {currentPartIndex + 1} / {parts.length}
-      </span>
+                            {currentPartIndex + 1} / {parts.length}
+                        </span>
                     </div>
                 </div>
             )}
