@@ -2,7 +2,7 @@
 import React from "react";
 import {ChevronDown, Lock, Star, StarOff} from "lucide-react";
 import type {PriorityEnum, WorkflowStatusEnum} from "../lib/database.types";
-import {getPriorityClasses, getStatusClasses, PRIORITY_LABELS, STATUS_LABELS,} from "../utils/partWorkflow";
+import {getPriorityClasses, getStatusClasses, PRIORITY_LABELS, STATUS_LABELS,} from "../utils/tagsFormatting.ts";
 
 type WorkflowStatus = WorkflowStatusEnum | null;
 type Priority = PriorityEnum | null;

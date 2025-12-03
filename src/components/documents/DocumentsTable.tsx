@@ -1,13 +1,11 @@
 // src/components/documents/DocumentsTable.tsx
 import React from "react";
 import {
-    AlertCircle,
-    CheckCircle2,
     ChevronDown,
     ChevronUp,
     Download,
     FileText,
-    Loader2,
+    FolderPlus,
     Lock,
     MoreVertical,
     RefreshCw,
@@ -17,7 +15,15 @@ import {
 } from "lucide-react";
 import type {PartWithDocument} from "../../hooks/useParts";
 import type {PriorityEnum, WorkflowStatusEnum} from "../../lib/database.types";
-import {getPriorityClasses, getStatusClasses, PRIORITY_LABELS, STATUS_LABELS,} from "../../utils/partWorkflow";
+import {
+    getComplexityConfig,
+    getFitConfig,
+    getPriorityClasses,
+    getStatusClasses,
+    getStatusConfig,
+    PRIORITY_LABELS,
+    STATUS_LABELS,
+} from "../../utils/tagsFormatting";
 
 export type SortField =
     | "file_name"
@@ -45,7 +51,7 @@ interface DocumentsTableProps {
     onDelete: (row: PartWithDocument) => void;
     onRowClick: (documentId: string, partId: string) => void;
 
-    // 💫 NOVÉ – tier & actions
+    // tier & actions
     canUseProjects?: boolean;
     canUseFavorite?: boolean;
     canSetStatus?: boolean;
@@ -64,8 +70,17 @@ interface DocumentsTableProps {
 
     updatingStatusIds?: Set<string>;
     updatingPriorityIds?: Set<string>;
-}
 
+    // 🔥 NOVÉ – výběr + batch akce
+    selectedPartIds?: Set<string>;
+    onToggleSelect?: (partId: string) => void;
+    onToggleSelectAll?: (partIdsOnPage: string[]) => void;
+
+    onBulkToggleFavorite?: (partIds: string[], favorite: boolean) => void;
+    onBulkSetStatus?: (partIds: string[], status: WorkflowStatusEnum) => void;
+    onBulkSetPriority?: (partIds: string[], priority: PriorityEnum) => void;
+    onBulkAddToProject?: (partIds: string[]) => void;
+}
 
 const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                            parts,
@@ -79,6 +94,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                            onDownload,
                                                            onDelete,
                                                            onRowClick,
+                                                           canUseProjects = false,
                                                            canUseFavorite = false,
                                                            canSetStatus = false,
                                                            canSetPriority = false,
@@ -88,8 +104,41 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                            onChangePriority,
                                                            updatingStatusIds,
                                                            updatingPriorityIds,
+                                                           // selection + bulk
+                                                           selectedPartIds,
+                                                           onToggleSelect,
+                                                           onToggleSelectAll,
+                                                           onBulkToggleFavorite,
+                                                           onBulkSetStatus,
+                                                           onBulkSetPriority,
+                                                           onBulkAddToProject,
+                                                           onAddToProject
                                                        }) => {
     const [openMenuId, setOpenMenuId] = React.useState<string | null>(null);
+
+    const selectionEnabled = !!selectedPartIds && !!onToggleSelect;
+    // 👉 tady přidej:
+    const hasBulkStatus = canSetStatus && !!onBulkSetStatus;
+    const hasBulkPriority = canSetPriority && !!onBulkSetPriority;
+    const hasBulkFavorite = canUseFavorite && !!onBulkToggleFavorite;
+    const hasBulkProjects = canUseProjects && !!onBulkAddToProject;
+
+    // je-li false, checkboxy budou zamčené
+    const hasBulkActions =
+        !!selectedPartIds &&
+        !!onToggleSelect &&
+        !!onToggleSelectAll &&
+        (hasBulkStatus || hasBulkPriority || hasBulkFavorite || hasBulkProjects);
+
+    const partsIdsOnPage = React.useMemo(
+        () => parts.map((p) => p.id),
+        [parts]
+    );
+
+    const selectedIdsOnPage: string[] = React.useMemo(() => {
+        if (!selectionEnabled || !selectedPartIds) return [];
+        return partsIdsOnPage.filter((id) => selectedPartIds.has(id));
+    }, [selectionEnabled, selectedPartIds, partsIdsOnPage]);
 
     const SortableHeader: React.FC<{
         field: SortField;
@@ -106,15 +155,9 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                     {children}
                     {isActive ? (
                         sortDirection === "asc" ? (
-                            <ChevronUp
-                                className="w-4 h-4 text-blue-600"
-                                strokeWidth={2}
-                            />
+                            <ChevronUp className="w-4 h-4 text-blue-600" strokeWidth={2}/>
                         ) : (
-                            <ChevronDown
-                                className="w-4 h-4 text-blue-600"
-                                strokeWidth={2}
-                            />
+                            <ChevronDown className="w-4 h-4 text-blue-600" strokeWidth={2}/>
                         )
                     ) : (
                         <div className="w-4 h-4 opacity-0 group-hover:opacity-30">
@@ -124,107 +167,6 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                 </div>
             </th>
         );
-    };
-
-    const getStatusConfig = (status: string | null) => {
-        switch (status) {
-            case "success":
-                return {
-                    icon: CheckCircle2,
-                    label: "Processed",
-                    className:
-                        "bg-emerald-50 text-emerald-700 border-emerald-200",
-                    iconColor: "text-emerald-600",
-                };
-            case "processing":
-            case "queued":
-                return {
-                    icon: Loader2,
-                    label: "Processing",
-                    className: "bg-blue-50 text-blue-700 border-blue-200",
-                    iconColor: "text-blue-600",
-                    animate: true,
-                };
-            case "failed":
-            case "error":
-                return {
-                    icon: AlertCircle,
-                    label: "Error",
-                    className: "bg-rose-50 text-rose-700 border-rose-200",
-                    iconColor: "text-rose-600",
-                };
-            default:
-                return {
-                    icon: FileText,
-                    label: "Unknown",
-                    className: "bg-gray-50 text-gray-600 border-gray-200",
-                    iconColor: "text-gray-500",
-                };
-        }
-    };
-
-    const getComplexityConfig = (complexity: string | null) => {
-        const val = complexity?.toUpperCase();
-        switch (val) {
-            case "HIGH":
-            case "EXTREME":
-                return {
-                    label: val,
-                    className:
-                        "bg-rose-50 text-rose-800 border-rose-300 font-semibold",
-                };
-            case "MEDIUM":
-                return {
-                    label: "MEDIUM",
-                    className:
-                        "bg-amber-50 text-amber-800 border-amber-300 font-medium",
-                };
-            case "LOW":
-                return {
-                    label: "LOW",
-                    className:
-                        "bg-emerald-50 text-emerald-800 border-emerald-300 font-medium",
-                };
-            default:
-                return null;
-        }
-    };
-
-    const getFitConfig = (fit: string | null) => {
-        const val = fit?.toUpperCase();
-        switch (val) {
-            case "GOOD":
-                return {
-                    label: "GOOD",
-                    className:
-                        "bg-emerald-50 text-emerald-800 border-emerald-300 font-medium",
-                };
-            case "PARTIAL":
-                return {
-                    label: "PARTIAL",
-                    className:
-                        "bg-blue-50 text-blue-800 border-blue-300 font-medium",
-                };
-            case "COOPERATION":
-                return {
-                    label: "COOP",
-                    className:
-                        "bg-purple-50 text-purple-800 border-purple-300 font-medium",
-                };
-            case "LOW":
-                return {
-                    label: "LOW",
-                    className:
-                        "bg-amber-50 text-amber-800 border-amber-300 font-medium",
-                };
-            case "UNKNOWN":
-                return {
-                    label: "UNKNOWN",
-                    className: "bg-gray-50 text-gray-600 border-gray-300",
-                };
-            default:
-                return null;
-        }
     };
 
     const formatDate = (dateString: string) => {
@@ -242,9 +184,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
         return (
             <div className="flex flex-col items-center justify-center py-20">
                 <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"/>
-                <p className="text-sm font-medium text-slate-600">
-                    Loading parts...
-                </p>
+                <p className="text-sm font-medium text-slate-600">Loading parts...</p>
             </div>
         );
     }
@@ -253,10 +193,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
         return (
             <div
                 className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border-2 border-dashed border-gray-300">
-                <FileText
-                    className="w-16 h-16 text-gray-300 mb-4"
-                    strokeWidth={1.5}
-                />
+                <FileText className="w-16 h-16 text-gray-300 mb-4" strokeWidth={1.5}/>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
                     No parts yet
                 </h3>
@@ -276,11 +213,106 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
 
     return (
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+            {/* 🔥 Bulk bar */}
+            {selectionEnabled && selectedIdsOnPage.length > 0 && (
+                <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-slate-50">
+          <span className="text-xs text-gray-700">
+            <span className="font-semibold">
+              {selectedIdsOnPage.length}
+            </span>{" "}
+              selected
+          </span>
+
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
+                        {/* Favorite */}
+                        {onBulkToggleFavorite && canUseFavorite && (
+                            <div className="inline-flex rounded-md border border-gray-200 overflow-hidden text-xs">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        onBulkToggleFavorite(selectedIdsOnPage, true)
+                                    }
+                                    className="px-2.5 py-1 inline-flex items-center gap-1 bg-white hover:bg-amber-50 text-amber-700"
+                                >
+                                    <Star className="w-3.5 h-3.5" strokeWidth={1.5}/>
+                                    Fav
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        onBulkToggleFavorite(selectedIdsOnPage, false)
+                                    }
+                                    className="px-2.5 py-1 inline-flex items-center gap-1 bg-white hover:bg-gray-50 text-gray-600 border-l border-gray-200"
+                                >
+                                    <StarOff className="w-3.5 h-3.5" strokeWidth={1.5}/>
+                                    Clear
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Status */}
+                        {onBulkSetStatus && canSetStatus && (
+                            <select
+                                defaultValue=""
+                                onChange={(e) => {
+                                    const value = e.target.value as WorkflowStatusEnum | "";
+                                    if (!value) return;
+                                    onBulkSetStatus(selectedIdsOnPage, value);
+                                    e.target.value = "";
+                                }}
+                                className="h-8 px-2 bg-white border border-gray-200 rounded-md text-xs shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none"
+                            >
+                                <option value="">Set status…</option>
+                                {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                                    <option key={value} value={value}>
+                                        {label}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+
+                        {/* Priority */}
+                        {onBulkSetPriority && canSetPriority && (
+                            <select
+                                defaultValue=""
+                                onChange={(e) => {
+                                    const value = e.target.value as PriorityEnum | "";
+                                    if (!value) return;
+                                    onBulkSetPriority(selectedIdsOnPage, value);
+                                    e.target.value = "";
+                                }}
+                                className="h-8 px-2 bg-white border border-gray-200 rounded-md text-xs shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none"
+                            >
+                                <option value="">Set priority…</option>
+                                {Object.entries(PRIORITY_LABELS).map(([value, label]) => (
+                                    <option key={value} value={value}>
+                                        {label}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+
+                        {/* Add to project */}
+                        {onBulkAddToProject && canUseProjects && (
+                            <button
+                                type="button"
+                                onClick={() => onBulkAddToProject(selectedIdsOnPage)}
+                                className="h-8 px-3 inline-flex items-center rounded-md border border-gray-200 bg-white text-xs text-gray-700 hover:bg-gray-50 shadow-sm"
+                            >
+                                Add to project
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
+
             <div className="overflow-x-auto">
                 <table className="w-full table-fixed">
                     <colgroup>
+                        {/* selection sloupec */}
+                        {selectionEnabled && <col style={{width: "36px"}}/>}
                         <col style={{width: "24%"}}/>
-                        {" "} {/* Document (file + page + company + favourite) */}
+                        {/* Document */}
                         <col style={{width: "8%"}}/>
                         {/* Class */}
                         <col style={{width: "10%"}}/>
@@ -304,12 +336,42 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                     </colgroup>
                     <thead className="bg-slate-50 border-b border-gray-200">
                     <tr>
-                        <SortableHeader field="file_name">
-                            Document
-                        </SortableHeader>
-                        <SortableHeader field="primary_class">
-                            Class
-                        </SortableHeader>
+                        {/* header checkbox */}
+                        {selectionEnabled && (
+                            <th className="px-3 py-3 text-center align-middle">
+                                {hasBulkActions ? (
+                                    <input
+                                        type="checkbox"
+                                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        onClick={(e) => e.stopPropagation()}
+                                        onChange={() => {
+                                            if (!hasBulkActions || !onToggleSelectAll || !selectedPartIds) return;
+
+                                            const idsOnPage = parts
+                                                .filter((p) => !p.isProcessingPlaceholder)
+                                                .map((p) => p.id);
+
+                                            onToggleSelectAll(idsOnPage);
+                                        }}
+                                        checked={
+                                            !!selectedPartIds &&
+                                            parts
+                                                .filter((p) => !p.isProcessingPlaceholder)
+                                                .every((p) => selectedPartIds.has(p.id)) &&
+                                            parts.length > 0
+                                        }
+                                    />
+                                ) : (
+                                    <div className="inline-flex items-center justify-center w-4 h-4 text-gray-300">
+                                        <Lock className="w-3 h-3" strokeWidth={1.5}/>
+                                    </div>
+                                )}
+                            </th>
+
+                        )}
+
+                        <SortableHeader field="file_name">Document</SortableHeader>
+                        <SortableHeader field="primary_class">Class</SortableHeader>
                         <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                             Material
                         </th>
@@ -319,15 +381,16 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                         <SortableHeader field="overall_complexity">
                             Complexity
                         </SortableHeader>
-                        <SortableHeader field="fit_level">
-                            Fit
-                        </SortableHeader>
+                        <SortableHeader field="fit_level">Fit</SortableHeader>
 
                         <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                             <div className="flex items-center gap-1.5">
                                 Work Status
                                 {!canSetStatus && (
-                                    <Lock className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5}/>
+                                    <Lock
+                                        className="w-3.5 h-3.5 text-gray-400"
+                                        strokeWidth={1.5}
+                                    />
                                 )}
                             </div>
                         </th>
@@ -335,17 +398,15 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                             <div className="flex items-center gap-1.5">
                                 Priority
                                 {!canSetPriority && (
-                                    <Lock className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5}/>
+                                    <Lock
+                                        className="w-3.5 h-3.5 text-gray-400"
+                                        strokeWidth={1.5}
+                                    />
                                 )}
                             </div>
                         </th>
-                        <SortableHeader field="last_updated">
-                            Modified
-                        </SortableHeader>
-                        <SortableHeader
-                            field="last_status"
-                            className="text-center"
-                        >
+                        <SortableHeader field="last_updated">Modified</SortableHeader>
+                        <SortableHeader field="last_status" className="text-center">
                             Status
                         </SortableHeader>
                         <th className="px-3 py-3"/>
@@ -362,16 +423,13 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                         );
                         const fitConfig = getFitConfig(part.fit_level);
 
-                        const isPlaceholder =
-                            part.isProcessingPlaceholder === true;
+                        const isPlaceholder = part.isProcessingPlaceholder === true;
 
-                        const isFavorite =
-                            favoritePartIds?.has(part.id) ?? false;
+                        const isFavorite = favoritePartIds?.has(part.id) ?? false;
 
                         const statusValue =
                             (part.workflow_status as WorkflowStatus) ?? null;
-                        const priorityValue =
-                            (part.priority as Priority) ?? null;
+                        const priorityValue = (part.priority as Priority) ?? null;
 
                         const statusDisabled =
                             isPlaceholder ||
@@ -385,9 +443,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                             updatingPriorityIds?.has(part.id);
 
                         const favoriteDisabled =
-                            isPlaceholder ||
-                            !canUseFavorite ||
-                            !onToggleFavorite;
+                            isPlaceholder || !canUseFavorite || !onToggleFavorite;
 
                         return (
                             <tr
@@ -403,6 +459,26 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                         : "hover:bg-blue-50/50 cursor-pointer"
                                 }`}
                             >
+                                {/* row checkbox */}
+                                {selectionEnabled && (
+                                    <td className="px-3 py-3 text-center">
+                                        <input
+                                            type="checkbox"
+                                            className={`w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 ${
+                                                !hasBulkActions ? "cursor-not-allowed opacity-40" : ""
+                                            }`}
+                                            disabled={!hasBulkActions || part.isProcessingPlaceholder}
+                                            checked={selectedPartIds?.has(part.id) ?? false}
+                                            onClick={(e) => e.stopPropagation()}
+                                            onChange={() => {
+                                                if (!hasBulkActions || !onToggleSelect) return;
+                                                onToggleSelect(part.id);
+                                            }}
+                                        />
+                                    </td>
+
+                                )}
+
                                 {/* Document (favourite + file + page/company) */}
                                 <td className="px-3 py-3">
                                     <div className="flex items-start gap-3">
@@ -411,23 +487,22 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                             type="button"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                if (favoriteDisabled)
-                                                    return;
+                                                if (favoriteDisabled) return;
                                                 onToggleFavorite?.(part);
                                             }}
                                             disabled={favoriteDisabled}
                                             className={`mt-0.5 inline-flex items-center justify-center w-7 h-7 rounded-full border text-xs transition
-                                                    ${
+                                            ${
                                                 isFavorite
                                                     ? "bg-amber-50 border-amber-300 text-amber-700"
                                                     : "bg-white border-gray-200 text-gray-400 hover:bg-gray-50"
                                             }
-                                                    ${
+                                            ${
                                                 !canUseFavorite
                                                     ? "opacity-60 cursor-not-allowed"
                                                     : ""
                                             }
-                                                `}
+                                        `}
                                         >
                                             {isFavorite ? (
                                                 <Star
@@ -445,48 +520,33 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                         <div className="flex items-center gap-3 min-w-0 flex-1">
                                             <FileText
                                                 className={`w-4 h-4 flex-shrink-0 ${
-                                                    isPlaceholder
-                                                        ? "text-blue-400"
-                                                        : "text-gray-400"
+                                                    isPlaceholder ? "text-blue-400" : "text-gray-400"
                                                 }`}
                                             />
                                             <div className="flex flex-col min-w-0">
-                                                    <span
-                                                        className={`text-sm font-medium truncate ${
-                                                            isPlaceholder
-                                                                ? "text-blue-900"
-                                                                : "text-gray-900"
-                                                        }`}
-                                                    >
-                                                        {part.document
-                                                                ?.file_name ||
-                                                            "Unknown"}
-                                                    </span>
+                                              <span
+                                                  className={`text-sm font-medium truncate ${
+                                                      isPlaceholder ? "text-blue-900" : "text-gray-900"
+                                                  }`}
+                                              >
+                                                {part.document?.file_name || "Unknown"}
+                                              </span>
                                                 <span className="text-xs text-gray-500 truncate">
-                                                        {isPlaceholder ? (
-                                                            <span className="italic">
-                                                                Processing…
-                                                            </span>
-                                                        ) : (
+                                                {isPlaceholder ? (
+                                                    <span className="italic">Processing…</span>
+                                                ) : (
+                                                    <>
+                                                        {part.page !== null ? (
                                                             <>
-                                                                {part.page !==
-                                                                null ? (
-                                                                    <>
-                                                                        Page{" "}
-                                                                        {
-                                                                            part.page
-                                                                        }
-                                                                        {part.company_name &&
-                                                                            " • "}
-                                                                    </>
-                                                                ) : null}
-                                                                {part.company_name ??
-                                                                    (!part.page
-                                                                        ? "—"
-                                                                        : "")}
+                                                                Page {part.page}
+                                                                {part.company_name && " • "}
                                                             </>
-                                                        )}
-                                                    </span>
+                                                        ) : null}
+                                                        {part.company_name ??
+                                                            (!part.page ? "—" : "")}
+                                                    </>
+                                                )}
+                                              </span>
                                             </div>
                                         </div>
                                     </div>
@@ -494,66 +554,52 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
 
                                 {/* Class */}
                                 <td className="px-3 py-3">
-                                        <span className="text-sm text-gray-500 truncate block">
-                                            {isPlaceholder
-                                                ? "-"
-                                                : part.primary_class || "-"}
-                                        </span>
+                                    <span className="text-sm text-gray-500 truncate block">
+                                      {isPlaceholder ? "-" : part.primary_class || "-"}
+                                    </span>
                                 </td>
 
                                 {/* Material */}
                                 <td className="px-3 py-3">
-                                        <span className="text-sm text-gray-500 truncate block">
-                                            {isPlaceholder
-                                                ? "-"
-                                                : part.material || "-"}
-                                        </span>
+                                    <span className="text-sm text-gray-500 truncate block">
+                                      {isPlaceholder ? "-" : part.material || "-"}
+                                    </span>
                                 </td>
 
                                 {/* Envelope */}
                                 <td className="px-3 py-3">
-                                        <span className="text-sm text-gray-500 truncate block">
-                                            {isPlaceholder
-                                                ? "-"
-                                                : part.envelope_text || "-"}
-                                        </span>
+                                    <span className="text-sm text-gray-500 truncate block">
+                                      {isPlaceholder ? "-" : part.envelope_text || "-"}
+                                    </span>
                                 </td>
 
                                 {/* Complexity */}
                                 <td className="px-3 py-3">
                                     {isPlaceholder ? (
-                                        <span className="text-sm text-gray-400">
-                                                -
-                                            </span>
+                                        <span className="text-sm text-gray-400">-</span>
                                     ) : complexityConfig ? (
                                         <span
                                             className={`inline-flex items-center px-2 py-1 rounded text-xs border ${complexityConfig.className}`}
                                         >
-                                                {complexityConfig.label}
-                                            </span>
+                                        {complexityConfig.label}
+                                      </span>
                                     ) : (
-                                        <span className="text-sm text-gray-400">
-                                                -
-                                            </span>
+                                        <span className="text-sm text-gray-400">-</span>
                                     )}
                                 </td>
 
                                 {/* Fit */}
                                 <td className="px-3 py-3">
                                     {isPlaceholder ? (
-                                        <span className="text-sm text-gray-400">
-                                                -
-                                            </span>
+                                        <span className="text-sm text-gray-400">-</span>
                                     ) : fitConfig ? (
                                         <span
                                             className={`inline-flex items-center px-2 py-1 rounded text-xs border ${fitConfig.className}`}
                                         >
-                                                {fitConfig.label}
-                                            </span>
+                                            {fitConfig.label}
+                                        </span>
                                     ) : (
-                                        <span className="text-sm text-gray-400">
-                                                -
-                                            </span>
+                                        <span className="text-sm text-gray-400">-</span>
                                     )}
                                 </td>
 
@@ -564,7 +610,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                     ) : canSetStatus && onChangeWorkflowStatus ? (
                                         <div
                                             className="relative inline-block w-full"
-                                            onClick={(e) => e.stopPropagation()} // 👉 NEPUSTIT KLIK NA <tr>
+                                            onClick={(e) => e.stopPropagation()}
                                         >
                                             <select
                                                 value={statusValue ?? ""}
@@ -582,11 +628,13 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                 }`}
                                             >
                                                 {!statusValue && <option value="">—</option>}
-                                                {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                                                    <option key={value} value={value}>
-                                                        {label}
-                                                    </option>
-                                                ))}
+                                                {Object.entries(STATUS_LABELS).map(
+                                                    ([value, label]) => (
+                                                        <option key={value} value={value}>
+                                                            {label}
+                                                        </option>
+                                                    )
+                                                )}
                                             </select>
 
                                             <ChevronDown
@@ -600,8 +648,8 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                 statusValue
                                             )}`}
                                         >
-            {STATUS_LABELS[statusValue as WorkflowStatusEnum]}
-        </span>
+                                            {STATUS_LABELS[statusValue as WorkflowStatusEnum]}
+                                        </span>
                                     ) : (
                                         <span className="text-xs text-gray-400">-</span>
                                     )}
@@ -614,7 +662,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                     ) : canSetPriority && onChangePriority ? (
                                         <div
                                             className="relative inline-block w-full"
-                                            onClick={(e) => e.stopPropagation()} // 👉 zamezí otevření detailu
+                                            onClick={(e) => e.stopPropagation()}
                                         >
                                             <select
                                                 value={priorityValue ?? ""}
@@ -632,11 +680,13 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                 }`}
                                             >
                                                 {!priorityValue && <option value="">—</option>}
-                                                {Object.entries(PRIORITY_LABELS).map(([value, label]) => (
-                                                    <option key={value} value={value}>
-                                                        {label}
-                                                    </option>
-                                                ))}
+                                                {Object.entries(PRIORITY_LABELS).map(
+                                                    ([value, label]) => (
+                                                        <option key={value} value={value}>
+                                                            {label}
+                                                        </option>
+                                                    )
+                                                )}
                                             </select>
 
                                             <ChevronDown
@@ -650,8 +700,8 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                 priorityValue
                                             )}`}
                                         >
-            {PRIORITY_LABELS[priorityValue as PriorityEnum]}
-        </span>
+                                        {PRIORITY_LABELS[priorityValue as PriorityEnum]}
+                                        </span>
                                     ) : (
                                         <span className="text-xs text-gray-400">-</span>
                                     )}
@@ -659,13 +709,13 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
 
                                 {/* Modified */}
                                 <td className="px-3 py-3">
-                                        <span className="text-xs text-gray-500">
-                                            {isPlaceholder
-                                                ? "-"
-                                                : part.last_updated
-                                                    ? formatDate(part.last_updated)
-                                                    : "-"}
-                                        </span>
+                                    <span className="text-xs text-gray-500">
+                                      {isPlaceholder
+                                          ? "-"
+                                          : part.last_updated
+                                              ? formatDate(part.last_updated)
+                                              : "-"}
+                                    </span>
                                 </td>
 
                                 {/* Doc processing status */}
@@ -673,9 +723,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                     <div className="flex justify-center">
                                         <StatusIcon
                                             className={`w-5 h-5 ${statusConfig.iconColor} ${
-                                                statusConfig.animate
-                                                    ? "animate-spin"
-                                                    : ""
+                                                statusConfig.animate ? "animate-spin" : ""
                                             }`}
                                             strokeWidth={1.5}
                                         />
@@ -690,10 +738,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     setOpenMenuId(
-                                                        openMenuId ===
-                                                        part.id
-                                                            ? null
-                                                            : part.id
+                                                        openMenuId === part.id ? null : part.id
                                                     );
                                                 }}
                                                 className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
@@ -704,80 +749,67 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                 />
                                             </button>
 
-                                            {openMenuId === part.id &&
-                                                part.document && (
-                                                    <div
-                                                        className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                                            {openMenuId === part.id && part.document && (
+                                                <div
+                                                    className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onRerun(part.document!.id);
+                                                            setOpenMenuId(null);
+                                                        }}
+                                                        className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
+                                                    >
+                                                        <RefreshCw
+                                                            className="w-4 h-4"
+                                                            strokeWidth={1.5}
+                                                        />
+                                                        Rerun
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onDownload(part.document);
+                                                            setOpenMenuId(null);
+                                                        }}
+                                                        className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
+                                                    >
+                                                        <Download
+                                                            className="w-4 h-4"
+                                                            strokeWidth={1.5}
+                                                        />
+                                                        Download
+                                                    </button>
+                                                    {/* ⬇️ NOVÉ – Add to project */}
+                                                    {canUseProjects && onAddToProject && (
                                                         <button
-                                                            onClick={(
-                                                                e
-                                                            ) => {
+                                                            onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                onRerun(
-                                                                    part
-                                                                        .document!
-                                                                        .id
-                                                                );
-                                                                setOpenMenuId(
-                                                                    null
-                                                                );
+                                                                onAddToProject(part);
+                                                                setOpenMenuId(null);
                                                             }}
                                                             className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
                                                         >
-                                                            <RefreshCw
-                                                                className="w-4 h-4"
-                                                                strokeWidth={
-                                                                    1.5
-                                                                }
-                                                            />
-                                                            Rerun
+                                                            <FolderPlus className="w-4 h-4" strokeWidth={1.5}/>
+                                                            Add to project
                                                         </button>
-                                                        <button
-                                                            onClick={(
-                                                                e
-                                                            ) => {
-                                                                e.stopPropagation();
-                                                                onDownload(
-                                                                    part.document
-                                                                );
-                                                                setOpenMenuId(
-                                                                    null
-                                                                );
-                                                            }}
-                                                            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
-                                                        >
-                                                            <Download
-                                                                className="w-4 h-4"
-                                                                strokeWidth={
-                                                                    1.5
-                                                                }
-                                                            />
-                                                            Download
-                                                        </button>
-                                                        <button
-                                                            onClick={(
-                                                                e
-                                                            ) => {
-                                                                e.stopPropagation();
-                                                                onDelete(
-                                                                    part
-                                                                );
-                                                                setOpenMenuId(
-                                                                    null
-                                                                );
-                                                            }}
-                                                            className="flex items-center gap-2 px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 w-full text-left transition-colors"
-                                                        >
-                                                            <Trash2
-                                                                className="w-4 h-4"
-                                                                strokeWidth={
-                                                                    1.5
-                                                                }
-                                                            />
-                                                            Delete
-                                                        </button>
-                                                    </div>
-                                                )}
+                                                    )}
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onDelete(part);
+                                                            setOpenMenuId(null);
+                                                        }}
+                                                        className="flex items-center gap-2 px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 w-full text-left transition-colors"
+                                                    >
+                                                        <Trash2
+                                                            className="w-4 h-4"
+                                                            strokeWidth={1.5}
+                                                        />
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </td>

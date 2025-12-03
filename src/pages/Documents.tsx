@@ -16,15 +16,15 @@ import {useOrgUsage} from "../hooks/useOrgUsage";
 
 import {getUsageLimitInfo, isInactiveStatus} from "../utils/billing";
 import {formatTierLabel} from "../utils/tiers";
+import {useProjects} from "../hooks/useProjects";
+
 
 import type {PriorityEnum, WorkflowStatusEnum,} from "../lib/database.types";
 
-// minimální info, které potřebujeme pro delete modal
 type SimpleDocumentRef = {
     id: string;
     file_name?: string | null;
 };
-
 
 type StatusFilter = "all" | "processed" | "processing" | "error";
 type TimeFilter = "all" | "7d" | "30d" | "90d";
@@ -59,6 +59,7 @@ const Documents: React.FC = () => {
     const {usage} = useOrgUsage(currentOrg?.org_id);
 
     // === TIER CAPABILITIES ====================================================
+    const canUseProjects = !!billing?.tier?.can_use_projects;
     const canSetFavourite = !!billing?.tier?.can_set_favourite;
     const canSetStatus = !!billing?.tier?.can_set_status;
     const canSetPriority = !!billing?.tier?.can_set_priority;
@@ -68,7 +69,18 @@ const Documents: React.FC = () => {
 
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [docToDelete, setDocToDelete] = useState<SimpleDocumentRef | null>(null);
+    const [selectedPartIds, setSelectedPartIds] = useState<Set<string>>(new Set());
 
+    // === PROJECTS / ADD TO PROJECT ============================================
+    const {projects, loading: projectsLoading} = useProjects();
+    const [addToProjectOpen, setAddToProjectOpen] = useState(false);
+    const [partToAdd, setPartToAdd] = useState<PartWithDocument | null>(null);
+    const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+    const [addToProjectError, setAddToProjectError] = useState<string | null>(null);
+    const [addToProjectLoading, setAddToProjectLoading] = useState(false);
+    const [bulkProjectPartIds, setBulkProjectPartIds] = useState<string[] | null>(
+        null
+    );
 
     // Filtry
     const [statusFilter, setStatusFilter] = useState<StatusFilter>("all"); // document last_status
@@ -457,6 +469,319 @@ const Documents: React.FC = () => {
                 return next;
             });
         }
+    };
+
+    const handleOpenAddToProject = (part: PartWithDocument) => {
+        if (!canUseProjects) return;
+        if (part.isProcessingPlaceholder) return;
+
+        setBulkProjectPartIds(null);
+        setPartToAdd(part);
+        setSelectedProjectId("");
+        setAddToProjectError(null);
+        setAddToProjectOpen(true);
+    };
+
+    // === HANDLERY: BULK STATUS / PRIORITY / FAVOURITES =======================
+    const handleBulkSetStatus = async (
+        partIds: string[],
+        value: WorkflowStatusEnum
+    ) => {
+        if (!currentOrg) return;
+        if (!canSetStatus) return;
+
+        // odfiltrujeme placeholdery (processing dokumenty)
+        const validIds = partIds.filter((id) => {
+            const p = parts.find((part) => part.id === id);
+            return p && !p.isProcessingPlaceholder;
+        });
+
+        if (validIds.length === 0) return;
+
+        setUpdatingStatusIds((prev) => {
+            const next = new Set(prev);
+            validIds.forEach((id) => next.add(id));
+            return next;
+        });
+
+        try {
+            const {error} = await supabase
+                .from("parts")
+                .update({workflow_status: value})
+                .in("id", validIds)
+                .eq("org_id", currentOrg.org_id);
+
+            if (error) throw error;
+
+            // optimistický update
+            setParts((prev) =>
+                prev.map((p) =>
+                    validIds.includes(p.id)
+                        ? {...p, workflow_status: value}
+                        : p
+                )
+            );
+        } catch (err: any) {
+            console.error("[Documents] Error bulk updating workflow_status:", err);
+            setUploadError(
+                err.message || "Failed to update status for selected parts."
+            );
+        } finally {
+            setUpdatingStatusIds((prev) => {
+                const next = new Set(prev);
+                validIds.forEach((id) => next.delete(id));
+                return next;
+            });
+        }
+    };
+
+    const handleBulkSetPriority = async (
+        partIds: string[],
+        value: PriorityEnum
+    ) => {
+        if (!currentOrg) return;
+        if (!canSetPriority) return;
+
+        const validIds = partIds.filter((id) => {
+            const p = parts.find((part) => part.id === id);
+            return p && !p.isProcessingPlaceholder;
+        });
+
+        if (validIds.length === 0) return;
+
+        setUpdatingPriorityIds((prev) => {
+            const next = new Set(prev);
+            validIds.forEach((id) => next.add(id));
+            return next;
+        });
+
+        try {
+            const {error} = await supabase
+                .from("parts")
+                .update({priority: value})
+                .in("id", validIds)
+                .eq("org_id", currentOrg.org_id);
+
+            if (error) throw error;
+
+            setParts((prev) =>
+                prev.map((p) =>
+                    validIds.includes(p.id)
+                        ? {...p, priority: value}
+                        : p
+                )
+            );
+        } catch (err: any) {
+            console.error("[Documents] Error bulk updating priority:", err);
+            setUploadError(
+                err.message || "Failed to update priority for selected parts."
+            );
+        } finally {
+            setUpdatingPriorityIds((prev) => {
+                const next = new Set(prev);
+                validIds.forEach((id) => next.delete(id));
+                return next;
+            });
+        }
+    };
+
+    const handleBulkToggleFavorite = async (
+        partIds: string[],
+        favorite: boolean
+    ) => {
+        if (!currentOrg || !user) return;
+        if (!canSetFavourite) return;
+
+        const validIds = partIds.filter((id) => {
+            const p = parts.find((part) => part.id === id);
+            return p && !p.isProcessingPlaceholder;
+        });
+
+        if (validIds.length === 0) return;
+
+        try {
+            if (favorite) {
+                // přidat do oblíbených jen ty, které tam ještě nejsou
+                const idsToInsert = validIds.filter(
+                    (id) => !favoritePartIds.has(id)
+                );
+                if (idsToInsert.length === 0) return;
+
+                const rows = idsToInsert.map((partId) => ({
+                    org_id: currentOrg.org_id,
+                    user_id: user.id,
+                    part_id: partId,
+                }));
+
+                const {error} = await supabase
+                    .from("part_favorites")
+                    .insert(rows);
+
+                if (error) throw error;
+
+                setFavoritePartIds((prev) => {
+                    const next = new Set(prev);
+                    idsToInsert.forEach((id) => next.add(id));
+                    return next;
+                });
+            } else {
+                // odebrat z oblíbených jen ty, které tam jsou
+                const idsToDelete = validIds.filter((id) =>
+                    favoritePartIds.has(id)
+                );
+                if (idsToDelete.length === 0) return;
+
+                const {error} = await supabase
+                    .from("part_favorites")
+                    .delete()
+                    .eq("org_id", currentOrg.org_id)
+                    .eq("user_id", user.id)
+                    .in("part_id", idsToDelete);
+
+                if (error) throw error;
+
+                setFavoritePartIds((prev) => {
+                    const next = new Set(prev);
+                    idsToDelete.forEach((id) => next.delete(id));
+                    return next;
+                });
+            }
+        } catch (err: any) {
+            console.error("[Documents] Error bulk toggling favourites:", err);
+            setUploadError(
+                err.message || "Failed to update favourites for selected parts."
+            );
+        }
+    };
+
+    const handleBulkAddToProject = (partIds: string[]) => {
+        if (!currentOrg || !canUseProjects) return;
+
+        // vyhodíme placeholdery
+        const validIds = partIds.filter((id) => {
+            const p = parts.find((part) => part.id === id);
+            return p && !p.isProcessingPlaceholder;
+        });
+
+        if (validIds.length === 0) return;
+
+        setPartToAdd(null);
+        setBulkProjectPartIds(validIds);
+        setSelectedProjectId("");
+        setAddToProjectError(null);
+        setAddToProjectOpen(true);
+    };
+
+
+    const handleConfirmAddToProject = async () => {
+        if (!currentOrg || !user) {
+            setAddToProjectError("Missing context to add part(s) to project.");
+            return;
+        }
+
+        if (!selectedProjectId) {
+            setAddToProjectError("Please select a project.");
+            return;
+        }
+
+        const idsToHandle =
+            bulkProjectPartIds && bulkProjectPartIds.length > 0
+                ? bulkProjectPartIds
+                : partToAdd
+                    ? [partToAdd.id]
+                    : [];
+
+        if (idsToHandle.length === 0) {
+            setAddToProjectError("No parts selected to add.");
+            return;
+        }
+
+        try {
+            setAddToProjectLoading(true);
+            setAddToProjectError(null);
+
+            // 1) zjistíme, které už v projektu jsou
+            const {data: existing, error: existingError} = await supabase
+                .from("project_parts")
+                .select("part_id")
+                .eq("org_id", currentOrg.org_id)
+                .eq("project_id", selectedProjectId)
+                .in("part_id", idsToHandle);
+
+            if (existingError) {
+                throw existingError;
+            }
+
+            const existingIds = new Set<string>(
+                (existing || []).map((row: any) => row.part_id)
+            );
+
+            const idsToInsert = idsToHandle.filter(
+                (id) => !existingIds.has(id)
+            );
+
+            if (idsToInsert.length > 0) {
+                const rows = idsToInsert.map((partId) => ({
+                    org_id: currentOrg.org_id,
+                    project_id: selectedProjectId,
+                    part_id: partId,
+                    added_by_user_id: user.id,
+                }));
+
+                const {error} = await supabase
+                    .from("project_parts")
+                    .insert(rows);
+
+                if (error) {
+                    // pokud máš unique constraint, 23505 ignorujeme
+                    // @ts-ignore
+                    if (error.code !== "23505") {
+                        throw error;
+                    }
+                }
+            }
+
+            // success – close & reset
+            setAddToProjectOpen(false);
+            setPartToAdd(null);
+            setBulkProjectPartIds(null);
+            setSelectedProjectId("");
+        } catch (err: any) {
+            console.error("[Documents] addToProject error:", err);
+            setAddToProjectError(
+                err.message || "Failed to add part(s) to project."
+            );
+        } finally {
+            setAddToProjectLoading(false);
+        }
+    };
+
+
+    // === HANDLERY: TOGGLE SELECT ==============================================
+    const handleToggleSelect = (partId: string) => {
+        setSelectedPartIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(partId)) next.delete(partId);
+            else next.add(partId);
+            return next;
+        });
+    };
+
+    const handleToggleSelectAll = (idsOnPage: string[]) => {
+        setSelectedPartIds((prev) => {
+            const allSelected = idsOnPage.every((id) => prev.has(id));
+            if (allSelected) {
+                // odškrtnout vše na stránce
+                const next = new Set(prev);
+                idsOnPage.forEach((id) => next.delete(id));
+                return next;
+            } else {
+                // všechny na stránce přidat
+                const next = new Set(prev);
+                idsOnPage.forEach((id) => next.add(id));
+                return next;
+            }
+        });
     };
 
     // === HANDLERY: FILTRY =====================================================
@@ -979,6 +1304,7 @@ const Documents: React.FC = () => {
                         }
                     }}
                     onRowClick={handleRowClick}
+                    canUseProjects={canUseProjects}
                     canUseFavorite={canSetFavourite}
                     canSetStatus={canSetStatus}
                     canSetPriority={canSetPriority}
@@ -988,6 +1314,14 @@ const Documents: React.FC = () => {
                     onChangePriority={handlePriorityChange}
                     updatingStatusIds={updatingStatusIds}
                     updatingPriorityIds={updatingPriorityIds}
+                    selectedPartIds={selectedPartIds}
+                    onToggleSelect={handleToggleSelect}
+                    onToggleSelectAll={handleToggleSelectAll}
+                    onBulkSetStatus={handleBulkSetStatus}
+                    onBulkSetPriority={handleBulkSetPriority}
+                    onBulkToggleFavorite={handleBulkToggleFavorite}
+                    onBulkAddToProject={handleBulkAddToProject}
+                    onAddToProject={handleOpenAddToProject}
                 />
 
                 {/* Pagination */}
@@ -1003,6 +1337,133 @@ const Documents: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {addToProjectOpen && (
+                <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+                        <h2 className="text-lg font-semibold text-gray-900 mb-3">
+                            {bulkProjectPartIds && bulkProjectPartIds.length > 0
+                                ? `Add ${bulkProjectPartIds.length} parts to project`
+                                : "Add part to project"}
+                        </h2>
+
+                        {/* single režim – zobrazíme info o dílu */}
+                        {partToAdd &&
+                            (!bulkProjectPartIds || bulkProjectPartIds.length === 0) && (
+                                <div
+                                    className="mb-4 text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                                    <div className="font-medium text-gray-800">
+                                        {partToAdd.drawing_title ||
+                                            partToAdd.document?.file_name ||
+                                            "Part"}
+                                    </div>
+                                    <div className="text-[11px] text-gray-500">
+                                        {partToAdd.company_name && (
+                                            <>
+                                                {partToAdd.company_name}
+                                                {" • "}
+                                            </>
+                                        )}
+                                        {partToAdd.document?.file_name}
+                                        {partToAdd.page != null &&
+                                            ` (page ${partToAdd.page})`}
+                                    </div>
+                                </div>
+                            )}
+
+                        {addToProjectError && (
+                            <div
+                                className="mb-3 p-2.5 bg-rose-50 border border-rose-200 rounded-md flex items-start gap-2">
+                                <AlertCircle
+                                    className="w-4 h-4 text-rose-600 mt-0.5"
+                                    strokeWidth={1.5}
+                                />
+                                <p className="text-xs text-rose-700">
+                                    {addToProjectError}
+                                </p>
+                            </div>
+                        )}
+
+                        {projects.length === 0 ? (
+                            <div className="text-sm text-gray-700">
+                                You don&apos;t have any projects yet.{" "}
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setAddToProjectOpen(false);
+                                        setPartToAdd(null);
+                                        setBulkProjectPartIds(null);
+                                        navigate("/projects");
+                                    }}
+                                    className="text-blue-600 hover:underline font-medium"
+                                >
+                                    Go to Projects
+                                </button>
+                                {" "}
+                                to create your first project.
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                        Project
+                                    </label>
+                                    <select
+                                        disabled={projectsLoading}
+                                        value={selectedProjectId}
+                                        onChange={(e) =>
+                                            setSelectedProjectId(e.target.value)
+                                        }
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+                                    >
+                                        <option value="">
+                                            {projectsLoading
+                                                ? "Loading projects..."
+                                                : "Select project..."}
+                                        </option>
+                                        {projects.map((p) => (
+                                            <option key={p.id} value={p.id as string}>
+                                                {p.name}
+                                                {p.customer_name
+                                                    ? ` – ${p.customer_name}`
+                                                    : ""}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex justify-end gap-2 mt-6">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setAddToProjectOpen(false);
+                                    setPartToAdd(null);
+                                    setBulkProjectPartIds(null);
+                                    setSelectedProjectId("");
+                                    setAddToProjectError(null);
+                                }}
+                                className="px-4 py-2 text-xs rounded-lg border border-gray-300 bg-white hover:bg-gray-50"
+                                disabled={addToProjectLoading}
+                            >
+                                Cancel
+                            </button>
+                            {projects.length > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={handleConfirmAddToProject}
+                                    disabled={addToProjectLoading}
+                                    className="px-4 py-2 text-xs rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium disabled:opacity-60"
+                                >
+                                    {addToProjectLoading ? "Adding..." : "Add to project"}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
 
             {/* Delete modal */}
             <DeleteDocumentModal
