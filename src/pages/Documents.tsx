@@ -12,6 +12,8 @@ import {useOrgBilling} from "../hooks/useOrgBilling";
 import {useOrgUsage} from "../hooks/useOrgUsage";
 import {getUsageLimitInfo, isInactiveStatus} from "../utils/billing";
 import {formatTierLabel} from "../utils/tiers.ts";
+import type { PartWithDocument } from "../hooks/useParts";
+import { useProjects } from "../hooks/useProjects";
 
 type StatusFilter = 'all' | 'processed' | 'processing' | 'error';
 type TimeFilter = 'all' | '7d' | '30d' | '90d';
@@ -57,6 +59,16 @@ const Documents: React.FC = () => {
 
     const {billing} = useOrgBilling();
     const {usage} = useOrgUsage(currentOrg?.org_id);
+
+    const canUseProjects = !!billing?.tier?.can_use_projects;  // 👈 feature flag
+    const { projects } = useProjects();                            // 👈 načtení projektů orgu
+
+    // state pro "Add to project"
+    const [addToProjectOpen, setAddToProjectOpen] = useState(false);
+    const [partToAdd, setPartToAdd] = useState<PartWithDocument | null>(null);
+    const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+    const [addToProjectError, setAddToProjectError] = useState<string | null>(null);
+    const [addToProjectLoading, setAddToProjectLoading] = useState(false);
 
     // usage + limit info
     const {jobsUsed, maxJobs, isOverLimit} = getUsageLimitInfo(
@@ -161,8 +173,8 @@ const Documents: React.FC = () => {
         }
     };
 
-    const openDeleteModal = (doc: any) => {
-        setDocToDelete(doc);
+    const openDeleteModal = (part: PartWithDocument) => {
+        setDocToDelete(part.document);
         setDeleteModalOpen(true);
     };
 
@@ -234,6 +246,64 @@ const Documents: React.FC = () => {
         setFitFilter('all');
         setCompanyFilter('all');
         setClassFilter('all');
+    };
+
+    const handleOpenAddToProject = (part: PartWithDocument) => {
+        if (!canUseProjects) {
+            return;
+        }
+        setPartToAdd(part);
+        setSelectedProjectId("");
+        setAddToProjectError(null);
+        setAddToProjectOpen(true);
+    };
+
+    const handleConfirmAddToProject = async () => {
+        if (!currentOrg || !user || !partToAdd) {
+            setAddToProjectError("Missing context to add part to project.");
+            return;
+        }
+
+        if (!selectedProjectId) {
+            setAddToProjectError("Please select a project.");
+            return;
+        }
+
+        try {
+            setAddToProjectLoading(true);
+            setAddToProjectError(null);
+
+            const { error } = await supabase
+                .from("project_parts")
+                .insert({
+                    org_id: currentOrg.org_id,
+                    project_id: selectedProjectId,
+                    part_id: partToAdd.id,
+                    added_by_user_id: user.id,
+                });
+
+            if (error) {
+                // pokud máš unique constraint, může přijít 23505 – klidně ji ber jako "ok"
+                // @ts-ignore
+                if (error.code === "23505") {
+                    // part už v projektu je – nebudeme to brát jako fail
+                } else {
+                    console.error("[Documents] addToProject error:", error);
+                    setAddToProjectError(error.message || "Failed to add part to project.");
+                    return;
+                }
+            }
+
+            // success
+            setAddToProjectOpen(false);
+            setPartToAdd(null);
+            setSelectedProjectId("");
+        } catch (err: any) {
+            console.error("[Documents] unexpected addToProject error:", err);
+            setAddToProjectError(err.message || "Failed to add part to project.");
+        } finally {
+            setAddToProjectLoading(false);
+        }
     };
 
     // Distinct values for company and class filters
@@ -580,6 +650,8 @@ const Documents: React.FC = () => {
                     onDownload={handleDownloadDocument}
                     onDelete={openDeleteModal}
                     onRowClick={handleRowClick}
+                    canUseProjects={canUseProjects}
+                    onAddToProject={handleOpenAddToProject}
                 />
 
                 {hasMore && !loading && (
@@ -594,6 +666,107 @@ const Documents: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* Add to project modal */}
+        {addToProjectOpen && partToAdd && (
+            <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+                <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-3">
+                        Add part to project
+                    </h2>
+
+                    <div className="mb-4 text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                        <div className="font-medium text-gray-800">
+                            {partToAdd.drawing_title ||
+                                partToAdd.document?.file_name ||
+                                "Part"}
+                        </div>
+                        <div className="text-[11px] text-gray-500">
+                            {partToAdd.company_name && (
+                                <>
+                                    {partToAdd.company_name}
+                                    {" • "}
+                                </>
+                            )}
+                            {partToAdd.document?.file_name}
+                            {partToAdd.page != null && ` (page ${partToAdd.page})`}
+                        </div>
+                    </div>
+
+                    {addToProjectError && (
+                        <div className="mb-3 p-2.5 bg-rose-50 border border-rose-200 rounded-md flex items-start gap-2">
+                            <AlertCircle className="w-4 h-4 text-rose-600 mt-0.5" strokeWidth={1.5} />
+                            <p className="text-xs text-rose-700">{addToProjectError}</p>
+                        </div>
+                    )}
+
+                    {projects.length === 0 ? (
+                        <div className="text-sm text-gray-700">
+                            You don&apos;t have any projects yet.{" "}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setAddToProjectOpen(false);
+                                    setPartToAdd(null);
+                                    navigate("/projects");
+                                }}
+                                className="text-blue-600 hover:underline font-medium"
+                            >
+                                Go to Projects
+                            </button>{" "}
+                            to create your first project.
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    Project
+                                </label>
+                                <select
+                                    value={selectedProjectId}
+                                    onChange={(e) => setSelectedProjectId(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+                                >
+                                    <option value="">Select project...</option>
+                                    {projects.map((p) => (
+                                        <option key={p.id} value={p.id as string}>
+                                            {p.name}
+                                            {p.customer_name ? ` – ${p.customer_name}` : ""}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex justify-end gap-2 mt-6">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setAddToProjectOpen(false);
+                                setPartToAdd(null);
+                                setSelectedProjectId("");
+                                setAddToProjectError(null);
+                            }}
+                            className="px-4 py-2 text-xs rounded-lg border border-gray-300 bg-white hover:bg-gray-50"
+                            disabled={addToProjectLoading}
+                        >
+                            Cancel
+                        </button>
+                        {projects.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={handleConfirmAddToProject}
+                                disabled={addToProjectLoading}
+                                className="px-4 py-2 text-xs rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium disabled:opacity-60"
+                            >
+                                {addToProjectLoading ? "Adding..." : "Add to project"}
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+        )}
 
             <DeleteDocumentModal
                 open={deleteModalOpen}

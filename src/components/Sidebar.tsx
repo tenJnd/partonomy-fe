@@ -1,6 +1,16 @@
 import React from 'react';
 import {NavLink} from 'react-router-dom';
-import {ChevronLeft, ChevronRight, CreditCard, FileText, SlidersHorizontal, Users,} from 'lucide-react';
+import {
+    ChevronLeft,
+    ChevronRight,
+    CreditCard,
+    FileText,
+    FolderKanban,
+    Lock,
+    SlidersHorizontal,
+    Users
+} from 'lucide-react';
+import {useOrgBilling} from '../hooks/useOrgBilling';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -15,16 +25,17 @@ const Sidebar: React.FC<SidebarProps> = ({
                                              isCollapsed,
                                              onToggleCollapse,
                                          }) => {
+    const {billing} = useOrgBilling();
+    const canUseProjects = !!billing?.tier?.can_use_projects;
     const mainNavItems = [
         {path: '/Documents', label: 'Documents', icon: FileText},
+        {path: '/projects', label: 'Projects', icon: FolderKanban, locked: !canUseProjects},
     ];
 
     const settingsNavItems = [
         {path: '/settings/report', label: 'Report Settings', icon: SlidersHorizontal},
         {path: '/settings/organization', label: 'Organization', icon: Users},
         {path: '/settings/billing', label: 'Billing & Usage', icon: CreditCard},
-        // future:
-        // { path: '/help', label: 'Help & Support', icon: HelpCircle },
     ];
 
     return (
@@ -88,11 +99,19 @@ const Sidebar: React.FC<SidebarProps> = ({
                                         }`}
                                         strokeWidth={1.5}
                                     />
-                                    {!isCollapsed && <span className="text-sm">{item.label}</span>}
+                                    {!isCollapsed && (
+                                        <span className="text-sm flex items-center gap-1">
+                                        {item.label}
+                                            {item.locked && (
+                                                <Lock className="w-3 h-3 text-gray-400" strokeWidth={1.5}/>
+                                            )}
+                                        </span>
+                                    )}
                                 </>
                             )}
                         </NavLink>
                     ))}
+
 
                     {/* Divider */}
                     <div className="border-t border-gray-200 my-2"/>

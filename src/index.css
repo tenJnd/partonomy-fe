@@ -4,6 +4,10 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  font-size: 14px; /* 16px * 0.9375 ≈ 94% velikosti */
+}
+
 * {
   margin: 0;
   padding: 0;

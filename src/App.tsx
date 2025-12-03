@@ -9,7 +9,9 @@ import TopBar from './components/TopBar';
 import Sidebar from './components/Sidebar';
 
 import Documents from './pages/Documents';
+import Projects from './pages/Projects'
 import DocumentDetail from './pages/DocumentDetail';
+import ProjectDetail from "./pages/ProjectDetail";
 
 // Settings pages
 import ReportSettings from './pages/ReportSettings';
@@ -64,7 +66,9 @@ const AppLayout: React.FC = () => {
                     <Routes>
                         {/* Dashboard */}
                         <Route path="/documents" element={<Documents/>}/>
+                        <Route path="/projects" element={<Projects />} />
                         <Route path="/documents/:documentId" element={<DocumentDetail/>}/>
+                        <Route path="/projects/:projectId" element={<ProjectDetail />} />
 
                         {/* Settings */}
                         <Route path="/settings/report" element={<ReportSettings/>}/>

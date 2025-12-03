@@ -20,6 +20,7 @@ export interface OrgBilling {
     can_use_tags: boolean | false;
     can_set_priority: boolean | false;
     can_set_status: boolean | false;
+    can_use_projects: boolean | false
   } | null;
 }
 
@@ -57,7 +58,8 @@ export function useOrgBilling() {
             can_set_favourite,
             can_use_tags,
             can_set_priority,
-            can_set_status
+            can_set_status,
+            can_use_projects
           )
         `
         )

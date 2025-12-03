@@ -21,6 +21,8 @@ export type FitLevelEnum = "GOOD" | "PARTIAL" | "COOPERATION" | "LOW" | "UNKNOWN
 export type TierEnum = "free" | "trial" | "starter" | "pro" | "enterprise";
 export type WorkflowStatusEnum = 'new' | 'in_progress' | 'done' | 'ignored';
 export type PriorityEnum = 'low' | 'normal' | 'high' | 'hot';
+export type ProjectStatusEnum = 'open' | 'in_progress' | 'closed' | 'archived'
+export type ProjectPriorityEnum = 'low' | 'normal' | 'high' | 'hot';
 
 
 export interface Database {
@@ -290,6 +292,62 @@ export interface Database {
                 };
                 Update: Partial<Omit<Database["public"]["Tables"]["part_favorites"]["Insert"], "id">>;
             };
+            projects: {
+                Row: {
+                    id: string;
+                    org_id: string;
+                    created_by_user_id: string;
+                    name: string;
+                    description: string | null;
+                    customer_name: string | null;
+                    external_ref: string | null;
+                    status: ProjectStatusEnum;
+                    priority: ProjectPriorityEnum;
+                    due_date: string | null;   // timestamptz -> string | null
+                    meta: Json | null;         // JSONB z Python modelu
+                    created_at: string;
+                    updated_at: string;
+                };
+                Insert: {
+                    id?: string;               // UUID default v DB
+                    org_id: string;
+                    created_by_user_id: string;
+                    name: string;
+                    description?: string | null;
+                    customer_name?: string | null;
+                    external_ref?: string | null;
+                    status?: ProjectStatusEnum;        // default 'open'
+                    priority?: ProjectPriorityEnum;    // default 'normal'
+                    due_date?: string | null;
+                    meta?: Json | null;
+                    created_at?: string;
+                    updated_at?: string;
+                };
+                Update: Partial<
+                    Omit<Database["public"]["Tables"]["projects"]["Insert"], "id">
+                >;
+            };
+            project_parts: {
+                Row: {
+                    id: string;
+                    org_id: string;
+                    project_id: string;
+                    part_id: string;
+                    added_by_user_id: string;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;          // UUID generovaný v DB
+                    org_id: string;
+                    project_id: string;
+                    part_id: string;
+                    added_by_user_id: string;
+                    created_at?: string;
+                };
+                Update: Partial<
+                    Omit<Database["public"]["Tables"]["project_parts"]["Insert"], "id">
+                >;
+            };
             Views: {
                 [_ in never]: never;
             };
@@ -305,7 +363,9 @@ export interface Database {
                 fit_level_enum: FitLevelEnum;
                 tier_enum: TierEnum;
                 part_workflow_status_enum: WorkflowStatusEnum,
-                part_priority_enum: PriorityEnum
+                part_priority_enum: PriorityEnum,
+                project_status_enum: ProjectStatusEnum,
+                project_priority_enum: ProjectPriorityEnum
             };
         };
     }

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
     AlertCircle,
@@ -7,14 +6,22 @@ import {
     ChevronUp,
     Download,
     FileText,
+    FolderPlus,
     Loader2,
     MoreVertical,
     RefreshCw,
-    Trash2
+    Trash2,
 } from 'lucide-react';
-import type { PartWithDocument } from '../../hooks/useParts';
+import type {PartWithDocument} from '../../hooks/useParts';
 
-export type SortField = 'file_name' | 'company_name' | 'primary_class' | 'overall_complexity' | 'fit_level' | 'last_status' | 'last_updated';
+export type SortField =
+    'file_name'
+    | 'company_name'
+    | 'primary_class'
+    | 'overall_complexity'
+    | 'fit_level'
+    | 'last_status'
+    | 'last_updated';
 
 interface DocumentsTableProps {
     parts: PartWithDocument[];
@@ -29,28 +36,34 @@ interface DocumentsTableProps {
     onDownload: (doc: any) => void;
     onDelete: (doc: any) => void;
     onRowClick: (documentId: string, partId: string) => void;
+    canUseProjects: boolean;
+    onAddToProject: (part: PartWithDocument) => void;
+    deleteLabel?: string;
 }
 
 const DocumentsTable: React.FC<DocumentsTableProps> = ({
-    parts,
-    loading,
-    uploading,
-    sortField,
-    sortDirection,
-    onSortChange,
-    onUploadClick,
-    onRerun,
-    onDownload,
-    onDelete,
-    onRowClick,
-}) => {
+                                                           parts,
+                                                           loading,
+                                                           uploading,
+                                                           sortField,
+                                                           sortDirection,
+                                                           onSortChange,
+                                                           onUploadClick,
+                                                           onRerun,
+                                                           onDownload,
+                                                           onDelete,
+                                                           onRowClick,
+                                                           canUseProjects,
+                                                           onAddToProject,
+                                                           deleteLabel = "Delete",
+                                                       }) => {
     const [openMenuId, setOpenMenuId] = React.useState<string | null>(null);
 
     const SortableHeader: React.FC<{
         field: SortField;
         children: React.ReactNode;
         className?: string;
-    }> = ({ field, children, className = '' }) => {
+    }> = ({field, children, className = ''}) => {
         const isActive = sortField === field;
         return (
             <th
@@ -61,13 +74,13 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                     {children}
                     {isActive ? (
                         sortDirection === 'asc' ? (
-                            <ChevronUp className="w-4 h-4 text-blue-600" strokeWidth={2} />
+                            <ChevronUp className="w-4 h-4 text-blue-600" strokeWidth={2}/>
                         ) : (
-                            <ChevronDown className="w-4 h-4 text-blue-600" strokeWidth={2} />
+                            <ChevronDown className="w-4 h-4 text-blue-600" strokeWidth={2}/>
                         )
                     ) : (
                         <div className="w-4 h-4 opacity-0 group-hover:opacity-30">
-                            <ChevronDown className="w-4 h-4" strokeWidth={2} />
+                            <ChevronDown className="w-4 h-4" strokeWidth={2}/>
                         </div>
                     )}
                 </div>
@@ -192,7 +205,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
         return (
             <div
                 className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border-2 border-dashed border-gray-300">
-                <FileText className="w-16 h-16 text-gray-300 mb-4" strokeWidth={1.5} />
+                <FileText className="w-16 h-16 text-gray-300 mb-4" strokeWidth={1.5}/>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No parts yet</h3>
                 <p className="text-sm text-gray-600 mb-6">
                     Upload your first technical drawing to start analyzing
@@ -201,7 +214,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                     onClick={onUploadClick}
                     className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-all"
                 >
-                    <FileText className="w-4 h-4" strokeWidth={2} />
+                    <FileText className="w-4 h-4" strokeWidth={2}/>
                     Upload Documents
                 </button>
             </div>
@@ -213,75 +226,86 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
             <div className="overflow-x-auto">
                 <table className="w-full table-fixed">
                     <colgroup>
-                        <col style={{ width: '25%' }} /> {/* File Name */}
-                        <col style={{ width: '4%' }} />  {/* Page */}
-                        <col style={{ width: '10%' }} /> {/* Company */}
-                        <col style={{ width: '8%' }} /> {/* Class */}
-                        <col style={{ width: '9%' }} />  {/* Material */}
-                        <col style={{ width: '12%' }} /> {/* Envelope */}
-                        <col style={{ width: '8%' }} />  {/* Complexity */}
-                        <col style={{ width: '8%' }} />  {/* Fit */}
-                        <col style={{ width: '8%' }} /> {/* Modified */}
-                        <col style={{ width: '48px' }} /> {/* Status */}
-                        <col style={{ width: '48px' }} /> {/* Actions */}
+                        <col style={{width: '25%'}}/>
+                        {/* File Name */}
+                        <col style={{width: '4%'}}/>
+                        {/* Page */}
+                        <col style={{width: '10%'}}/>
+                        {/* Company */}
+                        <col style={{width: '8%'}}/>
+                        {/* Class */}
+                        <col style={{width: '9%'}}/>
+                        {/* Material */}
+                        <col style={{width: '12%'}}/>
+                        {/* Envelope */}
+                        <col style={{width: '8%'}}/>
+                        {/* Complexity */}
+                        <col style={{width: '8%'}}/>
+                        {/* Fit */}
+                        <col style={{width: '8%'}}/>
+                        {/* Modified */}
+                        <col style={{width: '48px'}}/>
+                        {/* Status */}
+                        <col style={{width: '48px'}}/>
+                        {/* Actions */}
                     </colgroup>
                     <thead className="bg-slate-50 border-b border-gray-200">
-                        <tr>
-                            <SortableHeader field="file_name">File Name</SortableHeader>
-                            <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                Page
-                            </th>
-                            <SortableHeader field="company_name">Company</SortableHeader>
-                            <SortableHeader field="primary_class">Class</SortableHeader>
-                            <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                Material
-                            </th>
-                            <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                Envelope
-                            </th>
-                            <SortableHeader field="overall_complexity">Complexity</SortableHeader>
-                            <SortableHeader field="fit_level">Fit</SortableHeader>
-                            <SortableHeader field="last_updated">Modified</SortableHeader>
-                            <SortableHeader field="last_status" className="text-center">Status</SortableHeader>
-                            <th className="px-3 py-3"></th>
-                        </tr>
+                    <tr>
+                        <SortableHeader field="file_name">File Name</SortableHeader>
+                        <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Page
+                        </th>
+                        <SortableHeader field="company_name">Company</SortableHeader>
+                        <SortableHeader field="primary_class">Class</SortableHeader>
+                        <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Material
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Envelope
+                        </th>
+                        <SortableHeader field="overall_complexity">Complexity</SortableHeader>
+                        <SortableHeader field="fit_level">Fit</SortableHeader>
+                        <SortableHeader field="last_updated">Modified</SortableHeader>
+                        <SortableHeader field="last_status" className="text-center">Status</SortableHeader>
+                        <th className="px-3 py-3"></th>
+                    </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                     {parts.map((part) => {
-                            const statusConfig = getStatusConfig(part.document?.last_status || null);
-                            const StatusIcon = statusConfig.icon;
-                            const complexityConfig = getComplexityConfig(part.overall_complexity);
-                            const fitConfig = getFitConfig(part.fit_level);
+                        const statusConfig = getStatusConfig(part.document?.last_status || null);
+                        const StatusIcon = statusConfig.icon;
+                        const complexityConfig = getComplexityConfig(part.overall_complexity);
+                        const fitConfig = getFitConfig(part.fit_level);
 
-                            // Check if this is a processing placeholder
-                            const isPlaceholder = part.isProcessingPlaceholder;
+                        // Check if this is a processing placeholder
+                        const isPlaceholder = part.isProcessingPlaceholder;
 
-                            return (
-                                <tr
-                                    key={part.id}
-                                    onClick={() => !isPlaceholder && part.document && onRowClick(part.document.id, part.id)}
-                                    className={`transition-colors ${
-                                        isPlaceholder 
-                                            ? 'bg-blue-50/30 cursor-default' 
-                                            : 'hover:bg-blue-50/50 cursor-pointer'
-                                    }`}
-                                >
-                                    {/* File Name */}
-                                    <td className="px-3 py-3">
-                                        <div className="flex items-center gap-3">
-                                            <FileText className={`w-4 h-4 flex-shrink-0 ${
-                                                isPlaceholder ? 'text-blue-400' : 'text-gray-400'
-                                            }`} />
-                                            <span className={`text-sm font-medium truncate ${
-                                                isPlaceholder ? 'text-blue-900' : 'text-gray-900'
-                                            }`}>
+                        return (
+                            <tr
+                                key={part.id}
+                                onClick={() => !isPlaceholder && part.document && onRowClick(part.document.id, part.id)}
+                                className={`transition-colors ${
+                                    isPlaceholder
+                                        ? 'bg-blue-50/30 cursor-default'
+                                        : 'hover:bg-blue-50/50 cursor-pointer'
+                                }`}
+                            >
+                                {/* File Name */}
+                                <td className="px-3 py-3">
+                                    <div className="flex items-center gap-3">
+                                        <FileText className={`w-4 h-4 flex-shrink-0 ${
+                                            isPlaceholder ? 'text-blue-400' : 'text-gray-400'
+                                        }`}/>
+                                        <span className={`text-sm font-medium truncate ${
+                                            isPlaceholder ? 'text-blue-900' : 'text-gray-900'
+                                        }`}>
                                                 {part.document?.file_name || 'Unknown'}
                                             </span>
-                                        </div>
-                                    </td>
+                                    </div>
+                                </td>
 
-                                    {/* Page */}
-                                    <td className="px-3 py-3">
+                                {/* Page */}
+                                <td className="px-3 py-3">
                                         <span className="text-sm text-gray-500">
                                             {isPlaceholder ? (
                                                 <span className="text-xs italic">Processing...</span>
@@ -289,139 +313,157 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                 part.page !== null ? part.page : '-'
                                             )}
                                         </span>
-                                    </td>
+                                </td>
 
-                                    {/* Company */}
-                                    <td className="px-3 py-3">
+                                {/* Company */}
+                                <td className="px-3 py-3">
                                         <span className="text-sm text-gray-500 truncate block">
                                             {isPlaceholder ? '-' : (part.company_name || '-')}
                                         </span>
-                                    </td>
+                                </td>
 
-                                    {/* Class */}
-                                    <td className="px-3 py-3">
+                                {/* Class */}
+                                <td className="px-3 py-3">
                                         <span className="text-sm text-gray-500 truncate block">
                                             {isPlaceholder ? '-' : (part.primary_class || '-')}
                                         </span>
-                                    </td>
+                                </td>
 
-                                    {/* Material */}
-                                    <td className="px-3 py-3">
+                                {/* Material */}
+                                <td className="px-3 py-3">
                                         <span className="text-sm text-gray-500 truncate block">
                                             {isPlaceholder ? '-' : (part.material || '-')}
                                         </span>
-                                    </td>
+                                </td>
 
-                                    {/* Envelope */}
-                                    <td className="px-3 py-3">
+                                {/* Envelope */}
+                                <td className="px-3 py-3">
                                         <span className="text-sm text-gray-500 truncate block">
                                             {isPlaceholder ? '-' : (part.envelope_text || '-')}
                                         </span>
-                                    </td>
+                                </td>
 
-                                    {/* Complexity */}
-                                    <td className="px-3 py-3">
-                                        {isPlaceholder ? (
-                                            <span className="text-sm text-gray-400">-</span>
-                                        ) : complexityConfig ? (
-                                            <span
-                                                className={`inline-flex items-center px-2 py-1 rounded text-xs border ${complexityConfig.className}`}>
+                                {/* Complexity */}
+                                <td className="px-3 py-3">
+                                    {isPlaceholder ? (
+                                        <span className="text-sm text-gray-400">-</span>
+                                    ) : complexityConfig ? (
+                                        <span
+                                            className={`inline-flex items-center px-2 py-1 rounded text-xs border ${complexityConfig.className}`}>
                                                 {complexityConfig.label}
                                             </span>
-                                        ) : (
-                                            <span className="text-sm text-gray-400">-</span>
-                                        )}
-                                    </td>
+                                    ) : (
+                                        <span className="text-sm text-gray-400">-</span>
+                                    )}
+                                </td>
 
-                                    {/* Fit */}
-                                    <td className="px-3 py-3">
-                                        {isPlaceholder ? (
-                                            <span className="text-sm text-gray-400">-</span>
-                                        ) : fitConfig ? (
-                                            <span
-                                                className={`inline-flex items-center px-2 py-1 rounded text-xs border ${fitConfig.className}`}>
+                                {/* Fit */}
+                                <td className="px-3 py-3">
+                                    {isPlaceholder ? (
+                                        <span className="text-sm text-gray-400">-</span>
+                                    ) : fitConfig ? (
+                                        <span
+                                            className={`inline-flex items-center px-2 py-1 rounded text-xs border ${fitConfig.className}`}>
                                                 {fitConfig.label}
                                             </span>
-                                        ) : (
-                                            <span className="text-sm text-gray-400">-</span>
-                                        )}
-                                    </td>
+                                    ) : (
+                                        <span className="text-sm text-gray-400">-</span>
+                                    )}
+                                </td>
 
-                                    {/* Modified */}
-                                    <td className="px-3 py-3">
+                                {/* Modified */}
+                                <td className="px-3 py-3">
                                         <span className="text-xs text-gray-500">
                                             {isPlaceholder ? '-' : (part.last_updated ? formatDate(part.last_updated) : '-')}
                                         </span>
-                                    </td>
+                                </td>
 
-                                    {/* Status */}
-                                    <td className="px-3 py-3">
-                                        <div className="flex justify-center">
-                                            <StatusIcon
-                                                className={`w-5 h-5 ${statusConfig.iconColor} ${statusConfig.animate ? 'animate-spin' : ''}`}
-                                                strokeWidth={1.5}
-                                            />
+                                {/* Status */}
+                                <td className="px-3 py-3">
+                                    <div className="flex justify-center">
+                                        <StatusIcon
+                                            className={`w-5 h-5 ${statusConfig.iconColor} ${statusConfig.animate ? 'animate-spin' : ''}`}
+                                            strokeWidth={1.5}
+                                        />
+                                    </div>
+                                </td>
+
+                                {/* Actions */}
+                                <td className="px-3 py-3">
+                                    {!isPlaceholder && (
+                                        <div className="relative">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setOpenMenuId(openMenuId === part.id ? null : part.id);
+                                                }}
+                                                className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                                            >
+                                                <MoreVertical className="w-4 h-4 text-gray-500" strokeWidth={1.5}/>
+                                            </button>
+
+                                            {openMenuId === part.id && part.document && (
+                                                <div
+                                                    className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onRerun(part.document!.id);
+                                                            setOpenMenuId(null);
+                                                        }}
+                                                        className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
+                                                    >
+                                                        <RefreshCw className="w-4 h-4" strokeWidth={1.5}/>
+                                                        Rerun
+                                                    </button>
+
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onDownload(part.document);
+                                                            setOpenMenuId(null);
+                                                        }}
+                                                        className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
+                                                    >
+                                                        <Download className="w-4 h-4" strokeWidth={1.5}/>
+                                                        Download
+                                                    </button>
+
+                                                    {/* 👇 Nové – zobrazí se jen pokud má org povolené Projects */}
+                                                    {canUseProjects && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                onAddToProject(part);
+                                                                setOpenMenuId(null);
+                                                            }}
+                                                            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
+                                                        >
+                                                            <FolderPlus className="w-4 h-4" strokeWidth={1.5}/>
+                                                            Add to project
+                                                        </button>
+                                                    )}
+
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onDelete(part);
+                                                            setOpenMenuId(null);
+                                                        }}
+                                                        className="flex items-center gap-2 px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 w-full text-left transition-colors"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" strokeWidth={1.5}/>
+                                                        {deleteLabel}
+                                                    </button>
+                                                </div>
+                                            )}
+
                                         </div>
-                                    </td>
-
-                                    {/* Actions */}
-                                    <td className="px-3 py-3">
-                                        {!isPlaceholder && (
-                                            <div className="relative">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setOpenMenuId(openMenuId === part.id ? null : part.id);
-                                                    }}
-                                                    className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-                                                >
-                                                    <MoreVertical className="w-4 h-4 text-gray-500" strokeWidth={1.5} />
-                                                </button>
-
-                                                {openMenuId === part.id && part.document && (
-                                                    <div
-                                                        className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                onRerun(part.document!.id);
-                                                                setOpenMenuId(null);
-                                                            }}
-                                                            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
-                                                        >
-                                                            <RefreshCw className="w-4 h-4" strokeWidth={1.5} />
-                                                            Rerun
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                onDownload(part.document);
-                                                                setOpenMenuId(null);
-                                                            }}
-                                                            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
-                                                        >
-                                                            <Download className="w-4 h-4" strokeWidth={1.5} />
-                                                            Download
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                onDelete(part.document);
-                                                                setOpenMenuId(null);
-                                                            }}
-                                                            className="flex items-center gap-2 px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 w-full text-left transition-colors"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" strokeWidth={1.5} />
-                                                            Delete
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </td>
-                                </tr>
-                            );
-                        })}
+                                    )}
+                                </td>
+                            </tr>
+                        );
+                    })}
                     </tbody>
                 </table>
             </div>
