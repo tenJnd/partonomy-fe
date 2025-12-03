@@ -1,29 +1,43 @@
-import React, {useMemo, useRef, useState} from 'react';
-import {useNavigate} from 'react-router-dom';
-import {AlertCircle, Upload} from 'lucide-react';
-import {useAuth} from '../contexts/AuthContext';
-import {supabase} from '../lib/supabase';
-import DeleteDocumentModal from '../components/DeleteDocumentModal';
-import {useParts} from '../hooks/useParts';
-import {useDocumentUpload} from '../hooks/useDocumentUpload';
-import type {SortField} from '../components/documents/DocumentsTable';
-import DocumentsTable from '../components/documents/DocumentsTable';
+// src/pages/Documents.tsx
+import React, {useEffect, useMemo, useRef, useState,} from "react";
+import {useNavigate} from "react-router-dom";
+import {AlertCircle, Star, Upload} from "lucide-react";
+
+import {useAuth} from "../contexts/AuthContext";
+import {supabase} from "../lib/supabase";
+
+import DeleteDocumentModal from "../components/DeleteDocumentModal";
+import DocumentsTable, {SortField,} from "../components/documents/DocumentsTable";
+
+import {PartWithDocument, useParts} from "../hooks/useParts";
+import {useDocumentUpload} from "../hooks/useDocumentUpload";
 import {useOrgBilling} from "../hooks/useOrgBilling";
 import {useOrgUsage} from "../hooks/useOrgUsage";
-import {getUsageLimitInfo, isInactiveStatus} from "../utils/billing";
-import {formatTierLabel} from "../utils/tiers.ts";
-import type { PartWithDocument } from "../hooks/useParts";
-import { useProjects } from "../hooks/useProjects";
 
-type StatusFilter = 'all' | 'processed' | 'processing' | 'error';
-type TimeFilter = 'all' | '7d' | '30d' | '90d';
-type ComplexityFilter = 'all' | 'LOW' | 'MEDIUM' | 'HIGH' | 'EXTREME';
-type FitFilter = 'all' | 'GOOD' | 'PARTIAL' | 'COOPERATION' | 'LOW' | 'UNKNOWN';
+import {getUsageLimitInfo, isInactiveStatus} from "../utils/billing";
+import {formatTierLabel} from "../utils/tiers";
+
+import type {PriorityEnum, WorkflowStatusEnum,} from "../lib/database.types";
+
+// minimální info, které potřebujeme pro delete modal
+type SimpleDocumentRef = {
+    id: string;
+    file_name?: string | null;
+};
+
+
+type StatusFilter = "all" | "processed" | "processing" | "error";
+type TimeFilter = "all" | "7d" | "30d" | "90d";
+type ComplexityFilter = "all" | "LOW" | "MEDIUM" | "HIGH" | "EXTREME";
+type FitFilter = "all" | "GOOD" | "PARTIAL" | "COOPERATION" | "LOW" | "UNKNOWN";
+type WorkflowStatusFilter = "all" | WorkflowStatusEnum;
+type PriorityFilter = "all" | PriorityEnum;
 
 const Documents: React.FC = () => {
     const {currentOrg, user} = useAuth();
     const navigate = useNavigate();
 
+    // === DATA HOOKY ===========================================================
     const {
         parts,
         loading,
@@ -41,53 +55,105 @@ const Documents: React.FC = () => {
         uploadFiles,
     } = useDocumentUpload(currentOrg, user);
 
-    const [isDragging, setIsDragging] = useState(false);
-    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-    const [docToDelete, setDocToDelete] = useState<any | null>(null);
-
-    const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-    const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
-    const [complexityFilter, setComplexityFilter] = useState<ComplexityFilter>('all');
-    const [fitFilter, setFitFilter] = useState<FitFilter>('all');
-    const [companyFilter, setCompanyFilter] = useState<string>('all');
-    const [classFilter, setClassFilter] = useState<string>('all');
-
-    const [sortField, setSortField] = useState<SortField>('last_updated');
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
     const {billing} = useOrgBilling();
     const {usage} = useOrgUsage(currentOrg?.org_id);
 
-    const canUseProjects = !!billing?.tier?.can_use_projects;  // 👈 feature flag
-    const { projects } = useProjects();                            // 👈 načtení projektů orgu
+    // === TIER CAPABILITIES ====================================================
+    const canSetFavourite = !!billing?.tier?.can_set_favourite;
+    const canSetStatus = !!billing?.tier?.can_set_status;
+    const canSetPriority = !!billing?.tier?.can_set_priority;
 
-    // state pro "Add to project"
-    const [addToProjectOpen, setAddToProjectOpen] = useState(false);
-    const [partToAdd, setPartToAdd] = useState<PartWithDocument | null>(null);
-    const [selectedProjectId, setSelectedProjectId] = useState<string>("");
-    const [addToProjectError, setAddToProjectError] = useState<string | null>(null);
-    const [addToProjectLoading, setAddToProjectLoading] = useState(false);
+    // === UI STATE =============================================================
+    const [isDragging, setIsDragging] = useState(false);
 
-    // usage + limit info
-    const {jobsUsed, maxJobs, isOverLimit} = getUsageLimitInfo(
-        billing ?? null,
-        usage ?? null
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [docToDelete, setDocToDelete] = useState<SimpleDocumentRef | null>(null);
+
+
+    // Filtry
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>("all"); // document last_status
+    const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
+    const [complexityFilter, setComplexityFilter] =
+        useState<ComplexityFilter>("all");
+    const [fitFilter, setFitFilter] = useState<FitFilter>("all");
+    const [companyFilter, setCompanyFilter] = useState<string>("all");
+    const [classFilter, setClassFilter] = useState<string>("all");
+
+    const [workflowStatusFilter, setWorkflowStatusFilter] =
+        useState<WorkflowStatusFilter>("all");
+    const [priorityFilter, setPriorityFilter] =
+        useState<PriorityFilter>("all");
+    const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+
+    // Sort
+    const [sortField, setSortField] = useState<SortField>("last_updated");
+    const [sortDirection, setSortDirection] = useState<"asc" | "desc">(
+        "desc",
     );
 
-    // kdy blokujeme upload globálně
-    const uploadsBlocked =
-        !currentOrg ||
-        isInactiveStatus(billing?.status) ||
-        isOverLimit;
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Favourites & loading flags
+    const [favoritePartIds, setFavoritePartIds] = useState<Set<string>>(
+        new Set(),
+    );
+    const [updatingStatusIds, setUpdatingStatusIds] = useState<Set<string>>(
+        new Set(),
+    );
+    const [updatingPriorityIds, setUpdatingPriorityIds] =
+        useState<Set<string>>(new Set());
+
+    // === USAGE / LIMITS =======================================================
+    const {jobsUsed, maxJobs, isOverLimit} = getUsageLimitInfo(
+        billing ?? null,
+        usage ?? null,
+    );
+
+    const uploadsBlocked =
+        !currentOrg || isInactiveStatus(billing?.status) || isOverLimit;
+
+    // === LOAD FAVOURITES ======================================================
+    useEffect(() => {
+        if (!currentOrg || !user) {
+            setFavoritePartIds(new Set());
+            return;
+        }
+
+        let cancelled = false;
+
+        const loadFavorites = async () => {
+            const {data, error} = await supabase
+                .from("part_favorites")
+                .select("part_id")
+                .eq("org_id", currentOrg.org_id)
+                .eq("user_id", user.id);
+
+            if (error) {
+                console.error("[Documents] Error loading favorites:", error);
+                return;
+            }
+
+            if (!cancelled) {
+                setFavoritePartIds(
+                    new Set((data || []).map((row: any) => row.part_id)),
+                );
+            }
+        };
+
+        loadFavorites();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [currentOrg?.org_id, user?.id]);
+
+    // === HANDLERY: UPLOAD =====================================================
     const handleUploadClick = () => {
         if (uploadsBlocked) {
             setUploadError(
                 maxJobs
                     ? `You have reached the limit of your plan (${jobsUsed}/${maxJobs} jobs). Upgrade your plan to upload more documents.`
-                    : "Uploads are currently disabled for this organization."
+                    : "Uploads are currently disabled for this organization.",
             );
             return;
         }
@@ -95,8 +161,9 @@ const Documents: React.FC = () => {
         fileInputRef.current?.click();
     };
 
-
-    const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileSelect = async (
+        event: React.ChangeEvent<HTMLInputElement>,
+    ) => {
         const files = event.target.files;
         if (!files || files.length === 0) return;
 
@@ -104,9 +171,8 @@ const Documents: React.FC = () => {
             setUploadError(
                 maxJobs
                     ? `You have reached the limit of your plan (${jobsUsed}/${maxJobs} jobs). Upgrade your plan to upload more documents.`
-                    : "Uploads are currently disabled for this organization."
+                    : "Uploads are currently disabled for this organization.",
             );
-            // reset input, jinak by tam soubory zůstaly
             if (fileInputRef.current) {
                 fileInputRef.current.value = "";
             }
@@ -119,7 +185,6 @@ const Documents: React.FC = () => {
             fileInputRef.current.value = "";
         }
     };
-
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -144,7 +209,7 @@ const Documents: React.FC = () => {
             setUploadError(
                 maxJobs
                     ? `You have reached the limit of your plan (${jobsUsed}/${maxJobs} jobs). Upgrade your plan to upload more documents.`
-                    : "Uploads are currently disabled for this organization."
+                    : "Uploads are currently disabled for this organization.",
             );
             return;
         }
@@ -152,51 +217,59 @@ const Documents: React.FC = () => {
         await uploadFiles(Array.from(files));
     };
 
-
+    // === HANDLERY: DOCUMENTS ==================================================
     const handleRerunDocument = async (docId: string) => {
         try {
             const {error} = await supabase
-                .from('documents')
+                .from("documents")
                 .update({
-                    last_status: 'queued',
+                    last_status: "queued",
                     last_error: null,
                 })
-                .eq('id', docId);
+                .eq("id", docId);
 
             if (error) {
-                console.error('[Documents] Error rerunning document:', error);
-                setUploadError(error.message || 'Failed to re-run document');
+                console.error("[Documents] Error rerunning document:", error);
+                setUploadError(
+                    error.message || "Failed to re-run document.",
+                );
             }
         } catch (err: any) {
-            console.error('[Documents] Error rerunning document:', err);
-            setUploadError(err.message || 'Failed to re-run document');
+            console.error("[Documents] Error rerunning document:", err);
+            setUploadError(err.message || "Failed to re-run document.");
         }
     };
 
-    const openDeleteModal = (part: PartWithDocument) => {
-        setDocToDelete(part.document);
+    const openDeleteModal = (doc: SimpleDocumentRef) => {
+        setDocToDelete(doc);
         setDeleteModalOpen(true);
     };
+
 
     const handleDeleteDocumentConfirm = async () => {
         if (!docToDelete) return;
 
         try {
             const {error} = await supabase
-                .from('documents')
+                .from("documents")
                 .delete()
-                .eq('id', docToDelete.id);
+                .eq("id", docToDelete.id);
 
             if (error) {
-                console.error('[Documents] Error deleting document:', error);
-                setUploadError(error.message || 'Failed to delete document');
+                console.error("[Documents] Error deleting document:", error);
+                setUploadError(
+                    error.message || "Failed to delete document.",
+                );
                 return;
             }
 
-            setParts((prev) => prev.filter((p) => p.document?.id !== docToDelete.id));
+            // odfiltrujeme všechny parts, které patřily tomuto dokumentu
+            setParts((prev) =>
+                prev.filter((p) => p.document?.id !== docToDelete.id),
+            );
         } catch (err: any) {
-            console.error('[Documents] Error deleting document:', err);
-            setUploadError(err.message || 'Failed to delete document');
+            console.error("[Documents] Error deleting document:", err);
+            setUploadError(err.message || "Failed to delete document.");
         } finally {
             setDeleteModalOpen(false);
             setDocToDelete(null);
@@ -206,7 +279,9 @@ const Documents: React.FC = () => {
     const handleDownloadDocument = async (doc: any) => {
         try {
             if (!doc.raw_bucket || !doc.raw_storage_key) {
-                setUploadError('Original file is not available for this document.');
+                setUploadError(
+                    "Original file is not available for this document.",
+                );
                 return;
             }
 
@@ -215,195 +290,324 @@ const Documents: React.FC = () => {
                 .createSignedUrl(doc.raw_storage_key, 60);
 
             if (error || !data?.signedUrl) {
-                console.error('[Documents] Error generating download URL:', error);
-                setUploadError('Failed to generate download link.');
+                console.error(
+                    "[Documents] Error generating download URL:",
+                    error,
+                );
+                setUploadError("Failed to generate download link.");
                 return;
             }
 
-            const link = document.createElement('a');
+            const link = document.createElement("a");
             link.href = data.signedUrl;
-            link.download = doc.file_name || 'document';
+            link.download = doc.file_name || "document";
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         } catch (err: any) {
-            console.error('[Documents] Error downloading document:', err);
-            setUploadError(err.message || 'Failed to download document');
+            console.error("[Documents] Error downloading document:", err);
+            setUploadError(err.message || "Failed to download document.");
         }
     };
 
+    const handleRowClick = (documentId: string, partId: string) => {
+        navigate(`/documents/${documentId}?partId=${partId}`);
+    };
+
+    // === HANDLERY: SORT =======================================================
     const handleSortChange = (field: SortField) => {
         setSortDirection((prevDir) =>
-            field === sortField ? (prevDir === 'asc' ? 'desc' : 'asc') : 'asc',
+            field === sortField
+                ? prevDir === "asc"
+                    ? "desc"
+                    : "asc"
+                : "asc",
         );
         setSortField(field);
     };
 
-    const resetFilters = () => {
-        setStatusFilter('all');
-        setTimeFilter('all');
-        setComplexityFilter('all');
-        setFitFilter('all');
-        setCompanyFilter('all');
-        setClassFilter('all');
-    };
+    // === HANDLERY: FAVOURITES / WORKFLOW / PRIORITY ===========================
+    const handleToggleFavorite = async (part: PartWithDocument) => {
+        if (!currentOrg || !user) return;
+        if (!canSetFavourite) return;
+        if (part.isProcessingPlaceholder) return;
 
-    const handleOpenAddToProject = (part: PartWithDocument) => {
-        if (!canUseProjects) {
-            return;
-        }
-        setPartToAdd(part);
-        setSelectedProjectId("");
-        setAddToProjectError(null);
-        setAddToProjectOpen(true);
-    };
-
-    const handleConfirmAddToProject = async () => {
-        if (!currentOrg || !user || !partToAdd) {
-            setAddToProjectError("Missing context to add part to project.");
-            return;
-        }
-
-        if (!selectedProjectId) {
-            setAddToProjectError("Please select a project.");
-            return;
-        }
+        const isFav = favoritePartIds.has(part.id);
 
         try {
-            setAddToProjectLoading(true);
-            setAddToProjectError(null);
+            if (isFav) {
+                const {error} = await supabase
+                    .from("part_favorites")
+                    .delete()
+                    .eq("org_id", currentOrg.org_id)
+                    .eq("user_id", user.id)
+                    .eq("part_id", part.id);
 
-            const { error } = await supabase
-                .from("project_parts")
-                .insert({
-                    org_id: currentOrg.org_id,
-                    project_id: selectedProjectId,
-                    part_id: partToAdd.id,
-                    added_by_user_id: user.id,
+                if (error) throw error;
+
+                setFavoritePartIds((prev) => {
+                    const next = new Set(prev);
+                    next.delete(part.id);
+                    return next;
                 });
+            } else {
+                const {error} = await supabase
+                    .from("part_favorites")
+                    .insert({
+                        org_id: currentOrg.org_id,
+                        user_id: user.id,
+                        part_id: part.id,
+                    });
 
-            if (error) {
-                // pokud máš unique constraint, může přijít 23505 – klidně ji ber jako "ok"
-                // @ts-ignore
-                if (error.code === "23505") {
-                    // part už v projektu je – nebudeme to brát jako fail
-                } else {
-                    console.error("[Documents] addToProject error:", error);
-                    setAddToProjectError(error.message || "Failed to add part to project.");
-                    return;
-                }
+                if (error) throw error;
+
+                setFavoritePartIds((prev) => {
+                    const next = new Set(prev);
+                    next.add(part.id);
+                    return next;
+                });
             }
-
-            // success
-            setAddToProjectOpen(false);
-            setPartToAdd(null);
-            setSelectedProjectId("");
         } catch (err: any) {
-            console.error("[Documents] unexpected addToProject error:", err);
-            setAddToProjectError(err.message || "Failed to add part to project.");
-        } finally {
-            setAddToProjectLoading(false);
+            console.error("[Documents] Error toggling favorite:", err);
+            setUploadError(
+                err.message || "Failed to update favourite for this part.",
+            );
         }
     };
 
-    // Distinct values for company and class filters
+    const handleWorkflowStatusChange = async (
+        part: PartWithDocument,
+        value: WorkflowStatusEnum,
+    ) => {
+        if (!currentOrg) return;
+        if (!canSetStatus) return;
+        if (part.isProcessingPlaceholder) return;
+
+        setUpdatingStatusIds((prev) => {
+            const next = new Set(prev);
+            next.add(part.id);
+            return next;
+        });
+
+        try {
+            const {error} = await supabase
+                .from("parts")
+                .update({workflow_status: value})
+                .eq("id", part.id)
+                .eq("org_id", currentOrg.org_id);
+
+            if (error) throw error;
+
+            // optimistický update (realtime to dorovná)
+            setParts((prev) =>
+                prev.map((p) =>
+                    p.id === part.id ? {...p, workflow_status: value} : p,
+                ),
+            );
+        } catch (err: any) {
+            console.error(
+                "[Documents] Error updating workflow_status:",
+                err,
+            );
+            setUploadError(err.message || "Failed to update status.");
+        } finally {
+            setUpdatingStatusIds((prev) => {
+                const next = new Set(prev);
+                next.delete(part.id);
+                return next;
+            });
+        }
+    };
+
+    const handlePriorityChange = async (
+        part: PartWithDocument,
+        value: PriorityEnum,
+    ) => {
+        if (!currentOrg) return;
+        if (!canSetPriority) return;
+        if (part.isProcessingPlaceholder) return;
+
+        setUpdatingPriorityIds((prev) => {
+            const next = new Set(prev);
+            next.add(part.id);
+            return next;
+        });
+
+        try {
+            const {error} = await supabase
+                .from("parts")
+                .update({priority: value})
+                .eq("id", part.id)
+                .eq("org_id", currentOrg.org_id);
+
+            if (error) throw error;
+
+            setParts((prev) =>
+                prev.map((p) =>
+                    p.id === part.id ? {...p, priority: value} : p,
+                ),
+            );
+        } catch (err: any) {
+            console.error("[Documents] Error updating priority:", err);
+            setUploadError(err.message || "Failed to update priority.");
+        } finally {
+            setUpdatingPriorityIds((prev) => {
+                const next = new Set(prev);
+                next.delete(part.id);
+                return next;
+            });
+        }
+    };
+
+    // === HANDLERY: FILTRY =====================================================
+    const resetFilters = () => {
+        setStatusFilter("all");
+        setTimeFilter("all");
+        setComplexityFilter("all");
+        setFitFilter("all");
+        setCompanyFilter("all");
+        setClassFilter("all");
+        setWorkflowStatusFilter("all");
+        setPriorityFilter("all");
+        setShowOnlyFavorites(false);
+    };
+
+    // === DISTINCT HODNOTY PRO FILTRY =========================================
     const {uniqueCompanies, uniqueClasses} = useMemo(() => {
         const companySet = new Set<string>();
         const classSet = new Set<string>();
 
         for (const part of parts) {
-            if (part.company_name) {
-                companySet.add(part.company_name);
-            }
-            if (part.primary_class) {
-                classSet.add(part.primary_class);
-            }
+            if (part.company_name) companySet.add(part.company_name);
+            if (part.primary_class) classSet.add(part.primary_class);
         }
 
         const companies = Array.from(companySet).sort((a, b) =>
-            a.localeCompare(b, undefined, {sensitivity: 'base'}),
+            a.localeCompare(b, undefined, {sensitivity: "base"}),
         );
         const classes = Array.from(classSet).sort((a, b) =>
-            a.localeCompare(b, undefined, {sensitivity: 'base'}),
+            a.localeCompare(b, undefined, {sensitivity: "base"}),
         );
 
         return {uniqueCompanies: companies, uniqueClasses: classes};
     }, [parts]);
 
-    // FILTERING + SORTING
+    // === FILTERING + SORTING ==================================================
     const filteredSortedParts = useMemo(() => {
         let result = [...parts];
 
-        // Status filter
-        if (statusFilter !== 'all') {
+        // Document processing status filter (success / queued / processing / failed)
+        if (statusFilter !== "all") {
             result = result.filter((part) => {
                 const s = part.document?.last_status;
                 if (!s) return false;
 
-                if (statusFilter === 'processed') {
-                    return s === 'success';
+                if (statusFilter === "processed") {
+                    return s === "success";
                 }
-                if (statusFilter === 'processing') {
-                    return s === 'processing' || s === 'queued';
+                if (statusFilter === "processing") {
+                    return s === "processing" || s === "queued";
                 }
-                if (statusFilter === 'error') {
-                    return s === 'failed';
+                if (statusFilter === "error") {
+                    return s === "failed" || s === "error";
                 }
                 return true;
             });
         }
 
-        // Time filter (based on last_updated)
-        if (timeFilter !== 'all') {
+        // Time filter (based on part.last_updated)
+        if (timeFilter !== "all") {
             const now = new Date();
             const days =
-                timeFilter === '7d' ? 7 : timeFilter === '30d' ? 30 : timeFilter === '90d' ? 90 : 0;
+                timeFilter === "7d"
+                    ? 7
+                    : timeFilter === "30d"
+                        ? 30
+                        : timeFilter === "90d"
+                            ? 90
+                            : 0;
 
             if (days > 0) {
-                const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+                const cutoff = new Date(
+                    now.getTime() - days * 24 * 60 * 60 * 1000,
+                );
                 result = result.filter((part) => {
-                    const updated = part.last_updated ? new Date(part.last_updated) : null;
+                    const updated = part.last_updated
+                        ? new Date(part.last_updated)
+                        : null;
                     return updated ? updated >= cutoff : false;
                 });
             }
         }
 
-        // Complexity filter
-        if (complexityFilter !== 'all') {
+        // Complexity
+        if (complexityFilter !== "all") {
             result = result.filter(
-                (part) => part.overall_complexity?.toUpperCase() === complexityFilter,
+                (part) =>
+                    part.overall_complexity?.toUpperCase() ===
+                    complexityFilter,
             );
         }
 
-        // Fit filter
-        if (fitFilter !== 'all') {
+        // Fit
+        if (fitFilter !== "all") {
             result = result.filter(
                 (part) => part.fit_level?.toUpperCase() === fitFilter,
             );
         }
 
-        // Company filter
-        if (companyFilter !== 'all') {
-            result = result.filter((part) => part.company_name === companyFilter);
+        // Company
+        if (companyFilter !== "all") {
+            result = result.filter(
+                (part) => part.company_name === companyFilter,
+            );
         }
 
-        // Class filter
-        if (classFilter !== 'all') {
-            result = result.filter((part) => part.primary_class === classFilter);
+        // Class
+        if (classFilter !== "all") {
+            result = result.filter(
+                (part) => part.primary_class === classFilter,
+            );
+        }
+
+        // Workflow status (per-part)
+        if (workflowStatusFilter !== "all") {
+            result = result.filter(
+                (part) =>
+                    (part.workflow_status as WorkflowStatusEnum | null) ===
+                    workflowStatusFilter,
+            );
+        }
+
+        // Priority (per-part)
+        if (priorityFilter !== "all") {
+            result = result.filter(
+                (part) =>
+                    (part.priority as PriorityEnum | null) ===
+                    priorityFilter,
+            );
+        }
+
+        // Favourites only
+        if (showOnlyFavorites) {
+            result = result.filter((part) =>
+                favoritePartIds.has(part.id),
+            );
         }
 
         // Sorting
-        const direction = sortDirection === 'asc' ? 1 : -1;
+        const direction = sortDirection === "asc" ? 1 : -1;
 
         const statusOrder = (status: string | null | undefined) => {
             switch (status) {
-                case 'success':
+                case "success":
                     return 1;
-                case 'processing':
+                case "processing":
                     return 2;
-                case 'queued':
+                case "queued":
                     return 3;
-                case 'failed':
+                case "failed":
+                case "error":
                     return 4;
                 default:
                     return 5;
@@ -415,33 +619,57 @@ const Documents: React.FC = () => {
             let bVal: any;
 
             switch (sortField) {
-                case 'last_updated':
-                    aVal = a.last_updated ? new Date(a.last_updated).getTime() : 0;
-                    bVal = b.last_updated ? new Date(b.last_updated).getTime() : 0;
+                case "last_updated":
+                    aVal = a.last_updated
+                        ? new Date(a.last_updated).getTime()
+                        : 0;
+                    bVal = b.last_updated
+                        ? new Date(b.last_updated).getTime()
+                        : 0;
                     break;
-                case 'last_status':
+                case "last_status":
                     aVal = statusOrder(a.document?.last_status);
                     bVal = statusOrder(b.document?.last_status);
                     break;
-                case 'file_name':
-                    aVal = (a.document?.file_name || '').toString().toLowerCase();
-                    bVal = (b.document?.file_name || '').toString().toLowerCase();
+                case "file_name":
+                    aVal = (a.document?.file_name || "")
+                        .toString()
+                        .toLowerCase();
+                    bVal = (b.document?.file_name || "")
+                        .toString()
+                        .toLowerCase();
                     break;
-                case 'company_name':
-                    aVal = (a.company_name || '').toString().toLowerCase();
-                    bVal = (b.company_name || '').toString().toLowerCase();
+                case "company_name":
+                    aVal = (a.company_name || "")
+                        .toString()
+                        .toLowerCase();
+                    bVal = (b.company_name || "")
+                        .toString()
+                        .toLowerCase();
                     break;
-                case 'primary_class':
-                    aVal = (a.primary_class || '').toString().toLowerCase();
-                    bVal = (b.primary_class || '').toString().toLowerCase();
+                case "primary_class":
+                    aVal = (a.primary_class || "")
+                        .toString()
+                        .toLowerCase();
+                    bVal = (b.primary_class || "")
+                        .toString()
+                        .toLowerCase();
                     break;
-                case 'overall_complexity':
-                    aVal = (a.overall_complexity || '').toString().toLowerCase();
-                    bVal = (b.overall_complexity || '').toString().toLowerCase();
+                case "overall_complexity":
+                    aVal = (a.overall_complexity || "")
+                        .toString()
+                        .toLowerCase();
+                    bVal = (b.overall_complexity || "")
+                        .toString()
+                        .toLowerCase();
                     break;
-                case 'fit_level':
-                    aVal = (a.fit_level || '').toString().toLowerCase();
-                    bVal = (b.fit_level || '').toString().toLowerCase();
+                case "fit_level":
+                    aVal = (a.fit_level || "")
+                        .toString()
+                        .toLowerCase();
+                    bVal = (b.fit_level || "")
+                        .toString()
+                        .toLowerCase();
                     break;
                 default:
                     aVal = 0;
@@ -452,6 +680,7 @@ const Documents: React.FC = () => {
             if (aVal > bVal) return 1 * direction;
             return 0;
         });
+
         return result;
     }, [
         parts,
@@ -461,14 +690,15 @@ const Documents: React.FC = () => {
         fitFilter,
         companyFilter,
         classFilter,
+        workflowStatusFilter,
+        priorityFilter,
+        showOnlyFavorites,
+        favoritePartIds,
         sortField,
         sortDirection,
     ]);
 
-    const handleRowClick = (documentId: string, partId: string) => {
-        navigate(`/documents/${documentId}?partId=${partId}`);
-    };
-
+    // === RENDER ===============================================================
     return (
         <div
             className="min-h-screen relative bg-gradient-to-br from-slate-50 via-white to-slate-50"
@@ -476,6 +706,7 @@ const Documents: React.FC = () => {
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
         >
+            {/* Drag overlay */}
             {isDragging && (
                 <div
                     className="pointer-events-none fixed inset-0 flex items-center justify-center z-50 bg-blue-600/5 backdrop-blur-sm">
@@ -487,9 +718,9 @@ const Documents: React.FC = () => {
                 </div>
             )}
 
-            <div className="p-6 mx-auto" style={{maxWidth: '1800px'}}>
+            <div className="p-6 mx-auto" style={{maxWidth: "1800px"}}>
+                {/* Header */}
                 <div className="flex items-center justify-between mb-6">
-                    {/*<h1 className="text-2xl font-semibold text-gray-900">Documents</h1>*/}
                     <button
                         onClick={handleUploadClick}
                         disabled={uploading || uploadsBlocked}
@@ -501,11 +732,12 @@ const Documents: React.FC = () => {
                     >
                         <Upload className="w-4 h-4" strokeWidth={1.5}/>
                         <span className="text-sm font-medium">
-                        {uploading ? "Uploading..." : "Upload Documents"}
-                      </span>
+                            {uploading ? "Uploading..." : "Upload Documents"}
+                        </span>
                     </button>
                 </div>
 
+                {/* Hidden file input */}
                 <input
                     ref={fileInputRef}
                     type="file"
@@ -515,20 +747,27 @@ const Documents: React.FC = () => {
                     className="hidden"
                 />
 
+                {/* Error banner */}
                 {uploadError && (
                     <div className="mb-4 p-4 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-3">
-                        <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0" strokeWidth={1.5}/>
+                        <AlertCircle
+                            className="w-5 h-5 text-rose-600 flex-shrink-0"
+                            strokeWidth={1.5}
+                        />
                         <p className="text-sm text-rose-700">{uploadError}</p>
                     </div>
                 )}
 
+                {/* Upload progress */}
                 {uploading && filteredSortedParts.length > 0 && (
                     <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium text-blue-900">
                                 Uploading documents...
                             </span>
-                            <span className="text-sm text-blue-700">{uploadProgress}%</span>
+                            <span className="text-sm text-blue-700">
+                                {uploadProgress}%
+                            </span>
                         </div>
                         <div className="w-full bg-blue-200 rounded-full h-2">
                             <div
@@ -539,37 +778,52 @@ const Documents: React.FC = () => {
                     </div>
                 )}
 
-                {(isOverLimit && maxJobs != null) && (
+                {/* Over-limit banner */}
+                {isOverLimit && maxJobs != null && (
                     <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
-                        <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" strokeWidth={1.5}/>
+                        <AlertCircle
+                            className="w-5 h-5 text-amber-600 flex-shrink-0"
+                            strokeWidth={1.5}
+                        />
                         <div>
                             <p className="text-sm font-semibold text-amber-800">
-                                You’ve reached the limit of
-                                your {billing?.tier ? formatTierLabel(billing.tier.code) : "current"} plan.
+                                You’ve reached the limit of your{" "}
+                                {billing?.tier
+                                    ? formatTierLabel(billing.tier.code)
+                                    : "current"}{" "}
+                                plan.
                             </p>
                             <p className="text-xs text-amber-700 mt-1">
-                                Processed {jobsUsed} / {maxJobs} jobs in this billing period.
-                                To upload more documents, upgrade your plan in Billing.
+                                Processed {jobsUsed} / {maxJobs} jobs in this
+                                billing period. To upload more documents,
+                                upgrade your plan in Billing.
                             </p>
                         </div>
                     </div>
                 )}
 
+                {/* FILTERS BAR ================================================= */}
                 <div className="flex items-center gap-3 mb-6 flex-wrap">
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
-                    >
-                        <option value="all">All Status</option>
-                        <option value="processed">Processed</option>
-                        <option value="processing">Processing</option>
-                        <option value="error">Error</option>
-                    </select>
+                    {/* Document status (success/processing/error) */}
+                    {/*<select*/}
+                    {/*    value={statusFilter}*/}
+                    {/*    onChange={(e) =>*/}
+                    {/*        setStatusFilter(e.target.value as StatusFilter)*/}
+                    {/*    }*/}
+                    {/*    className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"*/}
+                    {/*>*/}
+                    {/*    <option value="all">All Status</option>*/}
+                    {/*    <option value="processed">Processed</option>*/}
+                    {/*    <option value="processing">Processing</option>*/}
+                    {/*    <option value="error">Error</option>*/}
+                    {/*</select>*/}
 
+                    {/* Time */}
                     <select
                         value={timeFilter}
-                        onChange={(e) => setTimeFilter(e.target.value as TimeFilter)}
+                        onChange={(e) =>
+                            setTimeFilter(e.target.value as TimeFilter)
+                        }
                         className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
                         <option value="all">All Time</option>
@@ -578,9 +832,14 @@ const Documents: React.FC = () => {
                         <option value="90d">Last 90 days</option>
                     </select>
 
+                    {/* Complexity */}
                     <select
                         value={complexityFilter}
-                        onChange={(e) => setComplexityFilter(e.target.value as ComplexityFilter)}
+                        onChange={(e) =>
+                            setComplexityFilter(
+                                e.target.value as ComplexityFilter,
+                            )
+                        }
                         className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
                         <option value="all">All Complexity</option>
@@ -590,9 +849,12 @@ const Documents: React.FC = () => {
                         <option value="EXTREME">Extreme</option>
                     </select>
 
+                    {/* Fit */}
                     <select
                         value={fitFilter}
-                        onChange={(e) => setFitFilter(e.target.value as FitFilter)}
+                        onChange={(e) =>
+                            setFitFilter(e.target.value as FitFilter)
+                        }
                         className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
                         <option value="all">All Fit</option>
@@ -603,9 +865,12 @@ const Documents: React.FC = () => {
                         <option value="UNKNOWN">Unknown</option>
                     </select>
 
+                    {/* Company */}
                     <select
                         value={companyFilter}
-                        onChange={(e) => setCompanyFilter(e.target.value)}
+                        onChange={(e) =>
+                            setCompanyFilter(e.target.value)
+                        }
                         className="h-[38px] w-[130px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
                         <option value="all">All Companies</option>
@@ -616,9 +881,12 @@ const Documents: React.FC = () => {
                         ))}
                     </select>
 
+                    {/* Class */}
                     <select
                         value={classFilter}
-                        onChange={(e) => setClassFilter(e.target.value)}
+                        onChange={(e) =>
+                            setClassFilter(e.target.value)
+                        }
                         className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
                         <option value="all">All Classes</option>
@@ -629,14 +897,71 @@ const Documents: React.FC = () => {
                         ))}
                     </select>
 
+                    {/* Per-part workflow status */}
+                    <select
+                        value={workflowStatusFilter}
+                        onChange={(e) =>
+                            setWorkflowStatusFilter(
+                                e.target.value as WorkflowStatusFilter,
+                            )
+                        }
+                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
+                    >
+                        <option value="all">All Workflow</option>
+                        <option value="new">New</option>
+                        <option value="in_progress">In progress</option>
+                        <option value="done">Done</option>
+                        <option value="ignored">Ignored</option>
+                    </select>
+
+                    {/* Per-part priority */}
+                    <select
+                        value={priorityFilter}
+                        onChange={(e) =>
+                            setPriorityFilter(
+                                e.target.value as PriorityFilter,
+                            )
+                        }
+                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
+                    >
+                        <option value="all">All Priority</option>
+                        <option value="low">Low</option>
+                        <option value="normal">Normal</option>
+                        <option value="high">High</option>
+                        <option value="hot">Hot</option>
+                    </select>
+
+                    {/* Favourites only toggle */}
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setShowOnlyFavorites((prev) => !prev)
+                        }
+                        className={`h-[38px] px-3 inline-flex items-center gap-1 rounded-lg border text-xs shadow-sm transition-all ${
+                            showOnlyFavorites
+                                ? "bg-amber-50 border-amber-300 text-amber-800"
+                                : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+                        }`}
+                    >
+                        <Star
+                            className={`w-3.5 h-3.5 ${
+                                showOnlyFavorites ? "fill-current" : ""
+                            }`}
+                            strokeWidth={1.5}
+                        />
+                        <span>Favourites only</span>
+                    </button>
+
+                    {/* Reset filters */}
                     <button
                         onClick={resetFilters}
-                        className="h-[38px] px-3 bg-gray-100 border border-gray-200 rounded-lg shadow-sm hover:bg-gray-200 text-sm text-gray-700 text-xs"
+                        className="h-[38px] px-3 bg-gray-100 border border-gray-200 rounded-lg shadow-sm hover:bg-gray-200 text-xs text-gray-700"
                     >
                         Reset filters
                     </button>
                 </div>
 
+                {/* TABLE ======================================================= */}
                 <DocumentsTable
                     parts={filteredSortedParts}
                     loading={loading && parts.length === 0}
@@ -648,12 +973,24 @@ const Documents: React.FC = () => {
                     onUploadClick={handleUploadClick}
                     onRerun={handleRerunDocument}
                     onDownload={handleDownloadDocument}
-                    onDelete={openDeleteModal}
+                    onDelete={(partRow) => {
+                        if (partRow.document) {
+                            openDeleteModal(partRow.document);
+                        }
+                    }}
                     onRowClick={handleRowClick}
-                    canUseProjects={canUseProjects}
-                    onAddToProject={handleOpenAddToProject}
+                    canUseFavorite={canSetFavourite}
+                    canSetStatus={canSetStatus}
+                    canSetPriority={canSetPriority}
+                    favoritePartIds={favoritePartIds}
+                    onToggleFavorite={handleToggleFavorite}
+                    onChangeWorkflowStatus={handleWorkflowStatusChange}
+                    onChangePriority={handlePriorityChange}
+                    updatingStatusIds={updatingStatusIds}
+                    updatingPriorityIds={updatingPriorityIds}
                 />
 
+                {/* Pagination */}
                 {hasMore && !loading && (
                     <div className="flex justify-center mt-4">
                         <button
@@ -661,113 +998,13 @@ const Documents: React.FC = () => {
                             disabled={loadingMore}
                             className="px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50"
                         >
-                            {loadingMore ? 'Loading...' : 'Load more'}
+                            {loadingMore ? "Loading..." : "Load more"}
                         </button>
                     </div>
                 )}
             </div>
 
-            {/* Add to project modal */}
-        {addToProjectOpen && partToAdd && (
-            <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
-                <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                        Add part to project
-                    </h2>
-
-                    <div className="mb-4 text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-                        <div className="font-medium text-gray-800">
-                            {partToAdd.drawing_title ||
-                                partToAdd.document?.file_name ||
-                                "Part"}
-                        </div>
-                        <div className="text-[11px] text-gray-500">
-                            {partToAdd.company_name && (
-                                <>
-                                    {partToAdd.company_name}
-                                    {" • "}
-                                </>
-                            )}
-                            {partToAdd.document?.file_name}
-                            {partToAdd.page != null && ` (page ${partToAdd.page})`}
-                        </div>
-                    </div>
-
-                    {addToProjectError && (
-                        <div className="mb-3 p-2.5 bg-rose-50 border border-rose-200 rounded-md flex items-start gap-2">
-                            <AlertCircle className="w-4 h-4 text-rose-600 mt-0.5" strokeWidth={1.5} />
-                            <p className="text-xs text-rose-700">{addToProjectError}</p>
-                        </div>
-                    )}
-
-                    {projects.length === 0 ? (
-                        <div className="text-sm text-gray-700">
-                            You don&apos;t have any projects yet.{" "}
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setAddToProjectOpen(false);
-                                    setPartToAdd(null);
-                                    navigate("/projects");
-                                }}
-                                className="text-blue-600 hover:underline font-medium"
-                            >
-                                Go to Projects
-                            </button>{" "}
-                            to create your first project.
-                        </div>
-                    ) : (
-                        <div className="space-y-3">
-                            <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                    Project
-                                </label>
-                                <select
-                                    value={selectedProjectId}
-                                    onChange={(e) => setSelectedProjectId(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
-                                >
-                                    <option value="">Select project...</option>
-                                    {projects.map((p) => (
-                                        <option key={p.id} value={p.id as string}>
-                                            {p.name}
-                                            {p.customer_name ? ` – ${p.customer_name}` : ""}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="flex justify-end gap-2 mt-6">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setAddToProjectOpen(false);
-                                setPartToAdd(null);
-                                setSelectedProjectId("");
-                                setAddToProjectError(null);
-                            }}
-                            className="px-4 py-2 text-xs rounded-lg border border-gray-300 bg-white hover:bg-gray-50"
-                            disabled={addToProjectLoading}
-                        >
-                            Cancel
-                        </button>
-                        {projects.length > 0 && (
-                            <button
-                                type="button"
-                                onClick={handleConfirmAddToProject}
-                                disabled={addToProjectLoading}
-                                className="px-4 py-2 text-xs rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium disabled:opacity-60"
-                            >
-                                {addToProjectLoading ? "Adding..." : "Add to project"}
-                            </button>
-                        )}
-                    </div>
-                </div>
-            </div>
-        )}
-
+            {/* Delete modal */}
             <DeleteDocumentModal
                 open={deleteModalOpen}
                 onClose={() => {
@@ -775,7 +1012,7 @@ const Documents: React.FC = () => {
                     setDocToDelete(null);
                 }}
                 onConfirm={handleDeleteDocumentConfirm}
-                documentName={docToDelete?.file_name || ''}
+                documentName={docToDelete?.file_name || ""}
             />
         </div>
     );

@@ -94,38 +94,24 @@ export function useParts(currentOrg: CurrentOrg, pageSize: number = 50) {
 
       // 1) První dávka parts + documents
       const { data: partsData, error: partsError } = await supabase
-        .from('document_parts')
-        .select(
-          `
+      .from("document_parts")
+      .select(
+        `
           part_id,
           document_id,
-          parts (
-            id,
-            page,
-            drawing_title,
-            part_number,
-            drawing_number,
-            company_name,
-            material,
-            primary_class,
-            secondary_class,
-            envelope_text,
-            overall_complexity,
-            fit_level,
-            created_at,
-            last_updated
-          ),
+          parts (*),
           documents (
             id,
             file_name,
             last_status,
             created_at
           )
-        `,
-        )
-        .eq('parts.org_id', orgId)
-        .order('parts(last_updated)', { ascending: false })
-        .range(0, pageSize - 1);
+        `
+      )
+      .eq("parts.org_id", orgId)
+      .order("parts(last_updated)", { ascending: false })
+      .range(0, pageSize - 1);
+
 
       // 2) Dokumenty, které jsou queued / processing / error a ještě nemají parts
       const { data: processingData, error: processingError } = await supabase

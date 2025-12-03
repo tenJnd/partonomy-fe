@@ -6,21 +6,31 @@ import {useAuth} from "../contexts/AuthContext";
 import {supabase} from "../lib/supabase";
 import type {PartWithDocument} from "../hooks/useParts";
 import {useParts} from "../hooks/useParts";
-import DocumentsTable, {SortField,} from "../components/documents/DocumentsTable";
-import type {Database} from "../lib/database.types";
+import DocumentsTable, {SortField} from "../components/documents/DocumentsTable";
+import type {Database, PriorityEnum, WorkflowStatusEnum} from "../lib/database.types";
 import RemovePartFromProjectModal from "../components/RemovePartFromProjectModal";
+import {useOrgBilling} from "../hooks/useOrgBilling";
 
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
 
 const ProjectDetail: React.FC = () => {
     const {projectId} = useParams<{ projectId: string }>();
     const navigate = useNavigate();
-    const {currentOrg} = useAuth();
+    const {currentOrg, user} = useAuth();           // 🔹 potřebujeme user.id
+    const {billing} = useOrgBilling();
 
-    const {parts, loading, loadingMore, hasMore, loadMore} = useParts(
-        currentOrg,
-        200
-    );
+    const canUseFavorite = !!billing?.tier?.can_set_favourite;
+    const canSetStatus = !!billing?.tier?.can_set_status;
+    const canSetPriority = !!billing?.tier?.can_set_priority;
+
+    const {
+        parts,
+        loading,
+        loadingMore,
+        hasMore,
+        loadMore,
+        setParts,                                  // 🔹 budeme lokálně updatovat parts
+    } = useParts(currentOrg, 200);
 
     const [sortField, setSortField] = useState<SortField>("last_updated");
     const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
@@ -31,16 +41,16 @@ const ProjectDetail: React.FC = () => {
 
     const [projectPartIds, setProjectPartIds] = useState<string[]>([]);
     const [projectPartsLoading, setProjectPartsLoading] = useState(true);
-    const [projectPartsError, setProjectPartsError] = useState<string | null>(
-        null
-    );
+    const [projectPartsError, setProjectPartsError] = useState<string | null>(null);
 
     // modal state pro "Remove from project"
     const [removeModalOpen, setRemoveModalOpen] = useState(false);
-    const [partToRemove, setPartToRemove] =
-        useState<PartWithDocument | null>(null);
+    const [partToRemove, setPartToRemove] = useState<PartWithDocument | null>(null);
 
-    // načti samotný projekt (kvůli názvu, zákazníkovi atd.)
+    // 🔹 favourites pro aktuální projekt (jen part_ids v tomhle projektu)
+    const [favoritePartIds, setFavoritePartIds] = useState<Set<string>>(new Set());
+
+    // === Načtení projektu ===
     useEffect(() => {
         if (!currentOrg || !projectId) return;
 
@@ -74,7 +84,7 @@ const ProjectDetail: React.FC = () => {
         loadProject();
     }, [currentOrg, projectId]);
 
-    // načti seznam part_id pro daný projekt
+    // === Načtení seznamu part_id pro daný projekt ===
     useEffect(() => {
         if (!currentOrg || !projectId) return;
 
@@ -106,6 +116,32 @@ const ProjectDetail: React.FC = () => {
 
         loadProjectParts();
     }, [currentOrg, projectId]);
+
+    // === Načíst favourites pro part_id v projektu ===
+    useEffect(() => {
+        if (!currentOrg || !user || projectPartIds.length === 0) {
+            setFavoritePartIds(new Set());
+            return;
+        }
+
+        const loadFavorites = async () => {
+            const {data, error} = await supabase
+                .from("part_favorites")
+                .select("part_id")
+                .eq("org_id", currentOrg!.org_id)
+                .eq("user_id", user!.id)
+                .in("part_id", projectPartIds);
+
+            if (error) {
+                console.error("[ProjectDetail] loadFavorites error:", error);
+                return;
+            }
+
+            setFavoritePartIds(new Set((data ?? []).map((row) => row.part_id)));
+        };
+
+        loadFavorites();
+    }, [currentOrg?.org_id, user?.id, projectPartIds.length]);
 
     const handleSortChange = (field: SortField) => {
         setSortDirection((prevDir) =>
@@ -168,6 +204,116 @@ const ProjectDetail: React.FC = () => {
         }
     };
 
+    // === Favourite toggle ===
+    const handleToggleFavorite = async (part: PartWithDocument) => {
+        if (!currentOrg || !user || !canUseFavorite) return;
+
+        const isFav = favoritePartIds.has(part.id);
+
+        try {
+            if (isFav) {
+                const {error} = await supabase
+                    .from("part_favorites")
+                    .delete()
+                    .eq("org_id", currentOrg.org_id)
+                    .eq("user_id", user.id)
+                    .eq("part_id", part.id);
+
+                if (error) {
+                    console.error("[ProjectDetail] remove favorite error:", error);
+                    return;
+                }
+
+                setFavoritePartIds((prev) => {
+                    const next = new Set(prev);
+                    next.delete(part.id);
+                    return next;
+                });
+            } else {
+                const {error} = await supabase.from("part_favorites").insert({
+                    org_id: currentOrg.org_id,
+                    user_id: user.id,
+                    part_id: part.id,
+                });
+
+                if (error) {
+                    console.error("[ProjectDetail] add favorite error:", error);
+                    return;
+                }
+
+                setFavoritePartIds((prev) => {
+                    const next = new Set(prev);
+                    next.add(part.id);
+                    return next;
+                });
+            }
+        } catch (err) {
+            console.error("[ProjectDetail] toggle favorite unexpected error:", err);
+        }
+    };
+
+    // === Workflow status change ===
+    const handleWorkflowStatusChange = async (
+        part: PartWithDocument,
+        value: WorkflowStatusEnum
+    ) => {
+        if (!currentOrg || !canSetStatus) return;
+
+        // optimistic update
+        setParts((prev) =>
+            prev.map((p) =>
+                p.id === part.id
+                    ? {
+                        ...p,
+                        workflow_status: value,
+                    }
+                    : p
+            )
+        );
+
+        const {error} = await supabase
+            .from("parts")
+            .update({workflow_status: value})
+            .eq("id", part.id)
+            .eq("org_id", currentOrg.org_id);
+
+        if (error) {
+            console.error("[ProjectDetail] Error updating workflow_status:", error);
+            // případně by se dal revertovat state; zatím necháme tak
+        }
+    };
+
+    // === Priority change ===
+    const handlePriorityChange = async (
+        part: PartWithDocument,
+        value: PriorityEnum
+    ) => {
+        if (!currentOrg || !canSetPriority) return;
+
+        // optimistic update
+        setParts((prev) =>
+            prev.map((p) =>
+                p.id === part.id
+                    ? {
+                        ...p,
+                        priority: value,
+                    }
+                    : p
+            )
+        );
+
+        const {error} = await supabase
+            .from("parts")
+            .update({priority: value})
+            .eq("id", part.id)
+            .eq("org_id", currentOrg.org_id);
+
+        if (error) {
+            console.error("[ProjectDetail] Error updating priority:", error);
+            // případně revert
+        }
+    };
+
     // otevření modalu – jen nastavení stavu
     const handleRemovePartFromProject = (part: PartWithDocument) => {
         setPartToRemove(part);
@@ -197,11 +343,14 @@ const ProjectDetail: React.FC = () => {
 
             // Lokálně odfiltrujeme part z projektu
             setProjectPartIds((prev) => prev.filter((id) => id !== partToRemove.id));
+            setFavoritePartIds((prev) => {
+                const next = new Set(prev);
+                next.delete(partToRemove.id);
+                return next;
+            });
         } catch (err: any) {
             console.error("[ProjectDetail] unexpected remove part error:", err);
-            setProjectPartsError(
-                err.message || "Failed to remove part from project."
-            );
+            setProjectPartsError(err.message || "Failed to remove part from project.");
         } finally {
             setRemoveModalOpen(false);
             setPartToRemove(null);
@@ -267,15 +416,22 @@ const ProjectDetail: React.FC = () => {
                     }}
                     onRerun={handleRerunDocument}
                     onDownload={handleDownloadDocument}
-                    onDelete={handleRemovePartFromProject} // maže link
+                    onDelete={handleRemovePartFromProject} // Remove from project
                     onRowClick={handleRowClick}
-                    canUseProjects={false} // schová "Add to project" v menu
+                    canUseProjects={false}
                     onAddToProject={() => {
                     }}
-                    deleteLabel="Remove from project" // text v menu místo "Delete"
+                    deleteLabel="Remove from project"
+                    // 🔹 nové props – stejné jako v Documents stránce
+                    canUseFavorite={canUseFavorite}
+                    canSetStatus={canSetStatus}
+                    canSetPriority={canSetPriority}
+                    favoritePartIds={favoritePartIds}
+                    onToggleFavorite={handleToggleFavorite}
+                    onChangeWorkflowStatus={handleWorkflowStatusChange}
+                    onChangePriority={handlePriorityChange}
                 />
 
-                {/* Load more – volitelné, ale dává smysl, protože useParts má stránkování */}
                 {hasMore && !loading && (
                     <div className="flex justify-center mt-4">
                         <button
