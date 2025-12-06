@@ -1,9 +1,11 @@
 // src/utils/tagsFormatting.ts
-import type {PriorityEnum, WorkflowStatusEnum,} from "../lib/database.types";
+import type {PriorityEnum, ProjectPriorityEnum, ProjectStatusEnum, WorkflowStatusEnum} from "../lib/database.types";
 import {AlertCircle, CheckCircle2, FileText, Loader2} from "lucide-react";
 
 export type WorkflowStatusNullable = WorkflowStatusEnum | null;
 export type PriorityNullable = PriorityEnum | null;
+export type ProjectStatusNullable = ProjectStatusEnum | null;
+export type ProjectPriorityNullable = ProjectPriorityEnum | null
 
 export const STATUS_LABELS: Record<WorkflowStatusEnum, string> = {
     new: "New",
@@ -17,6 +19,20 @@ export const PRIORITY_LABELS: Record<PriorityEnum, string> = {
     normal: "Normal",
     high: "High",
     hot: "Hot",
+};
+
+export const PROJECT_STATUS_LABELS: Record<ProjectStatusEnum, string> = {
+    open: "Open",
+    in_progress: "In progress",
+    archived: "Archived",
+    closed: "Closed"
+};
+
+export const PROJECT_PRIORITY_LABELS: Record<ProjectPriorityEnum, string> = {
+    high: "High",
+    normal: "Normal",
+    low: "Low",
+    hot: "Hot"
 };
 
 export const getStatusClasses = (status: WorkflowStatusNullable): string => {
@@ -149,3 +165,37 @@ export const getFitConfig = (fit: string | null) => {
             return null;
     }
 };
+
+
+export const getProjectStatusClasses = (status: ProjectStatusNullable): string | null => {
+    switch (status) {
+        case "open":
+            return "bg-emerald-50 text-emerald-800 border-emerald-200";
+        case "in_progress":
+            return "bg-blue-50 text-blue-800 border-blue-200";
+        case "archived":
+            return "bg-gray-50 text-gray-600 border-gray-200";
+        case "closed":
+            return "bg-slate-50 text-slate-700 border-slate-200";
+        default:
+            return "bg-gray-50 text-gray-500 border-gray-200";
+    }
+};
+
+
+export const getProjectPriorityClasses = (priority: ProjectPriorityNullable): string | null => {
+    switch (priority) {
+        case "high":
+            return "bg-amber-50 text-amber-800 border-amber-200";
+        case "normal":
+            return "bg-slate-50 text-slate-800 border-slate-200";
+        case "low":
+            return "bg-gray-50 text-gray-600 border-gray-200";
+        case "hot":
+            return "bg-rose-50 text-rose-800 border-rose-200";
+        default:
+            return "bg-gray-50 text-gray-500 border-gray-200";
+    }
+};
+
+
