@@ -1,13 +1,13 @@
 // src/components/projects/ProjectsTable.tsx
 import React from "react";
 import {CalendarClock, ChevronDown, ChevronUp, Edit3, FolderKanban, MoreVertical, Trash2,} from "lucide-react";
+import type {Database} from "../lib/database.types";
 import {
     getProjectPriorityClasses,
     getProjectStatusClasses,
     PROJECT_PRIORITY_LABELS,
     PROJECT_STATUS_LABELS
-} from "../utils/tagsFormatting";
-import type {Database} from "../lib/database.types";
+} from "../utils/tagsFormatting.ts";
 
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
 
@@ -29,39 +29,7 @@ interface ProjectsTableProps {
     onRowClick: (projectId: string) => void;
     onEdit: (project: ProjectRow) => void;
     onDelete: (project: ProjectRow) => void;
-
-    // 🔥 nové – editace statusu/priority
-    canSetStatus?: boolean;
-    canSetPriority?: boolean;
-    onChangeStatus?: (project: ProjectRow, value: ProjectRow["status"]) => void;
-    onChangePriority?: (
-        project: ProjectRow,
-        value: ProjectRow["priority"]
-    ) => void;
-    updatingStatusIds?: Set<string>;
-    updatingPriorityIds?: Set<string>;
 }
-
-
-const renderStatusBadge = (status: ProjectRow["status"]) => (
-    <span
-        className={`inline-flex items-center px-2 py-1 rounded text-xs border ${getProjectStatusClasses(
-            status
-        )}`}
-    >
-    {PROJECT_STATUS_LABELS[status] ?? status}
-  </span>
-);
-
-const renderPriorityBadge = (priority: ProjectRow["priority"]) => (
-    <span
-        className={`inline-flex items-center px-2 py-1 rounded text-xs border ${getProjectPriorityClasses(
-            priority
-        )}`}
-    >
-    {PROJECT_PRIORITY_LABELS[priority] ?? priority}
-  </span>
-);
 
 const ProjectsTable: React.FC<ProjectsTableProps> = ({
                                                          projects,
@@ -72,12 +40,6 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
                                                          onRowClick,
                                                          onEdit,
                                                          onDelete,
-                                                         canSetStatus = false,
-                                                         canSetPriority = false,
-                                                         onChangeStatus,
-                                                         onChangePriority,
-                                                         updatingStatusIds,
-                                                         updatingPriorityIds,
                                                      }) => {
     const [openMenuId, setOpenMenuId] = React.useState<string | null>(null);
 
@@ -98,10 +60,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
                         sortDirection === "asc" ? (
                             <ChevronUp className="w-4 h-4 text-blue-600" strokeWidth={2}/>
                         ) : (
-                            <ChevronDown
-                                className="w-4 h-4 text-blue-600"
-                                strokeWidth={2}
-                            />
+                            <ChevronDown className="w-4 h-4 text-blue-600" strokeWidth={2}/>
                         )
                     ) : (
                         <div className="w-4 h-4 opacity-0 group-hover:opacity-30">
@@ -123,13 +82,31 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
         }).format(date);
     };
 
+    const renderStatusBadge = (status: ProjectRow["status"]) => (
+        <span
+            className={`inline-flex items-center px-2 py-1 rounded text-xs border ${getProjectStatusClasses(
+                status
+            )}`}
+        >
+        {PROJECT_STATUS_LABELS[status] ?? status}
+      </span>
+    );
+
+    const renderPriorityBadge = (priority: ProjectRow["priority"]) => (
+        <span
+            className={`inline-flex items-center px-2 py-1 rounded text-xs border ${getProjectPriorityClasses(
+                priority
+            )}`}
+        >
+        {PROJECT_PRIORITY_LABELS[priority] ?? priority}
+      </span>
+    );
+
     if (loading && projects.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-20">
                 <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"/>
-                <p className="text-sm font-medium text-slate-600">
-                    Loading projects...
-                </p>
+                <p className="text-sm font-medium text-slate-600">Loading projects...</p>
             </div>
         );
     }
@@ -189,197 +166,101 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
                     </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                    {projects.map((project) => {
-                        const statusDisabled =
-                            !canSetStatus ||
-                            !onChangeStatus ||
-                            updatingStatusIds?.has(project.id as string);
-
-                        const priorityDisabled =
-                            !canSetPriority ||
-                            !onChangePriority ||
-                            updatingPriorityIds?.has(project.id as string);
-
-                        return (
-                            <tr
-                                key={project.id}
-                                onClick={() => onRowClick(project.id)}
-                                className="cursor-pointer hover:bg-blue-50/50 transition-colors"
-                            >
-                                <td className="px-3 py-3">
-                                    <div className="flex items-center gap-2">
-                                        <FolderKanban className="w-4 h-4 text-blue-500 flex-shrink-0"/>
-                                        <div className="flex flex-col">
-                        <span className="text-sm font-medium text-gray-900 truncate">
-                          {project.name}
+                    {projects.map((project) => (
+                        <tr
+                            key={project.id}
+                            onClick={() => onRowClick(project.id)}
+                            className="cursor-pointer hover:bg-blue-50/50 transition-colors"
+                        >
+                            <td className="px-3 py-3">
+                                <div className="flex items-center gap-2">
+                                    <FolderKanban className="w-4 h-4 text-blue-500 flex-shrink-0"/>
+                                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-gray-900 truncate">
+                        {project.name}
+                      </span>
+                                        {project.description && (
+                                            <span className="text-xs text-gray-500 truncate">
+                          {project.description}
                         </span>
-                                            {project.description && (
-                                                <span className="text-xs text-gray-500 truncate">
-                            {project.description}
-                          </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </td>
-
-                                <td className="px-3 py-3">
-                    <span className="text-sm text-gray-700 truncate block">
-                      {project.customer_name || "-"}
-                    </span>
-                                </td>
-
-                                <td className="px-3 py-3">
-                    <span className="text-xs text-gray-500 truncate block">
-                      {project.external_ref || "-"}
-                    </span>
-                                </td>
-
-                                {/* 🔽 Status – badge nebo editable select */}
-                                <td className="px-3 py-3">
-                                    {canSetStatus && onChangeStatus ? (
-                                        <div
-                                            className="relative inline-block w-full max-w-[150px]"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <select
-                                                value={project.status}
-                                                disabled={statusDisabled}
-                                                onChange={(e) =>
-                                                    onChangeStatus(
-                                                        project,
-                                                        e.target.value as ProjectRow["status"]
-                                                    )
-                                                }
-                                                className={`pl-2 pr-7 h-8 w-full rounded-lg text-xs appearance-none bg-clip-padding border ${
-                                                    statusDisabled
-                                                        ? "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
-                                                        : `${getProjectStatusClasses(
-                                                            project.status
-                                                        )} cursor-pointer`
-                                                }`}
-                                            >
-                                                {Object.entries(PROJECT_STATUS_LABELS).map(
-                                                    ([value, label]) => (
-                                                        <option key={value} value={value}>
-                                                            {label}
-                                                        </option>
-                                                    )
-                                                )}
-                                            </select>
-                                            <ChevronDown
-                                                className="w-3.5 h-3.5 text-gray-400 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none"
-                                                strokeWidth={1.5}
-                                            />
-                                        </div>
-                                    ) : (
-                                        renderStatusBadge(project.status)
-                                    )}
-                                </td>
-
-                                {/* 🔽 Priority – badge nebo editable select */}
-                                <td className="px-3 py-3">
-                                    {canSetPriority && onChangePriority ? (
-                                        <div
-                                            className="relative inline-block w-full max-w-[140px]"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <select
-                                                value={project.priority}
-                                                disabled={priorityDisabled}
-                                                onChange={(e) =>
-                                                    onChangePriority(
-                                                        project,
-                                                        e.target.value as ProjectRow["priority"]
-                                                    )
-                                                }
-                                                className={`pl-2 pr-7 h-8 w-full rounded-lg text-xs appearance-none bg-clip-padding border ${
-                                                    priorityDisabled
-                                                        ? "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
-                                                        : `${getProjectPriorityClasses(
-                                                            project.priority
-                                                        )} cursor-pointer`
-                                                }`}
-                                            >
-                                                {Object.entries(PROJECT_PRIORITY_LABELS).map(
-                                                    ([value, label]) => (
-                                                        <option key={value} value={value}>
-                                                            {label}
-                                                        </option>
-                                                    )
-                                                )}
-                                            </select>
-                                            <ChevronDown
-                                                className="w-3.5 h-3.5 text-gray-400 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none"
-                                                strokeWidth={1.5}
-                                            />
-                                        </div>
-                                    ) : (
-                                        renderPriorityBadge(project.priority)
-                                    )}
-                                </td>
-
-                                <td className="px-3 py-3">
-                    <span className="text-xs text-gray-500">
-                      {formatDate(project.due_date)}
-                    </span>
-                                </td>
-                                <td className="px-3 py-3">
-                    <span className="text-xs text-gray-500">
-                      {formatDate(project.created_at)}
-                    </span>
-                                </td>
-
-                                <td
-                                    className="px-3 py-3"
-                                    onClick={(e) => e.stopPropagation()} // ať klik na menu neotvírá detail
-                                >
-                                    <div className="relative">
-                                        <button
-                                            onClick={() =>
-                                                setOpenMenuId(
-                                                    openMenuId === (project.id as string)
-                                                        ? null
-                                                        : (project.id as string)
-                                                )
-                                            }
-                                            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-                                        >
-                                            <MoreVertical
-                                                className="w-4 h-4 text-gray-500"
-                                                strokeWidth={1.5}
-                                            />
-                                        </button>
-
-                                        {openMenuId === project.id && (
-                                            <div
-                                                className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
-                                                <button
-                                                    onClick={() => {
-                                                        onEdit(project);
-                                                        setOpenMenuId(null);
-                                                    }}
-                                                    className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
-                                                >
-                                                    <Edit3 className="w-4 h-4" strokeWidth={1.5}/>
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        onDelete(project);
-                                                        setOpenMenuId(null);
-                                                    }}
-                                                    className="flex items-center gap-2 px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 w-full text-left transition-colors"
-                                                >
-                                                    <Trash2 className="w-4 h-4" strokeWidth={1.5}/>
-                                                    Delete
-                                                </button>
-                                            </div>
                                         )}
                                     </div>
-                                </td>
-                            </tr>
-                        );
-                    })}
+                                </div>
+                            </td>
+                            <td className="px-3 py-3">
+                  <span className="text-sm text-gray-700 truncate block">
+                    {project.customer_name || "-"}
+                  </span>
+                            </td>
+                            <td className="px-3 py-3">
+                  <span className="text-xs text-gray-500 truncate block">
+                    {project.external_ref || "-"}
+                  </span>
+                            </td>
+                            <td className="px-3 py-3">{renderStatusBadge(project.status)}</td>
+                            <td className="px-3 py-3">
+                                {renderPriorityBadge(project.priority)}
+                            </td>
+                            <td className="px-3 py-3">
+                  <span className="text-xs text-gray-500">
+                    {formatDate(project.due_date)}
+                  </span>
+                            </td>
+                            <td className="px-3 py-3">
+                  <span className="text-xs text-gray-500">
+                    {formatDate(project.created_at)}
+                  </span>
+                            </td>
+                            <td
+                                className="px-3 py-3"
+                                onClick={(e) => e.stopPropagation()} // ať klik na menu neotvírá detail
+                            >
+                                <div className="relative">
+                                    <button
+                                        onClick={() =>
+                                            setOpenMenuId(
+                                                openMenuId === (project.id as string)
+                                                    ? null
+                                                    : (project.id as string)
+                                            )
+                                        }
+                                        className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                                    >
+                                        <MoreVertical
+                                            className="w-4 h-4 text-gray-500"
+                                            strokeWidth={1.5}
+                                        />
+                                    </button>
+
+                                    {openMenuId === project.id && (
+                                        <div
+                                            className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                                            <button
+                                                onClick={() => {
+                                                    onEdit(project);
+                                                    setOpenMenuId(null);
+                                                }}
+                                                className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
+                                            >
+                                                <Edit3 className="w-4 h-4" strokeWidth={1.5}/>
+                                                Edit
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    onDelete(project);
+                                                    setOpenMenuId(null);
+                                                }}
+                                                className="flex items-center gap-2 px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 w-full text-left transition-colors"
+                                            >
+                                                <Trash2 className="w-4 h-4" strokeWidth={1.5}/>
+                                                Delete
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
                     </tbody>
                 </table>
             </div>
