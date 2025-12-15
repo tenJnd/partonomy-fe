@@ -152,7 +152,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
                     <tr>
                         <SortableHeader field="name">Project</SortableHeader>
                         <SortableHeader field="customer_name">Customer</SortableHeader>
-                        <SortableHeader field="external_ref">Ref</SortableHeader>
+                        <SortableHeader field="external_ref">Reference</SortableHeader>
                         <SortableHeader field="status">Status</SortableHeader>
                         <SortableHeader field="priority">Priority</SortableHeader>
                         <SortableHeader field="due_date">

@@ -176,7 +176,7 @@ const Projects: React.FC = () => {
   };
 
   const handleRowClick = (projectId: string) => {
-    navigate(`/projects/${projectId}`);
+    navigate(`/app/projects/${projectId}`);
   };
 
   // 🔒 Tady jen rozhodneme, CO vrátit – ale všechny hooky výše už běží vždy
@@ -203,7 +203,7 @@ const Projects: React.FC = () => {
                 Use projects to group related parts, RFQs and customers into one view.
                 Go to{" "}
                 <Link
-                  to="/settings/billing"
+                  to="/app/settings/billing"
                   className="text-blue-600 hover:underline font-medium"
                 >
                   Billing

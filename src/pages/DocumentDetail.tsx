@@ -386,7 +386,7 @@ const DocumentDetail: React.FC = () => {
                             {error || "The document you're looking for doesn't exist."}
                         </p>
                         <Link
-                            to="/Documents"
+                            to="/app/Documents"
                             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
                         >
                             <ArrowLeft className="w-4 h-4" strokeWidth={1.5}/>

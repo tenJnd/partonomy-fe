@@ -28,14 +28,14 @@ const Sidebar: React.FC<SidebarProps> = ({
     const {billing} = useOrgBilling();
     const canUseProjects = !!billing?.tier?.can_use_projects;
     const mainNavItems = [
-        {path: '/Documents', label: 'Documents', icon: FileText},
-        {path: '/projects', label: 'Projects', icon: FolderKanban, locked: !canUseProjects},
+        {path: '/app/Documents', label: 'Documents', icon: FileText},
+        {path: '/app/projects', label: 'Projects', icon: FolderKanban, locked: !canUseProjects},
     ];
 
     const settingsNavItems = [
-        {path: '/settings/report', label: 'Report Settings', icon: SlidersHorizontal},
-        {path: '/settings/organization', label: 'Organization', icon: Users},
-        {path: '/settings/billing', label: 'Billing & Usage', icon: CreditCard},
+        {path: '/app/settings/report', label: 'Report Settings', icon: SlidersHorizontal},
+        {path: '/app/settings/organization', label: 'Organization', icon: Users},
+        {path: '/app/settings/billing', label: 'Billing & Usage', icon: CreditCard},
     ];
 
     return (

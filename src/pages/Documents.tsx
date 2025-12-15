@@ -323,7 +323,7 @@ const Documents: React.FC = () => {
     };
 
     const handleRowClick = (documentId: string, partId: string) => {
-        navigate(`/documents/${documentId}?partId=${partId}`);
+        navigate(`/app/documents/${documentId}?partId=${partId}`);
     };
 
     // === HANDLERY: SORT =======================================================

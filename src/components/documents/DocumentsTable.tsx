@@ -1,4 +1,3 @@
-// src/components/documents/DocumentsTable.tsx
 import React from "react";
 import {
     ChevronDown,

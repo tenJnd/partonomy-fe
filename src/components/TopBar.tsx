@@ -54,7 +54,7 @@ const TopBar: React.FC = () => {
                 {/* Logo stejné jako na landing page */}
                 <button
                     type="button"
-                    onClick={() => navigate("/documents")}
+                    onClick={() => navigate("/app/documents")}
                     className="flex items-center gap-3 group"
                 >
                     <div className="relative">

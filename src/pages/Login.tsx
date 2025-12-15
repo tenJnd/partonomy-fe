@@ -22,7 +22,7 @@ const Login: React.FC = () => {
       setError(error.message);
       setLoading(false);
     } else {
-      navigate('/documents', { replace: true });
+      navigate('/app/documents', { replace: true });
     }
   };
 

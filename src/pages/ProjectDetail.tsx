@@ -157,7 +157,7 @@ const ProjectDetail: React.FC = () => {
     }, [parts, projectPartIds]);
 
     const handleRowClick = (documentId: string, partId: string) => {
-        navigate(`/documents/${documentId}?partId=${partId}`);
+        navigate(`/app/documents/${documentId}?partId=${partId}`);
     };
 
     const handleRerunDocument = async (docId: string) => {
@@ -367,7 +367,7 @@ const ProjectDetail: React.FC = () => {
                     <div className="flex items-center gap-3">
                         <button
                             type="button"
-                            onClick={() => navigate("/projects")}
+                            onClick={() => navigate("/app/projects")}
                             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs border border-gray-200 bg-white hover:bg-gray-50 text-gray-700"
                         >
                             <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.5}/>

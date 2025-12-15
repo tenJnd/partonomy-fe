@@ -24,7 +24,7 @@ const Landing = () => {
     }, []);
 
     const handleGetStarted = () => {
-        navigate("/documents");
+        navigate("/app/documents");
     };
 
     const handleLogin = () => {
