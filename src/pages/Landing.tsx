@@ -5,6 +5,7 @@ import {
     ChevronRight,
     Clock,
     FileText,
+    Languages,
     LightbulbIcon,
     TrendingUp,
     Upload,
@@ -13,7 +14,10 @@ import {
 import {useAuth} from "../contexts/AuthContext";
 import {Link, useLocation, useNavigate} from "react-router-dom";
 import PricingPlans from "../components/PricingPlans";
-import FaqItem from "../components/FaqItem"
+import FaqItem from "../components/FaqItem";
+import {useLang} from "../hooks/useLang";
+import {SUPPORTED_LANGS, type AppLang} from "../i18n/lang";
+import {useTranslation} from "react-i18next";
 
 const DEMO_DOCUMENTS = [
     {
@@ -57,8 +61,11 @@ const DEMO_DOCUMENTS = [
 const Landing = () => {
     const [scrolled, setScrolled] = useState(false);
     const [activeDemo, setActiveDemo] = useState(0);
+    const [showLangMenu, setShowLangMenu] = useState(false);
     const {user, loading} = useAuth();
     const navigate = useNavigate();
+    const lang = useLang();
+    const {t} = useTranslation();
 
     const location = useLocation();
 
@@ -101,11 +108,18 @@ const Landing = () => {
     if (loading) return null;
 
     const handleGetStarted = () => {
-        navigate(user ? "/app/documents" : "/signup"); // nebo "/login"
+        navigate(user ? `/${lang}/app/documents` : `/${lang}/signup`);
     };
 
     const handleLogin = () => {
-        navigate("/login");
+        navigate(`/${lang}/login`);
+    };
+
+    const handleLanguageSwitch = (newLang: AppLang) => {
+        const currentPath = window.location.pathname;
+        const newPath = currentPath.replace(`/${lang}`, `/${newLang}`);
+        navigate(newPath);
+        setShowLangMenu(false);
     };
 
 
@@ -144,7 +158,7 @@ const Landing = () => {
                             }}
                             className="text-slate-600 hover:text-slate-900 transition-colors"
                         >
-                            Jak to funguje
+                            {t('landing.nav.howItWorks')}
                         </button>
 
                         <button
@@ -155,7 +169,7 @@ const Landing = () => {
                             }}
                             className="text-slate-600 hover:text-slate-900 transition-colors"
                         >
-                            Funkce
+                            {t('landing.nav.features')}
                         </button>
 
                         <button
@@ -166,7 +180,7 @@ const Landing = () => {
                             }}
                             className="text-slate-600 hover:text-slate-900 transition-colors"
                         >
-                            Ceník
+                            {t('landing.nav.pricing')}
                         </button>
 
                         <button
@@ -177,32 +191,60 @@ const Landing = () => {
                             }}
                             className="text-slate-600 hover:text-slate-900 transition-colors"
                         >
-                            FAQ
+                            {t('landing.nav.faq')}
                         </button>
 
                         <Link
-                            to="/insights"
+                            to={`/${lang}/insights`}
                             className="text-slate-600 hover:text-slate-900 transition-colors"
                         >
-                            Z praxe
+                            {t('landing.nav.insights')}
                         </Link>
                     </nav>
 
 
                     <div className="flex items-center gap-3">
+                        {/* Language Switcher */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowLangMenu(!showLangMenu)}
+                                className="h-9 px-3 rounded-md bg-slate-100 hover:bg-slate-200 flex items-center gap-2 text-sm font-medium text-slate-700 transition-colors"
+                            >
+                                <Languages className="w-4 h-4"/>
+                                <span className="uppercase">{lang}</span>
+                            </button>
+                            {showLangMenu && (
+                                <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden z-50">
+                                    {SUPPORTED_LANGS.map(l => (
+                                        <button
+                                            key={l}
+                                            onClick={() => handleLanguageSwitch(l)}
+                                            className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                                                l === lang
+                                                    ? 'bg-blue-50 text-blue-700 font-medium'
+                                                    : 'text-slate-700 hover:bg-slate-50'
+                                            }`}
+                                        >
+                                            {l === 'en' ? 'English' : l === 'cs' ? 'Čeština' : 'Deutsch'}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
                         {!user && (
                             <button
                                 onClick={handleLogin}
                                 className="hidden sm:block px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors"
                             >
-                                Přihlásit
+                                {t('landing.nav.login')}
                             </button>
                         )}
 
                         <button
                             onClick={handleGetStarted}
                             className="group px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/40 hover:-translate-y-0.5">
-                            {user ? "Přejít do aplikace" : "Vyzkoušet zdarma"}
+                            {user ? t('landing.nav.goToApp') : t('landing.nav.tryFree')}
                             <ChevronRight
                                 className="inline-block ml-1 w-4 h-4 group-hover:translate-x-1 transition-transform"/>
                         </button>
@@ -232,35 +274,31 @@ const Landing = () => {
                                         <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
                                   </span>
                                     <span className="text-xs font-medium text-blue-900">
-                                        AI asistent pro zpracování obrázkových výkresů ve strojírenství
+                                        {t('landing.hero.badge')}
                                         </span>
                                 </div>
 
                                 <h1 className="text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
                                       <span
                                           className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
-                                        Zkraťte zpracování technických výkresů
+                                        {t('landing.hero.headline1')}
                                       </span>
                                     <br/>
                                     <span
                                         className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                                      z 20 minut na 3
+                                      {t('landing.hero.headline2')}
                                     </span>
                                 </h1>
 
                                 <p className="text-lg text-slate-600 leading-relaxed max-w-xl">
-                                    Partonomy automaticky přečte strojírenský výkres, vytáhne klíčové metadata,{" "}
-                                    výrobní náročnost a další a pomůže vám rychle rozhodnout –{" "}
-                                    <span className="font-semibold text-slate-900">vyplatí se nacenit, nebo rovnou odmítnout</span>.{" "}
-                                    Každým nahraným výkresem si zároveň budujete databázi dílů v jednotném,
-                                    serializovaném formátu.
+                                    {t('landing.hero.description')}
                                 </p>
 
                                 <div className="flex flex-wrap items-center gap-4">
                                     <button
                                         onClick={handleGetStarted}
                                         className="group px-8 py-4 text-base font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-xl shadow-blue-600/30 hover:shadow-2xl hover:shadow-blue-600/40 hover:-translate-y-1">
-                                        {user ? "Přejít do aplikace" : "Nahrát první výkres"}
+                                        {user ? t('landing.nav.goToApp') : t('landing.hero.uploadFirstDrawing')}
                                         <Upload
                                             className="inline-block ml-2 w-5 h-5 group-hover:translate-y-0.5 transition-transform"/>
                                     </button>
@@ -268,7 +306,7 @@ const Landing = () => {
                                         <button
                                             onClick={handleLogin}
                                             className="px-8 py-4 text-base font-medium text-slate-700 hover:text-slate-900 transition-colors group">
-                                            Přihlásit se do účtu
+                                            {t('landing.hero.loginToAccount')}
                                             <ChevronRight
                                                 className="inline-block ml-1 w-5 h-5 group-hover:translate-x-1 transition-transform"/>
                                         </button>)}
@@ -278,22 +316,22 @@ const Landing = () => {
                                     <div className="flex items-center gap-2">
                                         <Clock className="w-5 h-5 text-blue-600"/>
                                         <div>
-                                            <div className="text-2xl font-bold text-slate-900">až 80%</div>
-                                            <div className="text-xs text-slate-600">úspora času</div>
+                                            <div className="text-2xl font-bold text-slate-900">{t('landing.hero.stat1Value')}</div>
+                                            <div className="text-xs text-slate-600">{t('landing.hero.stat1Label')}</div>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <TrendingUp className="w-5 h-5 text-emerald-600"/>
                                         <div>
-                                            <div className="text-2xl font-bold text-slate-900">15–20h</div>
-                                            <div className="text-xs text-slate-600">typicky ušetřeno / měsíc</div>
+                                            <div className="text-2xl font-bold text-slate-900">{t('landing.hero.stat2Value')}</div>
+                                            <div className="text-xs text-slate-600">{t('landing.hero.stat2Label')}</div>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <CheckCircle2 className="w-5 h-5 text-purple-600"/>
                                         <div>
-                                            <div className="text-2xl font-bold text-slate-900">až 90%</div>
-                                            <div className="text-xs text-slate-600">výkresů bez ručního přepisu</div>
+                                            <div className="text-2xl font-bold text-slate-900">{t('landing.hero.stat3Value')}</div>
+                                            <div className="text-xs text-slate-600">{t('landing.hero.stat3Label')}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -420,9 +458,9 @@ const Landing = () => {
                 <section id="how-it-works" className="py-20 bg-white">
                     <div className="mx-auto max-w-7xl px-6">
                         <div className="text-center mb-16">
-                            <h2 className="text-4xl font-bold text-slate-900 mb-4">Jak to funguje</h2>
+                            <h2 className="text-4xl font-bold text-slate-900 mb-4">{t('landing.howItWorks.title')}</h2>
                             <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-                                Tři jednoduché kroky k rychlejšímu rozhodování.
+                                {t('landing.howItWorks.subtitle')}
                             </p>
                         </div>
 
@@ -434,22 +472,22 @@ const Landing = () => {
                             {[
                                 {
                                     step: "01",
-                                    title: "Nahrajete výkresy",
-                                    desc: "Jednoduše nahrajete výkresy jako PDF, TIFF, PNG nebo JPEG – funguje to i na běžné scany z mailu. Doporučujeme: 1 díl = 1 strana pro nejlepší výsledky.",
+                                    title: t('landing.howItWorks.step1'),
+                                    desc: t('landing.howItWorks.step1Desc'),
                                     icon: Upload,
                                     color: "blue"
                                 },
                                 {
                                     step: "02",
-                                    title: "AI výkres přečte",
-                                    desc: "Systém vytáhne materiál, rozměry, tolerance, GD&T a identifikuje kritická místa a cost drivery. Metadata ukládáme ve strukturované podobě, připravené pro další použití ve vašem systému.",
+                                    title: t('landing.howItWorks.step2'),
+                                    desc: t('landing.howItWorks.step2Desc'),
                                     icon: Zap,
                                     color: "purple"
                                 },
                                 {
                                     step: "03",
-                                    title: "Rozhodnete okamžitě",
-                                    desc: "Každý díl dostane přehledný report a jednoduché skóre. RFQ triage zabere minuty místo hodin. Zároveň vám z výkresů vzniká přehledná databáze dílů, se kterou můžete dál pracovat.",
+                                    title: t('landing.howItWorks.step3'),
+                                    desc: t('landing.howItWorks.step3Desc'),
                                     icon: CheckCircle2,
                                     color: "emerald"
                                 }
@@ -481,46 +519,45 @@ const Landing = () => {
                 <section id="features" className="py-20 bg-gradient-to-br from-slate-50 to-blue-50/30">
                     <div className="mx-auto max-w-7xl px-6">
                         <div className="text-center mb-16">
-                            <h2 className="text-4xl font-bold text-slate-900 mb-4">Co získáte</h2>
-                            <p className="text-lg text-slate-600">Řekněte sbohem manuálnímu přepisování z PDF a
-                                TIFů!</p>
+                            <h2 className="text-4xl font-bold text-slate-900 mb-4">{t('landing.features.title')}</h2>
+                            <p className="text-lg text-slate-600">{t('landing.features.subtitle')}</p>
                         </div>
 
                         <div className="grid md:grid-cols-2 gap-8">
                             {[
                                 {
-                                    title: "Seznam výkresů",
-                                    desc: "Všechny výkresy na jednom místě. Seřazené, označené stavem zpracování a připravené k rozhodnutí. Vidíte obálku dílu, základní popis, výrobní náročnost a to, jak dobře díl zapadá do vašich možností.",
+                                    title: t('landing.features.list.title'),
+                                    desc: t('landing.features.list.desc'),
                                     icon: FileText,
                                     gradient: "from-blue-500 to-blue-600"
                                 },
                                 {
-                                    title: "Rychlé zhodnocení výrobní náročnosti",
-                                    desc: "AI hledá kritické tolerance, GD&T, povrchové/tepelné úpravy a další typické nákladové faktory. Výsledkem je stručný, srozumitelný report pro každý díl – v jazyce vašeho týmu. Navíc, můžete report hned exportovat například do excelu.",
+                                    title: t('landing.features.list.complexity'),
+                                    desc: t('landing.features.list.complexityDesc'),
                                     icon: BarChart3,
                                     gradient: "from-purple-500 to-purple-600"
                                 },
                                 {
-                                    title: "Automatická klasifikace dílů",
-                                    desc: "Systém automaticky rozpozná taxonomii dílu a přiřadí score (náročnost, risk, alignment) podle obvyklých strojírenských kritérií. Vše ukládáme jako strukturovaná data – každým výkresem si budujete databázi dílů a můžete data exportovat do vašeho procesu.",
+                                    title: t('landing.features.list.classification'),
+                                    desc: t('landing.features.list.classificationDesc'),
                                     icon: Zap,
                                     gradient: "from-emerald-500 to-emerald-600"
                                 },
                                 {
-                                    title: "Výstup nastavený přímo pro vaši firmu",
-                                    desc: "Jednoduše slovně popíšete profil vaší dílny – jaké materiály obrábíte, jaké tolerance preferujete a v čem jste silní. Systém pak u každého dílu vyhodnotí shop alignment podle toho, jak dobře odpovídá vašim možnostem. 'Kooperacace nebo to zvládneme sami?'",
+                                    title: t('landing.features.list.customOutput'),
+                                    desc: t('landing.features.list.customOutputDesc'),
                                     icon: CheckCircle2,
                                     gradient: "from-amber-500 to-amber-600"
                                 },
                                 {
-                                    title: "Kontrola revizí a změn",
-                                    desc: "Když dorazí nový změnový index, Partonomy na to automaticky upozorní. V Inboxu hned vidíte, že jde o novější verzi výkresu – bez ruční kontroly tabulek a porovnávání souborů.",
+                                    title: t('landing.features.list.revisions'),
+                                    desc: t('landing.features.list.revisionsDesc'),
                                     icon: LightbulbIcon,
                                     gradient: "from-indigo-500 to-indigo-600"
                                 },
                                 {
-                                    title: "Projekty a týmový workflow",
-                                    desc: "V Pro verzi si vytváříte projekty, propojíte díly s konkrétní poptávkou a tým s nimi může pracovat společně v jednom workflow. Místo chaosu v e-mailech máte jedno místo pro RFQ triage, interní rozhodnutí a navazující kroky.",
+                                    title: t('landing.features.list.projects'),
+                                    desc: t('landing.features.list.projectsDesc'),
                                     icon: Clock,
                                     gradient: "from-blue-500 to-blue-600"
                                 }
@@ -546,10 +583,7 @@ const Landing = () => {
                         </div>
 
                         <p className="text-center mt-6 text-sm text-slate-500">
-                            Partonomy je aktuálně v režimu <span
-                            className="font-semibold text-slate-700">Early Access</span>. Zaměřujeme se na RFQ
-                            (poptávky) pro
-                            obrábění a výrobu a postupně přidáváme další funkce podle zpětné vazby od prvních uživatelů.
+                            {t('landing.features.earlyAccess')}
                         </p>
                     </div>
                 </section>
@@ -565,42 +599,42 @@ const Landing = () => {
                     <div className="mx-auto max-w-4xl px-6">
                         <div className="text-center mb-14">
                             <h2 className="text-4xl font-bold text-slate-900 mb-4">
-                                Časté dotazy
+                                {t('landing.faq.title')}
                             </h2>
                             <p className="text-lg text-slate-600">
-                                Odpovědi na nejčastější otázky, které dostáváme od výrobních firem.
+                                {t('landing.faq.subtitle')}
                             </p>
                         </div>
 
                         <div className="space-y-4">
                             <FaqItem
-                                question="Jaké typy výkresů Partonomy podporuje?"
-                                answer="Partonomy je navržené speciálně pro 2D technické výkresy v rastrové podobě, které typicky přicházejí jako přílohy v RFQ e-mailech. Podporujeme formáty PDF, TIFF, PNG a JPEG – včetně skenů a starší dokumentace."
+                                question={t('landing.faq.q1')}
+                                answer={t('landing.faq.a1')}
                             />
 
                             <FaqItem
-                                question="Podporuje Partonomy CAD výkresy nebo 3D modely?"
-                                answer="Ne. Partonomy nepracuje s CAD ani 3D modely (STEP, DWG, IGES apod.). Zaměřujeme se výhradně na 2D výkresy, protože právě ty tvoří většinu RFQ poptávek a jsou nejnáročnější na ruční zpracování."
+                                question={t('landing.faq.q2')}
+                                answer={t('landing.faq.a2')}
                             />
 
                             <FaqItem
-                                question="Musí být výkres perfektně čitelný?"
-                                answer="Ne. Partonomy si poradí i s běžnými skeny, horší kvalitou nebo výkresy přeposlanými z e-mailu. Čím kvalitnější vstup, tím lepší výsledek, ale systém je navržený pro reálný RFQ provoz."
+                                question={t('landing.faq.q3')}
+                                answer={t('landing.faq.a3')}
                             />
 
                             <FaqItem
-                                question="Jak přesná je analýza AI?"
-                                answer="Cílem není nahradit technologa ani poptávkáře, ale výrazně zrychlit první zpracování výkresu a rozhodnutí. AI vyhodnocuje výkresy na základě typických výrobních vzorů a pomáhá rychle rozhodnout, zda má smysl zakázku nacenit."
+                                question={t('landing.faq.q4')}
+                                answer={t('landing.faq.a4')}
                             />
 
                             <FaqItem
-                                question="Pro koho Partonomy není vhodné?"
-                                answer="Partonomy není určené pro detailní výrobní přípravu, CAD analýzu nebo finální kalkulaci ceny. Největší přínos má v RFQ triage – tedy ve fázi rychlého rozhodování nad příchozími poptávkami."
+                                question={t('landing.faq.q5')}
+                                answer={t('landing.faq.a5')}
                             />
 
                             <FaqItem
-                                question="Jak rychle můžu začít a můžu si to vyzkoušet?"
-                                answer="Začnete během pár minut. Stačí se zaregistrovat, přihlásit a nahrát první výkres. Získáte zkušební přístup na 14 dní zdarma — bez instalace a bez kreditní karty."
+                                question={t('landing.faq.q6')}
+                                answer={t('landing.faq.a6')}
                             />
 
                         </div>
@@ -612,20 +646,19 @@ const Landing = () => {
                     <div className="mx-auto max-w-7xl px-6">
                         <div className="text-center mb-12">
                             <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
-                                Z praxe zpracování RFQ výkresů
+                                {t('landing.insights.title')}
                             </h2>
 
                             <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
-                                Jeden přehledný článek, který popisuje realitu RFQ procesů ve výrobě –
-                                a jak se dá poptávková fáze výrazně zrychlit.
+                                {t('landing.insights.subtitle')}
                             </p>
 
                             <div className="mt-6">
                                 <Link
-                                    to="/insights"
+                                    to={`/${lang}/insights`}
                                     className="inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-800 transition-colors"
                                 >
-                                    Otevřít celý článek
+                                    {t('landing.insights.openFullArticle')}
                                     <ChevronRight className="w-4 h-4"/>
                                 </Link>
                             </div>
@@ -633,7 +666,7 @@ const Landing = () => {
 
                         <div className="grid md:grid-cols-3 gap-6">
                             <Link
-                                to="/insights#rfq-problem"
+                                to={`/${lang}/insights#rfq-problem`}
                                 className="group p-7 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
                             >
                                 <div
@@ -641,20 +674,19 @@ const Landing = () => {
                                     <BarChart3 className="w-6 h-6 text-white"/>
                                 </div>
                                 <h3 className="text-lg font-bold text-slate-900 mb-2">
-                                    Proč je RFQ dnes úzké hrdlo
+                                    {t('landing.insights.card1Title')}
                                 </h3>
                                 <p className="text-slate-600 leading-relaxed">
-                                    Málo lidí, hodně poptávek a tlak na rychlé rozhodnutí. Proč se z RFQ
-                                    stává bottleneck napříč firmou.
+                                    {t('landing.insights.card1Desc')}
                                 </p>
                                 <div
                                     className="mt-4 text-sm font-semibold text-blue-700 group-hover:text-blue-800 inline-flex items-center gap-1">
-                                    Přečíst sekci <ChevronRight className="w-4 h-4"/>
+                                    {t('landing.insights.card1Link')} <ChevronRight className="w-4 h-4"/>
                                 </div>
                             </Link>
 
                             <Link
-                                to="/insights#rastr-drawings"
+                                to={`/${lang}/insights#rastr-drawings`}
                                 className="group p-7 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
                             >
                                 <div
@@ -662,20 +694,19 @@ const Landing = () => {
                                     <FileText className="w-6 h-6 text-white"/>
                                 </div>
                                 <h3 className="text-lg font-bold text-slate-900 mb-2">
-                                    Proč rozhodují PDF/TIFF z e-mailu
+                                    {t('landing.insights.card2Title')}
                                 </h3>
                                 <p className="text-slate-600 leading-relaxed">
-                                    Většina RFQ nepřichází jako CAD, ale jako 2D rastrové přílohy v mailu.
-                                    Proč to tak je a co to dělá s procesem.
+                                    {t('landing.insights.card2Desc')}
                                 </p>
                                 <div
                                     className="mt-4 text-sm font-semibold text-blue-700 group-hover:text-blue-800 inline-flex items-center gap-1">
-                                    Přečíst sekci <ChevronRight className="w-4 h-4"/>
+                                    {t('landing.insights.card1Link')} <ChevronRight className="w-4 h-4"/>
                                 </div>
                             </Link>
 
                             <Link
-                                to="/insights#partonomy"
+                                to={`/${lang}/insights#partonomy`}
                                 className="group p-7 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
                             >
                                 <div
@@ -683,22 +714,20 @@ const Landing = () => {
                                     <Zap className="w-6 h-6 text-white"/>
                                 </div>
                                 <h3 className="text-lg font-bold text-slate-900 mb-2">
-                                    Jak Partonomy pomáhá v poptávkové fázi
+                                    {t('landing.insights.card3Title')}
                                 </h3>
                                 <p className="text-slate-600 leading-relaxed">
-                                    Nejen metadata: shrnutí, highlights, cost drivere, doporučení podle
-                                    profilu firmy, detekce revizí a workflow nad seznamem výkresů.
+                                    {t('landing.insights.card3Desc')}
                                 </p>
                                 <div
                                     className="mt-4 text-sm font-semibold text-blue-700 group-hover:text-blue-800 inline-flex items-center gap-1">
-                                    Přečíst sekci <ChevronRight className="w-4 h-4"/>
+                                    {t('landing.insights.card1Link')} <ChevronRight className="w-4 h-4"/>
                                 </div>
                             </Link>
                         </div>
 
                         <div className="mt-8 text-sm text-slate-500">
-                            Tip: z těchto sekcí odkazujeme přímo na konkrétní části článku, abyste se rychle dostali k
-                            tomu podstatnému.
+                            {t('landing.insights.tip')}
                         </div>
                     </div>
                 </section>
@@ -712,17 +741,16 @@ const Landing = () => {
 
                     <div className="relative mx-auto max-w-4xl px-6 text-center">
                         <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                            Připraveni ušetřit desítky hodin měsíčně?
+                            {t('landing.cta.title')}
                         </h2>
                         <p className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto">
-                            Začněte analyzovat výkresy za 3 minuty místo 20.
-                            První měsíc zdarma, žádná kreditka, žádné závazky.
+                            {t('landing.cta.subtitle')}
                         </p>
                         <button
                             onClick={handleGetStarted}
                             className="group px-10 py-5 text-lg font-bold text-slate-900 bg-white rounded-xl hover:bg-blue-50 transition-all shadow-2xl hover:shadow-blue-500/50 hover:-translate-y-1"
                         >
-                            {user ? "Přejít do aplikace" : "Začít zdarma"}
+                            {user ? t('landing.nav.goToApp') : t('landing.cta.startFree')}
                             <ChevronRight
                                 className="inline-block ml-2 w-6 h-6 group-hover:translate-x-2 transition-transform"
                             />
@@ -745,9 +773,9 @@ const Landing = () => {
                         </div>
 
                         <div className="flex gap-8 text-sm text-slate-400">
-                            <a href="#" className="hover:text-white transition-colors">Privacy</a>
-                            <a href="#" className="hover:text-white transition-colors">Terms</a>
-                            <a href="#" className="hover:text-white transition-colors">Contact</a>
+                            <a href="#" className="hover:text-white transition-colors">{t('landing.footer.privacy')}</a>
+                            <a href="#" className="hover:text-white transition-colors">{t('landing.footer.terms')}</a>
+                            <a href="#" className="hover:text-white transition-colors">{t('landing.footer.contact')}</a>
                         </div>
 
                         <div className="text-sm text-slate-400">

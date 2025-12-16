@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { AlertCircle, CheckCircle, Mail } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useLang } from '../hooks/useLang';
 
 const ForgotPassword: React.FC = () => {
+  const { t } = useTranslation();
+  const lang = useLang();
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
@@ -14,20 +18,20 @@ const ForgotPassword: React.FC = () => {
     setSuccess(false);
 
     if (!email.trim()) {
-      setError('Please enter your email address');
+      setError(t('auth.pleaseEnterEmail'));
       return;
     }
 
     setSending(true);
 
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/reset-password`, // ⬅ URL ve FE + v Supabase Redirect URLs
+      redirectTo: `${window.location.origin}/${lang}/reset-password`,
     });
 
     setSending(false);
 
     if (error) {
-      setError(error.message || 'Failed to send reset link');
+      setError(error.message || t('auth.failedToSendResetLink'));
     } else {
       setSuccess(true);
     }
@@ -42,10 +46,10 @@ const ForgotPassword: React.FC = () => {
               <Mail className="w-6 h-6 text-blue-600" />
             </div>
             <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-              Forgot your password?
+              {t('auth.forgotYourPassword')}
             </h1>
             <p className="text-sm text-gray-600">
-              Enter your email address and we&apos;ll send you a link to reset your password.
+              {t('auth.enterEmailForReset')}
             </p>
           </div>
 
@@ -60,7 +64,7 @@ const ForgotPassword: React.FC = () => {
             <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-start gap-2">
               <CheckCircle className="w-4 h-4 text-emerald-600 mt-0.5" />
               <p className="text-xs text-emerald-700">
-                If an account with this email exists, we&apos;ve sent a reset link.
+                {t('auth.resetLinkSent')}
               </p>
             </div>
           )}
@@ -68,14 +72,14 @@ const ForgotPassword: React.FC = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email address
+                {t('auth.emailAddress')}
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 className="w-full h-11 px-3 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none"
-                placeholder="you@company.com"
+                placeholder={t('auth.emailPlaceholder')}
                 required
                 disabled={sending}
               />
@@ -86,7 +90,7 @@ const ForgotPassword: React.FC = () => {
               disabled={sending}
               className="w-full h-11 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium text-sm transition-all active:scale-[0.98]"
             >
-              {sending ? 'Sending...' : 'Send reset link'}
+              {sending ? t('auth.sendingResetLink') : t('auth.sendResetLink')}
             </button>
           </form>
         </div>

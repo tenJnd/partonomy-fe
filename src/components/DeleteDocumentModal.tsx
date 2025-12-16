@@ -1,5 +1,6 @@
 import React from "react";
 import {AlertTriangle, Trash2} from "lucide-react";
+import {useTranslation} from 'react-i18next';
 
 interface DeleteDocumentModalProps {
     open: boolean;
@@ -14,6 +15,7 @@ const DeleteDocumentModal: React.FC<DeleteDocumentModalProps> = ({
                                                                      onConfirm,
                                                                      documentName,
                                                                  }) => {
+    const {t} = useTranslation();
     if (!open) return null;
 
     return (
@@ -26,20 +28,19 @@ const DeleteDocumentModal: React.FC<DeleteDocumentModalProps> = ({
                     </div>
                     <div>
                         <h2 className="text-xl font-semibold text-gray-900">
-                            Delete Document
+                            {t('modals.deleteDocument.title')}
                         </h2>
                         <p className="text-sm text-gray-600 mt-1">
-                            You are about to permanently delete <strong>{documentName}</strong>.
+                            {t('modals.deleteDocument.aboutToDelete')} <strong>{documentName}</strong>.
                         </p>
                     </div>
                 </div>
 
                 {/* Warning Box */}
                 <div className="p-4 bg-rose-50 border border-rose-200 rounded-lg text-sm text-rose-700 mb-6">
-                    <p className="font-medium">This action cannot be undone.</p>
+                    <p className="font-medium">{t('modals.deleteDocument.permanentWarning')}</p>
                     <p className="mt-1">
-                        Deleting this document may also remove{" "}
-                        <strong>all associated parts</strong> extracted from it.
+                        {t('modals.deleteDocument.associatedPartsWarning')}
                     </p>
                 </div>
 
@@ -49,14 +50,14 @@ const DeleteDocumentModal: React.FC<DeleteDocumentModalProps> = ({
                         onClick={onClose}
                         className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium"
                     >
-                        Cancel
+                        {t('modals.deleteDocument.cancel')}
                     </button>
                     <button
                         onClick={onConfirm}
                         className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium flex items-center gap-2"
                     >
                         <Trash2 className="w-4 h-4"/>
-                        Delete
+                        {t('modals.deleteDocument.delete')}
                     </button>
                 </div>
             </div>

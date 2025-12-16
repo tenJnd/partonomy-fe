@@ -59,29 +59,29 @@ const addLabelValueInline = (
 };
 
 // For long text (paragraph)
-const addBlock = (
-  doc: jsPDF,
-  label: string,
-  value: string,
-  y: number
-) => {
-  if (!value) return y;
-  y = ensurePage(doc, y + 2);
-
-  doc.setFontSize(10);
-
-  // label on its own line
-  doc.setFont('helvetica', 'bold');
-  doc.text(label, MARGIN_LEFT, y);
-  y += 5;
-
-  // paragraph under it, full width
-  doc.setFont('helvetica', 'normal');
-  const lines = doc.splitTextToSize(value, CONTENT_WIDTH);
-  doc.text(lines, MARGIN_LEFT, y);
-
-  return y + lines.length * 5;
-};
+// const addBlock = (
+//   doc: jsPDF,
+//   label: string,
+//   value: string,
+//   y: number
+// ) => {
+//   if (!value) return y;
+//   y = ensurePage(doc, y + 2);
+//
+//   doc.setFontSize(10);
+//
+//   // label on its own line
+//   doc.setFont('helvetica', 'bold');
+//   doc.text(label, MARGIN_LEFT, y);
+//   y += 5;
+//
+//   // paragraph under it, full width
+//   doc.setFont('helvetica', 'normal');
+//   const lines = doc.splitTextToSize(value, CONTENT_WIDTH);
+//   doc.text(lines, MARGIN_LEFT, y);
+//
+//   return y + lines.length * 5;
+// };
 
 const addMultilineList = (doc: jsPDF, items: string[], y: number) => {
   doc.setFont('helvetica', 'normal');

@@ -1,6 +1,7 @@
 // src/pages/BillingSettings.tsx
 import React from "react";
 import {Activity, CreditCard, ExternalLink, Loader2} from "lucide-react";
+import {useTranslation} from "react-i18next";
 import {useAuth} from "../contexts/AuthContext";
 import SettingsShell from "../components/SettingsShell";
 import {useOrgBilling} from "../hooks/useOrgBilling";
@@ -12,6 +13,7 @@ import {useStripeBillingPortal} from "../hooks/useStripeBillingPortal";
 import ErrorAlert from "../components/ErrorAlert";
 
 const BillingSettings: React.FC = () => {
+    const {t} = useTranslation();
     const {currentOrg} = useAuth();
     const canManageOrg =
         currentOrg?.role === "owner" || currentOrg?.role === "admin";
@@ -31,7 +33,7 @@ const BillingSettings: React.FC = () => {
     } = useStripeBillingPortal();
 
     if (!currentOrg) {
-        return <div className="p-6 max-w-4xl mx-auto">Loading...</div>;
+        return <div className="p-6 max-w-4xl mx-auto">{t('common.loading')}</div>;
     }
 
     const planTitle = getBillingPlanTitle(billing);
@@ -55,8 +57,8 @@ const BillingSettings: React.FC = () => {
 
     return (
         <SettingsShell
-            title="Billing & Usage"
-            description="Manage subscription plan and usage limits."
+            title={t('billingSettings.title')}
+            description={t('billingSettings.description')}
             canManageOrg={canManageOrg}
         >
             {/* Checkout error */}
@@ -70,10 +72,10 @@ const BillingSettings: React.FC = () => {
                     <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                         <div>
                             <h2 className="text-lg font-semibold text-gray-900">
-                                Current plan
+                                {t('billingSettings.currentPlan')}
                             </h2>
                             <p className="text-sm text-gray-500 mt-1">
-                                Overview of your subscription status.
+                                {t('billingSettings.currentPlanDescription')}
                             </p>
                         </div>
                     </div>
@@ -81,7 +83,7 @@ const BillingSettings: React.FC = () => {
                     <div className="p-6">
                         {billingLoading ? (
                             <div className="text-sm text-gray-500">
-                                Loading billing info...
+                                {t('billingSettings.loadingBillingInfo')}
                             </div>
                         ) : (
                             <div className="text-center space-y-3">
@@ -105,7 +107,7 @@ const BillingSettings: React.FC = () => {
                                         ) : (
                                             <ExternalLink className="w-4 h-4" strokeWidth={1.5}/>
                                         )}
-                                        {portalLoading ? "Opening billing portal..." : "Manage billing"}
+                                        {portalLoading ? t('common.openingBillingPortal') : t('common.manageBilling')}
                                     </button>
                                 )}
                             </div>
@@ -119,11 +121,10 @@ const BillingSettings: React.FC = () => {
                     <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                         <div>
                             <h2 className="text-lg font-semibold text-gray-900">
-                                Usage in current period
+                                {t('billingSettings.usageInCurrentPeriod')}
                             </h2>
                             <p className="text-sm text-gray-500 mt-1">
-                                Jobs processed for this organization in the current billing
-                                period.
+                                {t('billingSettings.usageDescription')}
                             </p>
                         </div>
                         <div className="hidden md:flex items-center gap-2 text-xs text-gray-500">
@@ -135,11 +136,11 @@ const BillingSettings: React.FC = () => {
                     <div className="p-6">
                         {usageLoading || billingLoading ? (
                             <div className="text-sm text-gray-500">
-                                Loading usage information...
+                                {t('billingSettings.loadingUsage')}
                             </div>
                         ) : maxJobs == null ? (
                             <p className="text-sm text-gray-500">
-                                Usage limits are not configured for this plan yet.
+                                {t('billingSettings.usageLimitsNotConfigured')}
                             </p>
                         ) : (
                             <div className="space-y-3">
@@ -171,16 +172,16 @@ const BillingSettings: React.FC = () => {
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-100">
                         <h2 className="text-lg font-semibold text-gray-900">
-                            Choose your plan
+                            {t('billingSettings.choosePlan')}
                         </h2>
                         <p className="text-sm text-gray-500 mt-1">
-                            Select the plan and billing period that best fits your needs.
+                            {t('billingSettings.choosePlanDescription')}
                         </p>
                     </div>
                     <div className="p-6">
                         {billingLoading ? (
                             <div className="text-sm text-gray-500">
-                                Loading billing info...
+                                {t('billingSettings.loadingBillingInfo')}
                             </div>
                         ) : (
                             <div className="relative">
@@ -190,7 +191,7 @@ const BillingSettings: React.FC = () => {
                                         className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm">
                                         <Loader2 className="w-6 h-6 animate-spin mb-2" strokeWidth={1.5}/>
                                         <p className="text-sm text-gray-600">
-                                            Redirecting to checkout...
+                                            {t('common.redirectingToCheckout')}
                                         </p>
                                     </div>
                                 )}

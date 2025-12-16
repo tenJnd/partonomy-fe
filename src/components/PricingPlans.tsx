@@ -4,6 +4,7 @@ import {CheckCircle2} from "lucide-react";
 import {OrgBilling} from "../hooks/useOrgBilling";
 import {TierEnum} from "../lib/database.types";
 import {getTrialInfo} from "../utils/billing";
+import {useTranslation} from "react-i18next";
 
 type PricingMode = "landing" | "billing";
 export type BillingPeriod = "monthly" | "yearly";
@@ -54,6 +55,7 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                                                    }) => {
     const currentTier = billing?.tier?.code ?? null;
     const {isTrial, daysLeft} = getTrialInfo(billing ?? null);
+    const {t} = useTranslation();
 
     const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("yearly");
     const [currency, setCurrency] = useState<Currency>("USD");
@@ -71,8 +73,8 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
 
     const periodLabel =
         billingPeriod === "yearly"
-            ? "měsíčně, účtováno ročně"
-            : "měsíčně, účtováno měsíčně";
+            ? t('pricing.monthlyBilledYearly')
+            : t('pricing.monthlyBilledMonthly');
 
     const handleSelectStarter = () => {
         if (!onSelectStarter) return;
@@ -88,26 +90,26 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
         if (mode === "landing") return "";
 
         if (isTrial) {
-            return "Vybrat Starter";
+            return t('pricing.starter.selectButton');
         }
 
-        if (isStarterCurrent) return "Aktuální plán";
-        if (isProCurrent) return "Downgrade na Starter";
+        if (isStarterCurrent) return t('pricing.starter.currentPlan');
+        if (isProCurrent) return t('pricing.starter.downgrade');
 
-        return "Vybrat Starter";
+        return t('pricing.starter.selectButton');
     })();
 
     const proButtonLabel = (() => {
         if (mode === "landing") return "";
 
         if (isTrial) {
-            return "Vybrat Pro";
+            return t('pricing.pro.selectButton');
         }
 
-        if (isProCurrent) return "Aktuální plán";
-        if (isStarterCurrent) return "Upgrade na Pro";
+        if (isProCurrent) return t('pricing.pro.currentPlan');
+        if (isStarterCurrent) return t('pricing.pro.upgrade');
 
-        return "Vybrat Pro";
+        return t('pricing.pro.selectButton');
     })();
 
     const starterDisabled =
@@ -128,10 +130,10 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                 {mode === "landing" && (
                     <div className="text-center mb-6">
                         <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">
-                            Jednoduchý ceník
+                            {t('pricing.title')}
                         </h2>
                         <p className="text-sm md:text-lg text-slate-600">
-                            Začněte zdarma, plaťte podle potřeby
+                            {t('pricing.subtitle')}
                         </p>
                         {/*<p className="text-xs md:text-sm text-slate-500 mt-2">*/}
                         {/*    Platíte jen za{" "}*/}
@@ -147,7 +149,7 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                 {/* Společný řádek: billing period + currency */}
                 <div className="flex justify-center mb-12">
                     <div className="inline-flex items-center bg-slate-100 rounded-full p-1 text-xs shadow-sm gap-1">
-                        <span className="px-3 py-1 text-slate-500 text-xs">účtováno:</span>
+                        <span className="px-3 py-1 text-slate-500 text-xs">{t('pricing.billedLabel')}</span>
 
                         {/* Billing period toggle */}
                         <div className="inline-flex items-center bg-slate-100 rounded-full p-1 text-xs shadow-sm">
@@ -160,9 +162,9 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                                 }`}
                                 onClick={() => setBillingPeriod("yearly")}
                             >
-                                Ročně{" "}
+                                {t('pricing.yearly')}{" "}
                                 <span className="ml-1 text-[10px] uppercase tracking-wide text-emerald-600">
-                                  Sleva
+                                  {t('pricing.discount')}
                                 </span>
                             </button>
                             <button
@@ -174,7 +176,7 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                                 }`}
                                 onClick={() => setBillingPeriod("monthly")}
                             >
-                                Měsíčně
+                                {t('pricing.monthly')}
                             </button>
                         </div>
 
@@ -220,14 +222,14 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                         {mode === "billing" && isStarterCurrent && !isTrial && (
                             <div
                                 className="absolute -top-4 left-4 px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-full">
-                                Aktuální plán
+                                {t('pricing.starter.currentPlan')}
                             </div>
                         )}
 
                         <div>
                             <div className="mb-6">
                                 <h3 className="text-2xl font-bold text-slate-900 mb-2">
-                                    Starter
+                                    {t('pricing.starter.name')}
                                 </h3>
                                 <div className="flex flex-col gap-1">
                                     <div className="flex items-baseline gap-2">
@@ -236,34 +238,34 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                                             {starterPrice}
                                         </span>
                                         <span className="text-slate-600">
-                                          / {starterDrawings} výkresů
+                                          / {starterDrawings} {t('pricing.starter.drawings')}
                                         </span>
                                     </div>
                                     <span className="text-xs text-slate-500">{periodLabel}</span>
                                 </div>
                                 <p className="mt-4 text-slate-600">
-                                    Ideální pro menší dílny a pilotní provoz
+                                    {t('pricing.starter.description')}
                                 </p>
                                 {mode === "billing" && isTrial && daysLeft !== null && (
                                     <p className="mt-2 text-xs text-slate-500">
-                                        Běží trial ({daysLeft}{" "}
-                                        {daysLeft === 1 ? "den zbývá" : "dní zbývá"}). Zvolený plán
-                                        začne po skončení trialu.
+                                        {t('pricing.starter.trialNote', {
+                                            days: daysLeft,
+                                            plural: daysLeft === 1 ? 'den' : 'dní'
+                                        })}
                                     </p>
                                 )}
                             </div>
 
                             <ul className="space-y-4">
                                 {[
-                                    "80 výkresů měsíčně",
-                                    "2 uživatelé",
-                                    "Analýza výkresů z rastrových PDF/obrázků",
-                                    // "Přehledný seznam zpracovaných dokumentů",
-                                    "Report na míru pro každý díl",
-                                    "Parsování kusovníků a historie revizí",
-                                    "Upozornění na změnu revize",
-                                    "Export dat",
-                                    "Email podpora"
+                                    t('pricing.starter.features.drawings'),
+                                    t('pricing.starter.features.users'),
+                                    t('pricing.starter.features.analysis'),
+                                    t('pricing.starter.features.customReport'),
+                                    t('pricing.starter.features.bomParsing'),
+                                    t('pricing.starter.features.revisionAlert'),
+                                    t('pricing.starter.features.dataExport'),
+                                    t('pricing.starter.features.emailSupport')
                                 ].map((item, idx) => (
                                     <li key={idx} className="flex items-start gap-3">
                                         <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"/>
@@ -295,19 +297,19 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                         className="relative p-8 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 border-2 border-blue-500 shadow-2xl shadow-blue-600/30 transform md:scale-105 h-full flex flex-col">
                         <div
                             className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-amber-400 to-amber-500 text-amber-900 text-sm font-bold rounded-full">
-                            Nejoblíbenější
+                            {t('pricing.pro.mostPopular')}
                         </div>
 
                         {mode === "billing" && isProCurrent && !isTrial && (
                             <div
                                 className="absolute -top-4 right-4 px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-full">
-                                Aktuální plán
+                                {t('pricing.pro.currentPlan')}
                             </div>
                         )}
 
                         <div>
                             <div className="mb-6">
-                                <h3 className="text-2xl font-bold text-white mb-2">Pro</h3>
+                                <h3 className="text-2xl font-bold text-white mb-2">{t('pricing.pro.name')}</h3>
                                 <div className="flex flex-col gap-1">
                                     <div className="flex items-baseline gap-2">
                                     <span className="text-5xl font-bold text-white">
@@ -315,42 +317,37 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                                         {proPrice}
                                     </span>
                                         <span className="text-blue-100">
-                                          / {proDrawings} výkresů
+                                          / {proDrawings} {t('pricing.pro.drawings')}
                                         </span>
                                     </div>
                                     <span className="text-xs text-blue-100/80">
-                                        {billingPeriod === "yearly"
-                                            ? "měsíčně, účtováno ročně"
-                                            : "měsíčně, účtováno měsíčně"}
+                                        {periodLabel}
                                     </span>
                                 </div>
                                 <p className="mt-4 text-blue-100">
-                                    Pro firmy s desítkami až stovkami výkresů měsíčně.
+                                    {t('pricing.pro.description')}
                                 </p>
                                 {mode === "billing" && isTrial && daysLeft !== null && (
                                     <p className="mt-2 text-xs text-blue-100/80">
-                                        Běží trial ({daysLeft}{" "}
-                                        {daysLeft === 1 ? "den zbývá" : "dní zbývá"}). Zvolený plán
-                                        začne po skončení trialu.
+                                        {t('pricing.pro.trialNote', {
+                                            days: daysLeft,
+                                            plural: daysLeft === 1 ? 'den' : 'dní'
+                                        })}
                                     </p>
                                 )}
                             </div>
 
                             <ul className="space-y-4">
                                 {[
-                                    "Vše ze Starter plánu",
-                                    "400 výkresů měsíčně",
-                                    "10 uživatelů",
-                                    // - Projects -
-                                    // — team workflow —
-                                    "Vytváření projektů",
-                                    "Oblíbené položky a vlastní workflow statusy",
-                                    "Interní tagy pro organizaci",
-                                    "Prioritizace dílů",
-
-                                    // — další benefity —
-                                    "Prioritní podpora",
-                                    "API (comming soon)"
+                                    t('pricing.pro.features.everythingStarter'),
+                                    t('pricing.pro.features.drawings'),
+                                    t('pricing.pro.features.users'),
+                                    t('pricing.pro.features.projects'),
+                                    t('pricing.pro.features.favorites'),
+                                    t('pricing.pro.features.tags'),
+                                    t('pricing.pro.features.prioritization'),
+                                    t('pricing.pro.features.prioritySupport'),
+                                    t('pricing.pro.features.api')
                                 ].map((item, idx) => (
                                     <li key={idx} className="flex items-start gap-3">
                                         <CheckCircle2 className="w-5 h-5 text-blue-200 mt-0.5 flex-shrink-0"/>
@@ -383,31 +380,28 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                             className="relative p-8 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-slate-700 text-white h-full flex flex-col">
                             <div
                                 className="absolute -top-4 left-1/2 -translate-x-1/2 px-3 py-1 bg-slate-100 text-slate-900 text-xs font-semibold rounded-full">
-                                Speciální podmínky
+                                {t('pricing.individual.badge')}
                             </div>
 
 
                             <div>
                                 <div className="mb-6">
-                                    <h3 className="text-2xl font-bold mb-2">Individual</h3>
+                                    <h3 className="text-2xl font-bold mb-2">{t('pricing.individual.name')}</h3>
                                     <p className="text-sm text-slate-300">
-                                        Pro firmy, kterým nestačí běžné limity nebo způsob účtování.
-                                        Vhodné pro větší týmy, vyšší objem výkresů nebo tam, kde je potřeba
-                                        fakturace a individuální dohoda.
+                                        {t('pricing.individual.description1')}
                                     </p>
                                     <p className="mt-4 text-slate-300">
-                                        Domluvíme společně objemy, způsob účtování a podporu tak,
-                                        aby Partonomy zapadlo do vašeho procesu.
+                                        {t('pricing.individual.description2')}
                                     </p>
                                 </div>
 
                                 <ul className="space-y-4">
                                     {[
-                                        "Individuální limity na počet výkresů a uživatelů",
-                                        "Možnost klasické fakturace (měsíční / čtvrtletní)",
-                                        "Podmínky na míru",
-                                        "Společné nastavení workflow a profilu dílny",
-                                        "Přednostní přístup k novým funkcím",
+                                        t('pricing.individual.features.customLimits'),
+                                        t('pricing.individual.features.invoicing'),
+                                        t('pricing.individual.features.customTerms'),
+                                        t('pricing.individual.features.workshopSetup'),
+                                        t('pricing.individual.features.earlyAccess'),
                                     ].map((item, idx) => (
                                         <li key={idx} className="flex items-start gap-3">
                                             <CheckCircle2 className="w-5 h-5 text-emerald-300 mt-0.5 flex-shrink-0"/>
@@ -422,7 +416,7 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                                     type="button"
                                     className="w-full py-4 px-6 rounded-xl font-semibold bg-slate-100 text-slate-900 hover:bg-white transition-colors"
                                 >
-                                    Domluvit si konzultaci
+                                    {t('pricing.individual.consultButton')}
                                 </button>
                             </div>
                         </div>
@@ -440,16 +434,13 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                                 onClick={onStartFree}
                                 className="inline-flex items-center justify-center px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-md transition-all active:scale-[0.98]"
                             >
-                                Začít zdarma
+                                {t('pricing.cta.landing')}
                             </button>
                         </>
                     ) : (
                         <>
                             <p className="text-sm text-slate-600">
-                                Potřebujete vyšší limity nebo klasickou fakturaci?{" "}
-                                <span className="font-medium text-slate-900">
-                                  Kontaktujte nás.
-                                </span>
+                                {t('pricing.cta.billing')}
                             </p>
                         </>
                     )}

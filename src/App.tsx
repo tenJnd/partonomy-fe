@@ -23,8 +23,9 @@ import AcceptInvite from "./pages/AcceptInvite";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import InsightsRFQ from "./pages/InsightsRFQ";
-
 import Landing from "./pages/Landing";
+
+import LanguageLayout from "./components/LanguageLayout";
 
 const AppLayout: React.FC = () => {
     const location = useLocation();
@@ -33,8 +34,8 @@ const AppLayout: React.FC = () => {
 
     useEffect(() => {
         const shouldCollapse =
-            location.pathname.startsWith("/app/documents/") &&
-            location.pathname !== "/app/documents";
+            location.pathname.includes("/app/documents/") &&
+            !location.pathname.endsWith("/app/documents");
 
         setSidebarCollapsed((prev) => (prev === shouldCollapse ? prev : shouldCollapse));
     }, [location.pathname]);
@@ -85,24 +86,33 @@ const App: React.FC = () => {
         <Router>
             <AuthProvider>
                 <Routes>
-                    <Route path="/" element={<Landing/>}/>
-                    <Route path="/insights" element={<InsightsRFQ/>}/>
-                    <Route path="/login" element={<Login/>}/>
-                    <Route path="/signup" element={<Signup/>}/>
-                    <Route path="/invite/:token" element={<AcceptInvite/>}/>
-                    <Route path="/forgot-password" element={<ForgotPassword/>}/>
-                    <Route path="/reset-password" element={<ResetPassword/>}/>
+                    {/* Redirect úplně bez lang prefixu → LanguageLayout to přesměruje */}
+                    <Route path="/" element={<Navigate to="/en" replace/>}/>
 
-                    <Route
-                        path="/app/*"
-                        element={
-                            <ProtectedRoute>
-                                <AppLayout/>
-                            </ProtectedRoute>
-                        }
-                    />
+                    {/* Vše pod /:lang/... */}
+                    <Route path="/:lang/*" element={<LanguageLayout/>}>
+                        {/* Public */}
+                        <Route index element={<Landing/>}/>
+                        <Route path="insights" element={<InsightsRFQ/>}/>
 
-                    {/* Unknown -> landing */}
+                        <Route path="login" element={<Login/>}/>
+                        <Route path="signup" element={<Signup/>}/>
+                        <Route path="invite/:token" element={<AcceptInvite/>}/>
+                        <Route path="forgot-password" element={<ForgotPassword/>}/>
+                        <Route path="reset-password" element={<ResetPassword/>}/>
+
+                        {/* App */}
+                        <Route
+                            path="app/*"
+                            element={
+                                <ProtectedRoute>
+                                    <AppLayout/>
+                                </ProtectedRoute>
+                            }
+                        />
+                    </Route>
+
+                    {/* Unknown -> root */}
                     <Route path="*" element={<Navigate to="/" replace/>}/>
                 </Routes>
             </AuthProvider>

@@ -1,12 +1,18 @@
 import React, {useState} from "react";
 import {useNavigate} from "react-router-dom";
-import {Check, LogOut} from "lucide-react";
+import {Check, Languages, LogOut} from "lucide-react";
+import {useTranslation} from "react-i18next";
 import {useAuth} from "../contexts/AuthContext";
 import {useOrgBilling} from "../hooks/useOrgBilling";
 import {getBillingBadgeText} from "../utils/billing";
+import {useLang} from "../hooks/useLang";
+import {SUPPORTED_LANGS, type AppLang} from "../i18n/lang";
 
 const TopBar: React.FC = () => {
+    const {t} = useTranslation();
+    const lang = useLang();
     const [showUserMenu, setShowUserMenu] = useState(false);
+    const [showLangMenu, setShowLangMenu] = useState(false);
     const {user, currentOrg, organizations, switchOrganization, signOut} =
         useAuth();
     const navigate = useNavigate();
@@ -14,7 +20,14 @@ const TopBar: React.FC = () => {
 
     const handleSignOut = async () => {
         await signOut();
-        navigate("/login");
+        navigate(`/${lang}/login`);
+    };
+
+    const handleLanguageSwitch = (newLang: AppLang) => {
+        const currentPath = window.location.pathname;
+        const newPath = currentPath.replace(`/${lang}`, `/${newLang}`);
+        navigate(newPath);
+        setShowLangMenu(false);
     };
 
     const getDisplayName = () => {
@@ -54,7 +67,7 @@ const TopBar: React.FC = () => {
                 {/* Logo stejné jako na landing page */}
                 <button
                     type="button"
-                    onClick={() => navigate("/app/documents")}
+                    onClick={() => navigate(`/${lang}/app/documents`)}
                     className="flex items-center gap-3 group"
                 >
                     <div className="relative">
@@ -78,7 +91,47 @@ const TopBar: React.FC = () => {
             </div>
 
             {/* Right */}
-            <div className="flex items-center">
+            <div className="flex items-center gap-2">
+                {/* Language Switcher */}
+                <div className="relative">
+                    <button
+                        onClick={() => setShowLangMenu(!showLangMenu)}
+                        className="h-8 px-3 rounded-md bg-gray-50 hover:bg-gray-100 flex items-center gap-2 text-sm font-medium text-gray-700 transition-colors"
+                    >
+                        <Languages className="w-4 h-4"/>
+                        <span className="uppercase">{lang}</span>
+                    </button>
+
+                    {showLangMenu && (
+                        <>
+                            <div
+                                className="fixed inset-0 z-40"
+                                onClick={() => setShowLangMenu(false)}
+                            />
+                            <div
+                                className="absolute right-0 top-full mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50">
+                                {SUPPORTED_LANGS.map(l => (
+                                    <button
+                                        key={l}
+                                        onClick={() => handleLanguageSwitch(l)}
+                                        className={`w-full flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
+                                            l === lang
+                                                ? 'bg-blue-50 text-blue-700 font-medium'
+                                                : 'text-gray-700 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        {l === lang && <Check className="w-4 h-4"/>}
+                                        <span className={l === lang ? '' : 'ml-6'}>
+                                            {t(`languages.${l}`)}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                {/* User Menu */}
                 <div className="relative">
                     <button
                         onClick={() => setShowUserMenu(!showUserMenu)}
@@ -118,7 +171,7 @@ const TopBar: React.FC = () => {
                                         <div className="py-2">
                                             <div
                                                 className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                                Switch Organization
+                                                {t('topbar.switchOrganization')}
                                             </div>
                                             {organizations.map(org => (
                                                 <button
@@ -158,7 +211,7 @@ const TopBar: React.FC = () => {
                                         className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                                     >
                                         <LogOut className="w-4 h-4" strokeWidth={1.5}/>
-                                        Sign Out
+                                        {t('topbar.signOut')}
                                     </button>
                                 </div>
                             </div>

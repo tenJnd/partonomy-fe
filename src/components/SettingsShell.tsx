@@ -1,5 +1,6 @@
 import React from 'react';
 import {AlertCircle, CheckCircle} from 'lucide-react';
+import {useTranslation} from 'react-i18next';
 
 interface SettingsShellProps {
     title: string;
@@ -20,6 +21,7 @@ const SettingsShell: React.FC<SettingsShellProps> = ({
                                                          saveSuccess,
                                                          children,
                                                      }) => {
+    const {t} = useTranslation();
     return (
         <div className="p-6 max-w-4xl mx-auto">
             <div className="mb-4">
@@ -34,11 +36,10 @@ const SettingsShell: React.FC<SettingsShellProps> = ({
                     <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" strokeWidth={2}/>
                     <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">
-                            You don&apos;t have permission to manage organization settings.
+                            {t('permissions.noPermission')}
                         </p>
                         <p className="text-sm text-gray-600 mt-1">
-                            Only organization owners and admins can change these settings. Contact your admin if you
-                            need access.
+                            {t('permissions.contactAdmin')}
                         </p>
                     </div>
                 </div>

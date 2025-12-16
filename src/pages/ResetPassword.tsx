@@ -3,8 +3,12 @@ import React, {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {AlertCircle, CheckCircle, Lock} from 'lucide-react';
 import {supabase} from '../lib/supabase';
+import {useTranslation} from 'react-i18next';
+import {useLang} from '../hooks/useLang';
 
 const ResetPassword: React.FC = () => {
+    const {t} = useTranslation();
+    const lang = useLang();
     const navigate = useNavigate();
     const [password, setPassword] = useState('');
     const [confirm, setConfirm] = useState('');
@@ -18,11 +22,11 @@ const ResetPassword: React.FC = () => {
         setSuccess('');
 
         if (password.length < 6) {
-            setError('Password must be at least 6 characters');
+            setError(t('auth.passwordMinLength'));
             return;
         }
         if (password !== confirm) {
-            setError('Passwords do not match');
+            setError(t('auth.passwordsDoNotMatch'));
             return;
         }
 
@@ -36,11 +40,11 @@ const ResetPassword: React.FC = () => {
             if (error) {
                 setError(error.message);
             } else {
-                setSuccess('Your password has been updated.');
-                setTimeout(() => navigate('/login'), 1500);
+                setSuccess(t('auth.passwordUpdated'));
+                setTimeout(() => navigate(`/${lang}/login`), 1500);
             }
         } catch (err: any) {
-            setError(err.message || 'Failed to update password');
+            setError(err.message || t('auth.failedToUpdatePassword'));
         } finally {
             setLoading(false);
         }
@@ -55,10 +59,10 @@ const ResetPassword: React.FC = () => {
                             <Lock className="w-6 h-6 text-blue-600"/>
                         </div>
                         <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-                            Set new password
+                            {t('auth.setNewPassword')}
                         </h1>
                         <p className="text-sm text-gray-600">
-                            Enter a new password for your account.
+                            {t('auth.enterNewPasswordForAccount')}
                         </p>
                     </div>
 
@@ -66,7 +70,7 @@ const ResetPassword: React.FC = () => {
                         <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-3">
                             <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5"/>
                             <div className="flex-1">
-                                <p className="text-sm font-medium text-rose-900">Error</p>
+                                <p className="text-sm font-medium text-rose-900">{t('common.error')}</p>
                                 <p className="text-sm text-rose-700 mt-1">{error}</p>
                             </div>
                         </div>
@@ -78,7 +82,7 @@ const ResetPassword: React.FC = () => {
                             <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5"/>
                             <div className="flex-1">
                                 <p className="text-sm font-medium text-emerald-900">
-                                    Password updated
+                                    {t('auth.passwordUpdatedTitle')}
                                 </p>
                                 <p className="text-sm text-emerald-700 mt-1">{success}</p>
                             </div>
@@ -88,7 +92,7 @@ const ResetPassword: React.FC = () => {
                     <form onSubmit={handleReset} className="space-y-5">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                New password
+                                {t('auth.newPassword')}
                             </label>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"/>
@@ -97,7 +101,7 @@ const ResetPassword: React.FC = () => {
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
                                     className="w-full h-11 pl-10 pr-4 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none"
-                                    placeholder="At least 6 characters"
+                                    placeholder={t('auth.atLeast6Characters')}
                                     required
                                 />
                             </div>
@@ -105,7 +109,7 @@ const ResetPassword: React.FC = () => {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Confirm password
+                                {t('auth.confirmPassword')}
                             </label>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"/>
@@ -114,7 +118,7 @@ const ResetPassword: React.FC = () => {
                                     value={confirm}
                                     onChange={e => setConfirm(e.target.value)}
                                     className="w-full h-11 pl-10 pr-4 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none"
-                                    placeholder="Repeat new password"
+                                    placeholder={t('auth.repeatNewPassword')}
                                     required
                                 />
                             </div>
@@ -125,7 +129,7 @@ const ResetPassword: React.FC = () => {
                             disabled={loading}
                             className="w-full h-11 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium text-sm transition-all active:scale-[0.98] disabled:cursor-not-allowed"
                         >
-                            {loading ? 'Updating...' : 'Update password'}
+                            {loading ? t('auth.updating') : t('auth.updatePassword')}
                         </button>
                     </form>
                 </div>

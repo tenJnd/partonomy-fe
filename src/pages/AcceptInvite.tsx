@@ -3,6 +3,8 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {AlertCircle, CheckCircle, Loader} from 'lucide-react';
 import {supabase} from '../lib/supabase';
 import {useAuth} from '../contexts/AuthContext';
+import {useTranslation} from 'react-i18next';
+import { useLang } from '../hooks/useLang';
 
 const AcceptInvite: React.FC = () => {
     const {token} = useParams<{ token: string }>();
@@ -13,12 +15,14 @@ const AcceptInvite: React.FC = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const [orgName, setOrgName] = useState('');
+    const {t} = useTranslation();
+    const lang = useLang();
 
     useEffect(() => {
         // Pokud není user přihlášený → uložíme token a pošleme ho na signup
         if (!user && token) {
             sessionStorage.setItem('pendingInviteToken', token);
-            navigate('/signup', {replace: true});
+            navigate(`/${lang}/signup`, {replace: true});
             return;
         }
 
@@ -68,16 +72,16 @@ const AcceptInvite: React.FC = () => {
                             }
 
                             // Redirect after 2 seconds
-                            setTimeout(() => navigate('/'), 2000);
+                            setTimeout(() => navigate(`/${lang}/`), 2000);
                         } else {
-                            setError(result.message || 'Failed to accept invite');
+                            setError(result.message || t('auth.failedToAcceptInvite'));
                         }
                     } else {
-                        setError('Failed to accept invite: No data returned');
+                        setError(t('auth.failedToAcceptInvite'));
                     }
                 } catch (err: any) {
                     console.error('[AcceptInvite] Error:', err);
-                    setError(err.message || 'Failed to accept invite');
+                    setError(err.message || t('auth.failedToAcceptInvite'));
                 } finally {
                     setLoading(false);
                 }
@@ -90,7 +94,7 @@ const AcceptInvite: React.FC = () => {
     if (!user) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-50">
-                <p className="text-gray-600">Redirecting to signup...</p>
+                <p className="text-gray-600">{t('auth.redirectingToSignup')}</p>
             </div>
         );
     }
@@ -102,10 +106,10 @@ const AcceptInvite: React.FC = () => {
                     <>
                         <Loader className="w-12 h-12 text-blue-600 mx-auto mb-4 animate-spin"/>
                         <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                            Accepting invite...
+                            {t('auth.acceptingInvite')}
                         </h2>
                         <p className="text-sm text-gray-600">
-                            Please wait while we process your request.
+                            {t('auth.pleaseWait')}
                         </p>
                     </>
                 )}
@@ -114,13 +118,13 @@ const AcceptInvite: React.FC = () => {
                     <>
                         <CheckCircle className="w-12 h-12 text-emerald-600 mx-auto mb-4"/>
                         <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                            Welcome to {orgName}!
+                            {t('auth.welcomeTo', {orgName})}
                         </h2>
                         <p className="text-sm text-gray-600 mb-4">
-                            You've successfully joined the organization.
+                            {t('auth.successfullyJoined')}
                         </p>
                         <p className="text-xs text-gray-500">
-                            Redirecting you to dashboard...
+                            {t('auth.redirectingToDashboard')}
                         </p>
                     </>
                 )}
@@ -129,14 +133,14 @@ const AcceptInvite: React.FC = () => {
                     <>
                         <AlertCircle className="w-12 h-12 text-rose-600 mx-auto mb-4"/>
                         <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                            Unable to Accept Invite
+                            {t('auth.unableToAcceptInvite')}
                         </h2>
                         <p className="text-sm text-gray-600 mb-4">{error}</p>
                         <button
-                            onClick={() => navigate('/login')}
+                            onClick={() => navigate(`/${lang}/login`)}
                             className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-all"
                         >
-                            Go to Login
+                            {t('auth.goToLogin')}
                         </button>
                     </>
                 )}

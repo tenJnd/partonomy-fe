@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 import {AlertCircle, Building2, Save} from 'lucide-react';
+import {useTranslation} from 'react-i18next';
 import {useAuth} from '../contexts/AuthContext';
 import {supabase} from '../lib/supabase';
 import SettingsShell from '../components/SettingsShell';
@@ -10,6 +11,7 @@ import {useOrgMembersCount} from "../hooks/useOrgMembersCount";
 import {formatTierLabel} from "../utils/tiers";
 
 const OrganizationSettings: React.FC = () => {
+    const {t} = useTranslation();
     const {currentOrg, user} = useAuth();
     const canManageOrg = currentOrg?.role === 'owner' || currentOrg?.role === 'admin';
 
@@ -34,7 +36,7 @@ const OrganizationSettings: React.FC = () => {
     const [inviteModalOpen, setInviteModalOpen] = useState(false);
 
     if (!currentOrg || !user) {
-        return <div className="p-6 max-w-4xl mx-auto">Loading...</div>;
+        return <div className="p-6 max-w-4xl mx-auto">{t('common.loading')}</div>;
     }
 
     const handleSaveOrgName = async () => {
@@ -62,8 +64,8 @@ const OrganizationSettings: React.FC = () => {
 
     return (
         <SettingsShell
-            title="Organization"
-            description="Manage organization name and team members."
+            title={t('organizationSettings.title')}
+            description={t('organizationSettings.description')}
             canManageOrg={canManageOrg}
             saveError={saveError}
             saveSuccess={saveSuccess}
@@ -72,17 +74,17 @@ const OrganizationSettings: React.FC = () => {
                 {/* Organization Name */}
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-100">
-                        <h2 className="text-lg font-semibold text-gray-900">Organization</h2>
+                        <h2 className="text-lg font-semibold text-gray-900">{t('organizationSettings.title')}</h2>
                         <p className="text-sm text-gray-500 mt-1">
-                            Manage organization details
+                            {t('organizationSettings.organizationDetails')}
                         </p>
                     </div>
                     <div className="p-6 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <Building2 className="w-5 h-5 text-gray-400" strokeWidth={1.5}/>
                             <div>
-                                <div className="text-sm font-medium text-gray-900">Organization Name</div>
-                                <div className="text-xs text-gray-500">Update your organization name</div>
+                                <div className="text-sm font-medium text-gray-900">{t('organizationSettings.organizationName')}</div>
+                                <div className="text-xs text-gray-500">{t('organizationSettings.updateOrganizationName')}</div>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -102,7 +104,7 @@ const OrganizationSettings: React.FC = () => {
                                 className="h-[38px] px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium flex items-center gap-2"
                             >
                                 <Save className="w-4 h-4"/>
-                                {saving ? 'Saving...' : 'Save'}
+                                {saving ? t('common.saving') : t('common.save')}
                             </button>
                         </div>
                     </div>
@@ -111,9 +113,9 @@ const OrganizationSettings: React.FC = () => {
                 {/* Members */}
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-100">
-                        <h2 className="text-lg font-semibold text-gray-900">Members</h2>
+                        <h2 className="text-lg font-semibold text-gray-900">{t('organizationSettings.members')}</h2>
                         <p className="text-sm text-gray-500 mt-1">
-                            Manage team members and permissions
+                            {t('organizationSettings.membersDescription')}
                         </p>
                     </div>
                     <div className="p-6 space-y-4">
@@ -133,7 +135,7 @@ const OrganizationSettings: React.FC = () => {
                                         : "bg-gray-200 text-gray-500 cursor-not-allowed"
                                 }`}
                             >
-                                Invite Member
+                                {t('organizationSettings.inviteMember')}
                             </button>
 
                             {maxUsers != null && membersCount >= maxUsers && (
@@ -142,12 +144,11 @@ const OrganizationSettings: React.FC = () => {
                                     <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" strokeWidth={1.5}/>
                                     <div>
                                         <p className="text-sm font-semibold text-amber-800">
-                                            You’ve reached the member limit for your{" "}
-                                            {billing?.tier ? formatTierLabel(billing.tier.code) : "current"} plan.
+                                            {t('organizationSettings.reachedMemberLimit')}{" "}
+                                            {billing?.tier ? formatTierLabel(billing.tier.code) : t('organizationSettings.plan')}.
                                         </p>
                                         <p className="text-xs text-amber-700 mt-1">
-                                            Current members: {membersCount} / {maxUsers}. To invite more teammates,
-                                            upgrade your plan in the Billing section.
+                                            {t('organizationSettings.currentMembers')}: {membersCount} / {maxUsers}. {t('organizationSettings.upgradeToInvite')}
                                         </p>
                                     </div>
                                 </div>

@@ -10,7 +10,9 @@ import {
     SlidersHorizontal,
     Users
 } from 'lucide-react';
+import {useTranslation} from 'react-i18next';
 import {useOrgBilling} from '../hooks/useOrgBilling';
+import {useLang} from '../hooks/useLang';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -25,17 +27,19 @@ const Sidebar: React.FC<SidebarProps> = ({
                                              isCollapsed,
                                              onToggleCollapse,
                                          }) => {
+    const {t} = useTranslation();
+    const lang = useLang();
     const {billing} = useOrgBilling();
     const canUseProjects = !!billing?.tier?.can_use_projects;
     const mainNavItems = [
-        {path: '/app/Documents', label: 'Documents', icon: FileText},
-        {path: '/app/projects', label: 'Projects', icon: FolderKanban, locked: !canUseProjects},
+        {path: `/${lang}/app/documents`, label: t('sidebar.documents'), icon: FileText},
+        {path: `/${lang}/app/projects`, label: t('sidebar.projects'), icon: FolderKanban, locked: !canUseProjects},
     ];
 
     const settingsNavItems = [
-        {path: '/app/settings/report', label: 'Report Settings', icon: SlidersHorizontal},
-        {path: '/app/settings/organization', label: 'Organization', icon: Users},
-        {path: '/app/settings/billing', label: 'Billing & Usage', icon: CreditCard},
+        {path: `/${lang}/app/settings/report`, label: t('sidebar.reportSettings'), icon: SlidersHorizontal},
+        {path: `/${lang}/app/settings/organization`, label: t('sidebar.organization'), icon: Users},
+        {path: `/${lang}/app/settings/billing`, label: t('sidebar.billingUsage'), icon: CreditCard},
     ];
 
     return (
@@ -61,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <button
                         onClick={onToggleCollapse}
                         className="w-8 h-8 rounded-md hover:bg-gray-100 flex items-center justify-center text-gray-600 transition-colors"
-                        title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                        title={isCollapsed ? t('sidebar.expandSidebar') : t('sidebar.collapseSidebar')}
                     >
                         {isCollapsed ? (
                             <ChevronRight className="w-4 h-4" strokeWidth={1.5}/>

@@ -1,5 +1,6 @@
 import React from "react";
 import { AlertTriangle } from "lucide-react";
+import {useTranslation} from 'react-i18next';
 
 interface RemovePartFromProjectModalProps {
   open: boolean;
@@ -14,6 +15,7 @@ const RemovePartFromProjectModal: React.FC<RemovePartFromProjectModalProps> = ({
   onConfirm,
   partName,
 }) => {
+  const {t} = useTranslation();
   if (!open) return null;
 
   return (
@@ -22,14 +24,14 @@ const RemovePartFromProjectModal: React.FC<RemovePartFromProjectModalProps> = ({
         <div className="flex items-center gap-3 mb-4">
           <AlertTriangle className="w-6 h-6 text-amber-600" strokeWidth={1.5} />
           <h2 className="text-lg font-semibold text-gray-900">
-            Remove part from project?
+            {t('modals.removePartFromProject.title')}
           </h2>
         </div>
 
         <p className="text-sm text-gray-600 mb-6">
-          This will remove <strong>{partName}</strong> from this project.
+          {t('modals.removePartFromProject.willRemove')} <strong>{partName}</strong> {t('modals.removePartFromProject.fromProject')}.
           <br />
-          The part itself will NOT be deleted.
+          {t('modals.removePartFromProject.partNotDeleted')}
         </p>
 
         <div className="flex justify-end gap-3">
@@ -37,7 +39,7 @@ const RemovePartFromProjectModal: React.FC<RemovePartFromProjectModalProps> = ({
             onClick={onClose}
             className="px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white hover:bg-gray-50"
           >
-            Cancel
+            {t('modals.removePartFromProject.cancel')}
           </button>
 
           <button
@@ -47,7 +49,7 @@ const RemovePartFromProjectModal: React.FC<RemovePartFromProjectModalProps> = ({
             }}
             className="px-4 py-2 text-sm rounded-lg bg-rose-600 text-white hover:bg-rose-700 shadow-sm"
           >
-            Remove Part
+            {t('modals.removePartFromProject.remove')}
           </button>
         </div>
       </div>
