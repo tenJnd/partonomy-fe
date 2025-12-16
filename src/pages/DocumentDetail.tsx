@@ -518,7 +518,7 @@ const DocumentDetail: React.FC = () => {
             <div className="flex items-center justify-between gap-4 mb-4">
                 <div className="flex items-center gap-4">
                     <Link
-                        to="/Documents"
+                        to="/app/Documents"
                         className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
                     >
                         <ArrowLeft
