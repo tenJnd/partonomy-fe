@@ -1,14 +1,26 @@
 import {useEffect, useState} from "react";
-import {BarChart3, CheckCircle2, ChevronRight, Clock, FileText, TrendingUp, Upload, Zap} from "lucide-react";
+import {
+    BarChart3,
+    CheckCircle2,
+    ChevronRight,
+    Clock,
+    FileText,
+    LightbulbIcon,
+    TrendingUp,
+    Upload,
+    Zap
+} from "lucide-react";
 import {useAuth} from "../contexts/AuthContext";
-import {useNavigate} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 import PricingPlans from "../components/PricingPlans";
+import FaqItem from "../components/FaqItem"
 
 const Landing = () => {
     const [scrollY, setScrollY] = useState(0);
     const [activeDemo, setActiveDemo] = useState(0);
-    const {user} = useAuth();
+    const {user, loading} = useAuth();
     const navigate = useNavigate();
+
 
     useEffect(() => {
         const handleScroll = () => setScrollY(window.scrollY);
@@ -18,13 +30,15 @@ const Landing = () => {
 
     useEffect(() => {
         const interval = setInterval(() => {
-            setActiveDemo((prev) => (prev + 1) % 3);
+            setActiveDemo((prev) => (prev + 1) % demoDocuments.length);
         }, 3000);
         return () => clearInterval(interval);
     }, []);
 
+    if (loading) return null;
+
     const handleGetStarted = () => {
-        navigate("/app/documents");
+        navigate(user ? "/app/documents" : "/signup"); // nebo "/login"
     };
 
     const handleLogin = () => {
@@ -77,7 +91,10 @@ const Landing = () => {
                 scrollY > 50 ? "bg-white/80 backdrop-blur-lg shadow-sm" : "bg-transparent"
             }`}>
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-                    <div className="flex items-center gap-3">
+                    <Link
+                        to="/"
+                        className="flex items-center gap-3 hover:opacity-90 transition-opacity"
+                    >
                         <div className="relative">
                             <div className="absolute inset-0 bg-blue-600 blur-md opacity-50 rounded-lg"></div>
                             <div
@@ -85,11 +102,12 @@ const Landing = () => {
                                 P
                             </div>
                         </div>
+
                         <span
                             className="text-lg font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-              Partonomy.ai
-            </span>
-                    </div>
+                            Partonomy.ai
+                        </span>
+                    </Link>
 
                     <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
                         <a href="#how-it-works" className="text-slate-600 hover:text-slate-900 transition-colors">
@@ -101,14 +119,22 @@ const Landing = () => {
                         <a href="#pricing" className="text-slate-600 hover:text-slate-900 transition-colors">
                             Ceník
                         </a>
+                        <a href="#faq" className="text-slate-600 hover:text-slate-900 transition-colors">
+                            FAQ
+                        </a>
+
                     </nav>
 
                     <div className="flex items-center gap-3">
-                        <button
-                            onClick={handleLogin}
-                            className="hidden sm:block px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors">
-                            Přihlásit
-                        </button>
+                        {!user && (
+                            <button
+                                onClick={handleLogin}
+                                className="hidden sm:block px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors"
+                            >
+                                Přihlásit
+                            </button>
+                        )}
+
                         <button
                             onClick={handleGetStarted}
                             className="group px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/40 hover:-translate-y-0.5">
@@ -136,26 +162,26 @@ const Landing = () => {
                             <div className="space-y-8">
                                 <div
                                     className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100/50 shadow-sm">
-                  <span className="relative flex h-2 w-2">
-                    <span
-                        className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
-                  </span>
+                                  <span className="relative flex h-2 w-2">
+                                        <span
+                                            className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
+                                  </span>
                                     <span className="text-xs font-medium text-blue-900">
-                    AI asistent pro zpracování obrázkových výkresů ve strojírenství
-                  </span>
+                                        AI asistent pro zpracování obrázkových výkresů ve strojírenství
+                                        </span>
                                 </div>
 
                                 <h1 className="text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
-                  <span
-                      className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
-                    Zkraťte zpracování RFQ výkresů
-                  </span>
+                                      <span
+                                          className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
+                                        Zkraťte zpracování technických výkresů
+                                      </span>
                                     <br/>
                                     <span
                                         className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    z 20 minut na 3
-                  </span>
+                                      z 20 minut na 3
+                                    </span>
                                 </h1>
 
                                 <p className="text-lg text-slate-600 leading-relaxed max-w-xl">
@@ -174,13 +200,14 @@ const Landing = () => {
                                         <Upload
                                             className="inline-block ml-2 w-5 h-5 group-hover:translate-y-0.5 transition-transform"/>
                                     </button>
-                                    <button
-                                        onClick={handleLogin}
-                                        className="px-8 py-4 text-base font-medium text-slate-700 hover:text-slate-900 transition-colors group">
-                                        Přihlásit se do účtu
-                                        <ChevronRight
-                                            className="inline-block ml-1 w-5 h-5 group-hover:translate-x-1 transition-transform"/>
-                                    </button>
+                                    {!user && (
+                                        <button
+                                            onClick={handleLogin}
+                                            className="px-8 py-4 text-base font-medium text-slate-700 hover:text-slate-900 transition-colors group">
+                                            Přihlásit se do účtu
+                                            <ChevronRight
+                                                className="inline-block ml-1 w-5 h-5 group-hover:translate-x-1 transition-transform"/>
+                                        </button>)}
                                 </div>
 
                                 <div className="flex flex-wrap gap-6 pt-4">
@@ -229,7 +256,7 @@ const Landing = () => {
                                         </div>
                                         <div
                                             className="flex-1 mx-3 h-7 rounded-md bg-white border border-slate-200 flex items-center px-3 text-xs text-slate-400">
-                                            partonomy.app/documents
+                                            partonomy.app/app/documents
                                         </div>
                                     </div>
 
@@ -399,7 +426,7 @@ const Landing = () => {
                             {[
                                 {
                                     title: "Seznam výkresů",
-                                    desc: "Všechny výkresy na jednom místě. Seřazené, označené stavem, připravené k rozhodnutí. Vidíte obálku dílu, základní popis, výrobní náročnost a to, jak dobře díl zapadá do vašich možností.",
+                                    desc: "Všechny výkresy na jednom místě. Seřazené, označené stavem zpracování a připravené k rozhodnutí. Vidíte obálku dílu, základní popis, výrobní náročnost a to, jak dobře díl zapadá do vašich možností.",
                                     icon: FileText,
                                     gradient: "from-blue-500 to-blue-600"
                                 },
@@ -411,16 +438,30 @@ const Landing = () => {
                                 },
                                 {
                                     title: "Automatická klasifikace dílů",
-                                    desc: "Systém automaticky rozpozná taxonomii dílu a přiřadí score (náročnost, risk, alignment) podle obvyklých strojírenských kritérií. Všechny tyto informace ukládáme jako strukturovaná data – každým výkresem si tak budujete vlastní databázi dílů.",
+                                    desc: "Systém automaticky rozpozná taxonomii dílu a přiřadí score (náročnost, risk, alignment) podle obvyklých strojírenských kritérií. Vše ukládáme jako strukturovaná data – každým výkresem si budujete databázi dílů a můžete data exportovat do vašeho procesu.",
                                     icon: Zap,
                                     gradient: "from-emerald-500 to-emerald-600"
                                 },
                                 {
                                     title: "Výstup nastavený přímo pro vaši firmu",
                                     desc: "Jednoduše slovně popíšete profil vaší dílny – jaké materiály obrábíte, jaké tolerance preferujete a v čem jste silní. Systém pak u každého dílu vyhodnotí shop alignment podle toho, jak dobře odpovídá vašim možnostem. 'Kooperacace nebo to zvládneme sami?'",
-                                    icon: BarChart3,
+                                    icon: CheckCircle2,
                                     gradient: "from-amber-500 to-amber-600"
+                                },
+                                {
+                                    title: "Kontrola revizí a změn",
+                                    desc: "Když dorazí nový změnový index, Partonomy na to automaticky upozorní. V Inboxu hned vidíte, že jde o novější verzi výkresu – bez ruční kontroly tabulek a porovnávání souborů.",
+                                    icon: LightbulbIcon,
+                                    gradient: "from-indigo-500 to-indigo-600"
+                                },
+                                {
+                                    title: "Projekty a týmový workflow",
+                                    desc: "V Pro verzi si vytváříte projekty, propojíte díly s konkrétní poptávkou a tým s nimi může pracovat společně v jednom workflow. Místo chaosu v e-mailech máte jedno místo pro RFQ triage, interní rozhodnutí a navazující kroky.",
+                                    icon: Clock,
+                                    gradient: "from-blue-500 to-blue-600"
                                 }
+
+
                             ].map((feature, idx) => {
                                 const Icon = feature.icon;
                                 return (
@@ -451,9 +492,56 @@ const Landing = () => {
 
                 {/* Pricing with enhanced cards */}
                 <PricingPlans
-  mode="landing"
-  onStartFree={handleGetStarted}
-/>
+                    mode="landing"
+                    onStartFree={handleGetStarted}
+                />
+
+                {/* FAQ */}
+                <section id="faq" className="py-20 bg-gradient-to-br from-slate-50 to-blue-50/30">
+                    <div className="mx-auto max-w-4xl px-6">
+                        <div className="text-center mb-14">
+                            <h2 className="text-4xl font-bold text-slate-900 mb-4">
+                                Časté dotazy
+                            </h2>
+                            <p className="text-lg text-slate-600">
+                                Odpovědi na nejčastější otázky, které dostáváme od výrobních firem.
+                            </p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <FaqItem
+                                question="Jaké typy výkresů Partonomy podporuje?"
+                                answer="Partonomy je navržené speciálně pro 2D technické výkresy v rastrové podobě, které typicky přicházejí jako přílohy v RFQ e-mailech. Podporujeme formáty PDF, TIFF, PNG a JPEG – včetně skenů a starší dokumentace."
+                            />
+
+                            <FaqItem
+                                question="Podporuje Partonomy CAD výkresy nebo 3D modely?"
+                                answer="Ne. Partonomy nepracuje s CAD ani 3D modely (STEP, DWG, IGES apod.). Zaměřujeme se výhradně na 2D výkresy, protože právě ty tvoří většinu RFQ poptávek a jsou nejnáročnější na ruční zpracování."
+                            />
+
+                            <FaqItem
+                                question="Musí být výkres perfektně čitelný?"
+                                answer="Ne. Partonomy si poradí i s běžnými skeny, horší kvalitou nebo výkresy přeposlanými z e-mailu. Čím kvalitnější vstup, tím lepší výsledek, ale systém je navržený pro reálný RFQ provoz."
+                            />
+
+                            <FaqItem
+                                question="Jak přesná je analýza AI?"
+                                answer="Cílem není nahradit technologa ani poptávkáře, ale výrazně zrychlit první zpracování výkresu a rozhodnutí. AI vyhodnocuje výkresy na základě typických výrobních vzorů a pomáhá rychle rozhodnout, zda má smysl zakázku nacenit."
+                            />
+
+                            <FaqItem
+                                question="Pro koho Partonomy není vhodné?"
+                                answer="Partonomy není určené pro detailní výrobní přípravu, CAD analýzu nebo finální kalkulaci ceny. Největší přínos má v RFQ triage – tedy ve fázi rychlého rozhodování nad příchozími poptávkami."
+                            />
+
+                            <FaqItem
+                                question="Jak rychle můžu začít a můžu si to vyzkoušet?"
+                                answer="Začnete během pár minut. Stačí se zaregistrovat, přihlásit a nahrát první výkres. Získáte zkušební přístup na 14 dní zdarma — bez instalace a bez kreditní karty."
+                            />
+
+                        </div>
+                    </div>
+                </section>
 
                 {/* CTA Section */}
                 <section className="py-20 bg-gradient-to-br from-slate-900 to-slate-800 relative overflow-hidden">

@@ -341,9 +341,9 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                                     "Vše ze Starter plánu",
                                     "400 výkresů měsíčně",
                                     "10 uživatelů",
-
-                                    // — týmové funkce —
-                                    "Týmová spolupráce (komentáře k dílům)",
+                                    // - Projects -
+                                    // — team workflow —
+                                    "Vytváření projektů",
                                     "Oblíbené položky a vlastní workflow statusy",
                                     "Interní tagy pro organizaci",
                                     "Prioritizace dílů",
@@ -429,6 +429,7 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                     )}
 
                 </div>
+
 
                 {/* Landing CTA – můžeš klidně nechat, nebo pak zjednodušit, když už máš Enterprise kartu */}
                 {/* Landing / Billing CTA logic */}
