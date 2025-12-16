@@ -22,6 +22,7 @@ import Signup from "./pages/Signup";
 import AcceptInvite from "./pages/AcceptInvite";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import InsightsRFQ from "./pages/InsightsRFQ";
 
 import Landing from "./pages/Landing";
 
@@ -85,7 +86,7 @@ const App: React.FC = () => {
             <AuthProvider>
                 <Routes>
                     <Route path="/" element={<Landing/>}/>
-
+                    <Route path="/insights" element={<InsightsRFQ/>}/>
                     <Route path="/login" element={<Login/>}/>
                     <Route path="/signup" element={<Signup/>}/>
                     <Route path="/invite/:token" element={<AcceptInvite/>}/>

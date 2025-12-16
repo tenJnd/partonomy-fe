@@ -11,29 +11,92 @@ import {
     Zap
 } from "lucide-react";
 import {useAuth} from "../contexts/AuthContext";
-import {Link, useNavigate} from "react-router-dom";
+import {Link, useLocation, useNavigate} from "react-router-dom";
 import PricingPlans from "../components/PricingPlans";
 import FaqItem from "../components/FaqItem"
 
+const DEMO_DOCUMENTS = [
+    {
+        name: "ANDR_02.pdf",
+        company: "ANDR Corp",
+        envelope: "150×100×50 mm",
+        cls: "BLOCK",
+        complexity: "HIGH",
+        fit: "GOOD",
+        status: "success"
+    },
+    {
+        name: "RA2562_FR.tiff",
+        company: "TechParts Inc",
+        envelope: "200×80×30 mm",
+        cls: "FLANGE",
+        complexity: "MEDIUM",
+        fit: "PARTIAL",
+        status: "processing"
+    },
+    {
+        name: "D52114230.tif",
+        company: "Manufacturing Co",
+        envelope: "120×120×80 mm",
+        cls: "SHAFT",
+        complexity: "HIGH",
+        fit: "GOOD",
+        status: "success"
+    },
+    {
+        name: "D52114232.png",
+        company: "Manufacturing Co",
+        envelope: "120×120×80 mm",
+        cls: "SHAFT",
+        complexity: "MEDIUM",
+        fit: "GOOD",
+        status: "success"
+    },
+];
+
 const Landing = () => {
-    const [scrollY, setScrollY] = useState(0);
+    const [scrolled, setScrolled] = useState(false);
     const [activeDemo, setActiveDemo] = useState(0);
     const {user, loading} = useAuth();
     const navigate = useNavigate();
 
+    const location = useLocation();
+
+    const scrollToHash = (hash: string) => {
+        const id = decodeURIComponent(hash.replace("#", ""));
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        // offset pro fixed header (u tebe cca 96px -> pt-24)
+        const headerOffset = 96;
+        const elementPosition = el.getBoundingClientRect().top + window.pageYOffset;
+        const offsetPosition = elementPosition - headerOffset;
+
+        window.scrollTo({top: offsetPosition, behavior: "smooth"});
+    };
 
     useEffect(() => {
-        const handleScroll = () => setScrollY(window.scrollY);
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
+        const onScroll = () => setScrolled(window.scrollY > 50);
+        window.addEventListener("scroll", onScroll, {passive: true});
+        onScroll();
+        return () => window.removeEventListener("scroll", onScroll);
     }, []);
 
     useEffect(() => {
         const interval = setInterval(() => {
-            setActiveDemo((prev) => (prev + 1) % demoDocuments.length);
+            setActiveDemo((prev) => (prev + 1) % DEMO_DOCUMENTS.length);
         }, 3000);
         return () => clearInterval(interval);
     }, []);
+
+    useEffect(() => {
+        if (!location.hash) return;
+
+        // počkej na render, ať element existuje
+        setTimeout(() => {
+            scrollToHash(location.hash);
+        }, 0);
+    }, [location.hash]);
 
     if (loading) return null;
 
@@ -45,51 +108,14 @@ const Landing = () => {
         navigate("/login");
     };
 
-    const demoDocuments = [
-        {
-            name: "ANDR_02.pdf",
-            company: "ANDR Corp",
-            envelope: "150×100×50 mm",
-            cls: "BLOCK",
-            complexity: "HIGH",
-            fit: "GOOD",
-            status: "success"
-        },
-        {
-            name: "RA2562_FR.tiff",
-            company: "TechParts Inc",
-            envelope: "200×80×30 mm",
-            cls: "FLANGE",
-            complexity: "MEDIUM",
-            fit: "PARTIAL",
-            status: "processing"
-        },
-        {
-            name: "D52114230.tif",
-            company: "Manufacturing Co",
-            envelope: "120×120×80 mm",
-            cls: "SHAFT",
-            complexity: "HIGH",
-            fit: "GOOD",
-            status: "success"
-        },
-        {
-            name: "D52114232.png",
-            company: "Manufacturing Co",
-            envelope: "120×120×80 mm",
-            cls: "SHAFT",
-            complexity: "MEDIUM",
-            fit: "GOOD",
-            status: "success"
-        },
-    ];
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 text-slate-900">
             {/* Header stays the same... */}
             <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-                scrollY > 50 ? "bg-white/80 backdrop-blur-lg shadow-sm" : "bg-transparent"
+                scrolled ? "bg-white/80 backdrop-blur-lg shadow-sm" : "bg-transparent"
             }`}>
+
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
                     <Link
                         to="/"
@@ -110,20 +136,58 @@ const Landing = () => {
                     </Link>
 
                     <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
-                        <a href="#how-it-works" className="text-slate-600 hover:text-slate-900 transition-colors">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                window.history.pushState(null, "", "/#how-it-works");
+                                scrollToHash("#how-it-works");
+                            }}
+                            className="text-slate-600 hover:text-slate-900 transition-colors"
+                        >
                             Jak to funguje
-                        </a>
-                        <a href="#features" className="text-slate-600 hover:text-slate-900 transition-colors">
-                            Funkce
-                        </a>
-                        <a href="#pricing" className="text-slate-600 hover:text-slate-900 transition-colors">
-                            Ceník
-                        </a>
-                        <a href="#faq" className="text-slate-600 hover:text-slate-900 transition-colors">
-                            FAQ
-                        </a>
+                        </button>
 
+                        <button
+                            type="button"
+                            onClick={() => {
+                                window.history.pushState(null, "", "/#features");
+                                scrollToHash("#features");
+                            }}
+                            className="text-slate-600 hover:text-slate-900 transition-colors"
+                        >
+                            Funkce
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => {
+                                window.history.pushState(null, "", "/#pricing");
+                                scrollToHash("#pricing");
+                            }}
+                            className="text-slate-600 hover:text-slate-900 transition-colors"
+                        >
+                            Ceník
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => {
+                                window.history.pushState(null, "", "/#faq");
+                                scrollToHash("#faq");
+                            }}
+                            className="text-slate-600 hover:text-slate-900 transition-colors"
+                        >
+                            FAQ
+                        </button>
+
+                        <Link
+                            to="/insights"
+                            className="text-slate-600 hover:text-slate-900 transition-colors"
+                        >
+                            Z praxe
+                        </Link>
                     </nav>
+
 
                     <div className="flex items-center gap-3">
                         {!user && (
@@ -268,7 +332,7 @@ const Landing = () => {
 
                                         {/* Table-like rows with more columns */}
                                         <div className="space-y-2">
-                                            {demoDocuments.map((doc, idx) => (
+                                            {DEMO_DOCUMENTS.map((doc, idx) => (
                                                 <div
                                                     key={doc.name}
                                                     className={`p-3 rounded-lg border transition-all duration-500 ${
@@ -542,6 +606,103 @@ const Landing = () => {
                         </div>
                     </div>
                 </section>
+
+                {/* Insights / Pillar article links */}
+                <section className="py-16 bg-gradient-to-br from-slate-50 to-blue-50/30">
+                    <div className="mx-auto max-w-7xl px-6">
+                        <div className="text-center mb-12">
+                            <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
+                                Z praxe zpracování RFQ výkresů
+                            </h2>
+
+                            <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
+                                Jeden přehledný článek, který popisuje realitu RFQ procesů ve výrobě –
+                                a jak se dá poptávková fáze výrazně zrychlit.
+                            </p>
+
+                            <div className="mt-6">
+                                <Link
+                                    to="/insights"
+                                    className="inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-800 transition-colors"
+                                >
+                                    Otevřít celý článek
+                                    <ChevronRight className="w-4 h-4"/>
+                                </Link>
+                            </div>
+                        </div>
+
+                        <div className="grid md:grid-cols-3 gap-6">
+                            <Link
+                                to="/insights#rfq-problem"
+                                className="group p-7 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
+                            >
+                                <div
+                                    className="inline-flex p-3 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 shadow-lg mb-5">
+                                    <BarChart3 className="w-6 h-6 text-white"/>
+                                </div>
+                                <h3 className="text-lg font-bold text-slate-900 mb-2">
+                                    Proč je RFQ dnes úzké hrdlo
+                                </h3>
+                                <p className="text-slate-600 leading-relaxed">
+                                    Málo lidí, hodně poptávek a tlak na rychlé rozhodnutí. Proč se z RFQ
+                                    stává bottleneck napříč firmou.
+                                </p>
+                                <div
+                                    className="mt-4 text-sm font-semibold text-blue-700 group-hover:text-blue-800 inline-flex items-center gap-1">
+                                    Přečíst sekci <ChevronRight className="w-4 h-4"/>
+                                </div>
+                            </Link>
+
+                            <Link
+                                to="/insights#rastr-drawings"
+                                className="group p-7 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
+                            >
+                                <div
+                                    className="inline-flex p-3 rounded-xl bg-gradient-to-br from-purple-600 to-purple-700 shadow-lg mb-5">
+                                    <FileText className="w-6 h-6 text-white"/>
+                                </div>
+                                <h3 className="text-lg font-bold text-slate-900 mb-2">
+                                    Proč rozhodují PDF/TIFF z e-mailu
+                                </h3>
+                                <p className="text-slate-600 leading-relaxed">
+                                    Většina RFQ nepřichází jako CAD, ale jako 2D rastrové přílohy v mailu.
+                                    Proč to tak je a co to dělá s procesem.
+                                </p>
+                                <div
+                                    className="mt-4 text-sm font-semibold text-blue-700 group-hover:text-blue-800 inline-flex items-center gap-1">
+                                    Přečíst sekci <ChevronRight className="w-4 h-4"/>
+                                </div>
+                            </Link>
+
+                            <Link
+                                to="/insights#partonomy"
+                                className="group p-7 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
+                            >
+                                <div
+                                    className="inline-flex p-3 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 shadow-lg mb-5">
+                                    <Zap className="w-6 h-6 text-white"/>
+                                </div>
+                                <h3 className="text-lg font-bold text-slate-900 mb-2">
+                                    Jak Partonomy pomáhá v poptávkové fázi
+                                </h3>
+                                <p className="text-slate-600 leading-relaxed">
+                                    Nejen metadata: shrnutí, highlights, cost drivere, doporučení podle
+                                    profilu firmy, detekce revizí a workflow nad seznamem výkresů.
+                                </p>
+                                <div
+                                    className="mt-4 text-sm font-semibold text-blue-700 group-hover:text-blue-800 inline-flex items-center gap-1">
+                                    Přečíst sekci <ChevronRight className="w-4 h-4"/>
+                                </div>
+                            </Link>
+                        </div>
+
+                        <div className="mt-8 text-sm text-slate-500">
+                            Tip: z těchto sekcí odkazujeme přímo na konkrétní části článku, abyste se rychle dostali k
+                            tomu podstatnému.
+                        </div>
+                    </div>
+                </section>
+
 
                 {/* CTA Section */}
                 <section className="py-20 bg-gradient-to-br from-slate-900 to-slate-800 relative overflow-hidden">
