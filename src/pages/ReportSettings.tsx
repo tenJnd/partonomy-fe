@@ -5,6 +5,18 @@ import {useAuth} from '../contexts/AuthContext';
 import {supabase} from '../lib/supabase';
 import SettingsShell from '../components/SettingsShell';
 
+const REPORT_LANGUAGES = [
+  { code: "en", label: "English" },
+  { code: "de", label: "German (Deutsch)" },
+  { code: "cs", label: "Czech (Čeština)" },
+  { code: "pl", label: "Polish (Polski)" },
+  { code: "sk", label: "Slovak (Slovenčina)" },
+  { code: "it", label: "Italian (Italiano)" },
+  { code: "fr", label: "French (Français)" },
+  { code: "es", label: "Spanish (Español)" },
+  { code: "nl", label: "Dutch (Nederlands)" }
+];
+
 const ReportSettings: React.FC = () => {
     const {t} = useTranslation();
     const {currentOrg} = useAuth();
@@ -130,9 +142,11 @@ const ReportSettings: React.FC = () => {
                                 onChange={e => setReportLang(e.target.value)}
                                 className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all text-sm"
                             >
-                                <option value="en">{t('languages.en')}</option>
-                                <option value="de">{t('languages.de')}</option>
-                                <option value="cs">{t('languages.cs')}</option>
+                                {REPORT_LANGUAGES.map(l => (
+                                    <option key={l.code} value={l.code}>
+                                      {l.label}
+                                    </option>
+                                  ))}
                             </select>
 
                             <button
