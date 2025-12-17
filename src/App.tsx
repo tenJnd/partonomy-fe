@@ -26,6 +26,7 @@ import InsightsRFQ from "./pages/InsightsRFQ";
 import Landing from "./pages/Landing";
 
 import LanguageLayout from "./components/LanguageLayout";
+import EnvBadge from "./components/EnvBadge";
 
 const AppLayout: React.FC = () => {
     const location = useLocation();
@@ -115,6 +116,7 @@ const App: React.FC = () => {
                     {/* Unknown -> root */}
                     <Route path="*" element={<Navigate to="/" replace/>}/>
                 </Routes>
+                <EnvBadge />
             </AuthProvider>
         </Router>
     );
