@@ -854,7 +854,6 @@ const DocumentDetail: React.FC = () => {
                         }
 
                         // TAB: Comments
-                        // TAB: Comments
                         if (activeReportTab === "comments") {
                             // 🔒 plán nemá komentáře – ukážeme jen upgrade flag
                             if (!canComment) {
@@ -864,8 +863,8 @@ const DocumentDetail: React.FC = () => {
                                             <h3 className="text-sm font-semibold text-gray-900">Comments</h3>
                                             <span
                                                 className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase bg-amber-50 text-amber-700 border border-amber-200">
-            Upgrade
-          </span>
+                                                Upgrade
+                                            </span>
                                         </div>
 
                                         <div
@@ -1054,8 +1053,8 @@ const DocumentDetail: React.FC = () => {
                                                                             : 'bg-gray-50 text-gray-600 border-gray-300'
                                                         }`}
                                                     >
-                            {assessment.shop_alignment.fit_level}
-                          </span>
+                                                    {assessment.shop_alignment.fit_level}
+                                                    </span>
                                                 </div>
                                                 <div className="text-xs text-gray-900">
                                                     {assessment.shop_alignment.fit_summary}
@@ -1084,12 +1083,12 @@ const DocumentDetail: React.FC = () => {
                                                 onClick={() => toggleSection('cost')}
                                                 className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors"
                                             >
-                        <span className="text-sm font-semibold text-gray-900">
-                          Cost Drivers
-                          <span className="ml-1 italic text-[11px] text-gray-500">
-                            (Quote Centric)
-                          </span>
-                        </span>
+                                                <span className="text-sm font-semibold text-gray-900">
+                                                  Cost Drivers
+                                                  <span className="ml-1 italic text-[11px] text-gray-500">
+                                                    (Quote Centric)
+                                                  </span>
+                                                </span>
                                                 {expandedSections['cost'] ? (
                                                     <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2}/>
                                                 ) : (
@@ -1112,9 +1111,9 @@ const DocumentDetail: React.FC = () => {
                                                             }`}
                                                         >
                                                             <div className="flex items-center gap-2 mb-1">
-                                <span className="text-sm font-semibold text-gray-900">
-                                  {driver.factor}
-                                </span>
+                                                                <span className="text-sm font-semibold text-gray-900">
+                                                                  {driver.factor}
+                                                                </span>
                                                                 <span
                                                                     className={`text-xs px-2 py-0.5 rounded ${
                                                                         driver.impact === 'EXTREME'
@@ -1126,8 +1125,8 @@ const DocumentDetail: React.FC = () => {
                                                                                     : 'bg-green-100 text-green-800'
                                                                     }`}
                                                                 >
-                                  {driver.impact}
-                                </span>
+                                                              {driver.impact}
+                                                            </span>
                                                             </div>
                                                             <p className="text-xs text-gray-600">{driver.details}</p>
                                                         </div>
@@ -1144,9 +1143,9 @@ const DocumentDetail: React.FC = () => {
                                                 onClick={() => toggleSection('processing')}
                                                 className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors"
                                             >
-                        <span className="text-sm font-semibold text-gray-900">
-                          Processing Hints
-                        </span>
+                                                <span className="text-sm font-semibold text-gray-900">
+                                                  Processing Hints
+                                                </span>
                                                 {expandedSections['processing'] ? (
                                                     <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2}/>
                                                 ) : (
@@ -1166,8 +1165,8 @@ const DocumentDetail: React.FC = () => {
                                                                         key={idx}
                                                                         className="text-xs bg-gray-100 px-2 py-1 rounded"
                                                                     >
-                                    {step}
-                                  </span>
+                                                                    {step}
+                                                                    </span>
                                                                 ))}
                                                             </div>
                                                         </div>
@@ -1212,12 +1211,12 @@ const DocumentDetail: React.FC = () => {
                                                 onClick={() => toggleSection('critical')}
                                                 className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors"
                                             >
-                        <span className="text-sm font-semibold text-gray-900">
-                          Critical Points
-                          <span className="ml-1 italic text-[11px] text-gray-500">
-                            (Production Centric)
-                          </span>
-                        </span>
+                                                <span className="text-sm font-semibold text-gray-900">
+                                                  Critical Points
+                                                  <span className="ml-1 italic text-[11px] text-gray-500">
+                                                    (Production Centric)
+                                                  </span>
+                                                </span>
                                                 {expandedSections['critical'] ? (
                                                     <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2}/>
                                                 ) : (
@@ -1240,9 +1239,10 @@ const DocumentDetail: React.FC = () => {
                                                             }`}
                                                         >
                                                             <div className="flex items-center gap-2 mb-1">
-                                <span className="text-sm font-semibold text-gray-900 capitalize">
-                                  {point.type.replace(/_/g, ' ')}
-                                </span>
+                                                                <span
+                                                                    className="text-sm font-semibold text-gray-900 capitalize">
+                                                                  {point.type.replace(/_/g, ' ')}
+                                                                </span>
                                                                 <span
                                                                     className={`text-xs px-2 py-0.5 rounded ${
                                                                         point.importance === 'EXTREME'
@@ -1254,8 +1254,8 @@ const DocumentDetail: React.FC = () => {
                                                                                     : 'bg-green-100 text-green-800'
                                                                     }`}
                                                                 >
-                                  {point.importance}
-                                </span>
+                                                              {point.importance}
+                                                            </span>
                                                             </div>
                                                             <p className="text-xs text-gray-600">{point.description}</p>
                                                         </div>
@@ -1272,9 +1272,9 @@ const DocumentDetail: React.FC = () => {
                                                 onClick={() => toggleSection('risks')}
                                                 className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors"
                                             >
-                        <span className="text-sm font-semibold text-gray-900">
-                          Key Risks & Opportunities
-                        </span>
+                                                <span className="text-sm font-semibold text-gray-900">
+                                                  Key Risks & Opportunities
+                                                </span>
                                                 {expandedSections['risks'] ? (
                                                     <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2}/>
                                                 ) : (
@@ -1329,9 +1329,9 @@ const DocumentDetail: React.FC = () => {
                                                 onClick={() => toggleSection('notes')}
                                                 className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors"
                                             >
-                        <span className="text-sm font-semibold text-gray-900">
-                          Internal Notes
-                        </span>
+                                                    <span className="text-sm font-semibold text-gray-900">
+                                                      Internal Notes
+                                                    </span>
                                                 {expandedSections['notes'] ? (
                                                     <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2}/>
                                                 ) : (
@@ -1404,8 +1404,8 @@ const DocumentDetail: React.FC = () => {
                                             <ZoomOut className="w-4 h-4" strokeWidth={2}/>
                                         </button>
                                         <span className="text-sm font-medium text-gray-700 min-w-[4rem] text-center">
-            {zoom}%
-          </span>
+                                            {zoom}%
+                                        </span>
                                         <button
                                             onClick={handleZoomIn}
                                             disabled={zoom >= 300}
@@ -1806,23 +1806,23 @@ const DocumentDetail: React.FC = () => {
                                             <span className="text-xs text-gray-500">Loading tags…</span>
                                         ) : tags.length === 0 ? (
                                             <span className="text-xs text-gray-400">
-              No tags yet. Add your first one below.
-            </span>
+                                              No tags yet. Add your first one below.
+                                            </span>
                                         ) : (
                                             tags.map((t) => (
                                                 <span
                                                     key={t.id}
                                                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white border border-gray-200 text-xs text-gray-800"
                                                 >
-                {t.label}
+                                                    {t.label}
                                                     <button
                                                         type="button"
                                                         onClick={() => removeTag(t.id)}
                                                         className="ml-0.5 p-0.5 hover:bg-gray-100 rounded-full"
                                                     >
-                  <X className="w-3 h-3 text-gray-500" strokeWidth={1.5}/>
-                </button>
-              </span>
+                                                    <X className="w-3 h-3 text-gray-500" strokeWidth={1.5}/>
+                                                    </button>
+                                                </span>
                                             ))
                                         )}
                                     </div>
