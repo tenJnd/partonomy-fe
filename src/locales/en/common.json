@@ -86,6 +86,21 @@
     "choosePlanDescription": "Select the plan and billing period that best fits your needs.",
     "currentPeriod": "Current period"
   },
+  "billing": {
+    "planInactive": "Plan inactive",
+    "plan": "plan",
+    "trial": {
+      "version": "version",
+      "endsInDays_one": "ends in {{count}} day",
+      "endsInDays_other": "ends in {{count}} days"
+    },
+    "description": {
+      "freePlan": "You are on the free plan.",
+      "inactive": "Your subscription is inactive. You can restart your plan anytime.",
+      "trial": "You are currently in a trial period. You can upgrade at any time.",
+      "current": "Current subscription plan for this organization."
+    }
+  },
   "organizationSettings": {
     "title": "Organization",
     "description": "Manage organization name and team members.",

@@ -2,6 +2,7 @@
 import type {OrgBilling} from "../hooks/useOrgBilling";
 import type {OrgUsageRow} from "../hooks/useOrgUsage";
 import {formatTierLabel} from "./tiers";
+import i18next, {type TFunction} from "i18next";
 
 export interface TrialInfo {
     isTrial: boolean;
@@ -36,74 +37,83 @@ export const isInactiveStatus = (status?: string | null): boolean => {
         status.toLowerCase()
     );
 };
+
+const defaultT = i18next.t.bind(i18next);
+
 // ---------------------------------------------
 // BADGE TEXT (TopBar)
 // ---------------------------------------------
-export const getBillingBadgeText = (billing: OrgBilling | null): string => {
-    if (!billing) return "Plan inactive";
+export const getBillingBadgeText = (
+    billing: OrgBilling | null,
+    t: TFunction = defaultT
+): string => {
+    if (!billing) return t("billing.planInactive");
 
     if (isInactiveStatus(billing.status)) {
-        return "Plan inactive";
+        return t("billing.planInactive");
     }
 
     const tierLabel = formatTierLabel(billing.tier?.code);
     const {isTrial, daysLeft} = getTrialInfo(billing);
 
     if (isTrial && daysLeft !== null) {
-        return `${tierLabel} verze · končí za ${daysLeft} ${
-            daysLeft === 1 ? "den" : "dní"
-        }`;
+        return `${tierLabel} ${t("billing.trial.version")} · ${t(
+            "billing.trial.endsInDays",
+            {count: daysLeft}
+        )}`;
     }
 
     // placený plán
     return tierLabel;
 };
 
-
 // ---------------------------------------------
 // BILLING PLAN TITLE (BillingSettings)
 // ---------------------------------------------
-export const getBillingPlanTitle = (billing: OrgBilling | null): string => {
-    if (!billing) return "Plan inactive";
+export const getBillingPlanTitle = (
+    billing: OrgBilling | null,
+    t: TFunction = defaultT
+): string => {
+    if (!billing) return t("billing.planInactive");
 
     if (isInactiveStatus(billing.status)) {
-        return "Plan inactive";
+        return t("billing.planInactive");
     }
 
     const tierLabel = formatTierLabel(billing.tier?.code);
     const {isTrial, daysLeft} = getTrialInfo(billing);
 
     if (isTrial && daysLeft !== null) {
-        return `${tierLabel} verze · končí za ${daysLeft} ${
-            daysLeft === 1 ? "den" : "dní"
-        }`;
+        return `${tierLabel} ${t("billing.trial.version")} · ${t(
+            "billing.trial.endsInDays",
+            {count: daysLeft}
+        )}`;
     }
 
-    return `${tierLabel} plan`;
+    return `${tierLabel} ${t("billing.plan")}`;
 };
-
 
 // ---------------------------------------------
 // BILLING PLAN DESCRIPTION (BillingSettings)
 // ---------------------------------------------
 export const getBillingPlanDescription = (
-    billing: OrgBilling | null
+    billing: OrgBilling | null,
+    t: TFunction = defaultT
 ): string => {
-    if (!billing) return "You are on the free plan.";
+    if (!billing) return t("billing.description.freePlan");
 
     if (isInactiveStatus(billing.status)) {
-        return "Your subscription is inactive. You can restart your plan anytime.";
+        return t("billing.description.inactive");
     }
 
     const {isTrial} = getTrialInfo(billing);
 
     if (isTrial) {
-        return "You are currently in a trial period. You can upgrade at any time.";
+        return t("billing.description.trial");
     }
 
-    return "Current subscription plan for this organization.";
+    return t("billing.description.current");
 };
-
 
 // ---------------------------------------------
 // USAGE LIMIT INFO – pro Documents & další
@@ -127,12 +137,11 @@ export const getUsageLimitInfo = (
     const jobsUsed = usage?.jobs_used ?? 0;
     const maxJobs = billing?.tier?.max_jobs_per_period ?? null;
 
-    const isOverLimit =
-        maxJobs != null && maxJobs > 0 ? jobsUsed >= maxJobs : false;
+    const isOverLimit = maxJobs != null && maxJobs > 0 ? jobsUsed >= maxJobs : false;
 
     return {
         jobsUsed,
         maxJobs,
-        isOverLimit,
+        isOverLimit
     };
 };

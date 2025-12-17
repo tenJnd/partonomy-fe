@@ -86,6 +86,22 @@
     "choosePlanDescription": "Vyberte plán a fakturační období, které nejlépe vyhovuje vašim potřebám.",
     "currentPeriod": "Aktuální období"
   },
+  "billing": {
+    "planInactive": "Plán je neaktivní",
+    "plan": "plán",
+    "trial": {
+      "version": "verze",
+      "endsInDays_one": "končí za {{count}} den",
+      "endsInDays_few": "končí za {{count}} dny",
+      "endsInDays_other": "končí za {{count}} dní"
+    },
+    "description": {
+      "freePlan": "Jste na bezplatném plánu.",
+      "inactive": "Vaše předplatné je neaktivní. Plán můžete kdykoliv znovu aktivovat.",
+      "trial": "Aktuálně jste ve zkušebním období. Kdykoliv můžete upgradovat.",
+      "current": "Aktuální plán předplatného pro tuto organizaci."
+    }
+  },
   "organizationSettings": {
     "title": "Organizace",
     "description": "Spravujte název organizace a členy týmu.",

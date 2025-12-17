@@ -86,6 +86,21 @@
     "choosePlanDescription": "Wählen Sie den Plan und Abrechnungszeitraum, der am besten zu Ihren Anforderungen passt.",
     "currentPeriod": "Aktueller Zeitraum"
   },
+  "billing": {
+    "planInactive": "Plan inaktiv",
+    "plan": "Plan",
+    "trial": {
+      "version": "Version",
+      "endsInDays_one": "endet in {{count}} Tag",
+      "endsInDays_other": "endet in {{count}} Tagen"
+    },
+    "description": {
+      "freePlan": "Du nutzt den kostenlosen Plan.",
+      "inactive": "Dein Abonnement ist inaktiv. Du kannst deinen Plan jederzeit wieder aktivieren.",
+      "trial": "Du befindest dich derzeit in einer Testphase. Du kannst jederzeit upgraden.",
+      "current": "Aktueller Abonnementplan für diese Organisation."
+    }
+  },
   "organizationSettings": {
     "title": "Organisation",
     "description": "Verwalten Sie Organisationsname und Teammitglieder.",
