@@ -470,5 +470,79 @@
       "landing": "Start for free",
       "billing": "Need higher limits or classic invoicing? Contact us."
     }
+  },
+  "insightsRFQ": {
+    "header": {
+      "brand": "Partonomy.ai",
+      "back": "← Back to homepage"
+    },
+    "intro": {
+      "title": "Why RFQ drawing processing in manufacturing is so challenging",
+      "subtitle": "(and how it can be significantly simplified)",
+      "lead": "Processing RFQs is often one of the biggest bottlenecks in manufacturing companies. Not because people lack expertise, but because the workload is growing while capacity and tools remain the same."
+    },
+    "sections": {
+      "rfqProblem": {
+        "title": "Why is RFQ drawing processing such a problem today?",
+        "p1": "In most manufacturing companies the scenario is similar. RFQs arrive in high volume, often under time pressure, and every drawing is different. The decision whether to engage with a job must come quickly.",
+        "p2": "Responsibility often lies with one or two key people — a technologist, a quotation specialist, or a senior person in production. These people become the bottleneck of the entire process.",
+        "p3": "Each RFQ means opening the drawing, understanding it, putting it into manufacturing context, and making an initial qualified decision. And repeating that, multiple times a day."
+      },
+      "rasterDrawings": {
+        "title": "Why do most RFQs arrive as raster drawings in email?",
+        "p1": "Presentations often talk about CAD data, digital twins and connected systems. But the reality of RFQ processes is much more down-to-earth.",
+        "p2": "Most requests arrive via email as attachments — PDF, TIFF, PNG, sometimes even scanned legacy documentation. These drawings are not structured and are not machine-readable.",
+        "p3": "This is not an ideal state, but the reality of supply chains. And it is very unlikely to fundamentally change in the near future."
+      },
+      "manualTranscript": {
+        "title": "What information is manually transcribed from drawings today?",
+        "intro": "To make a decision on a job, someone typically has to manually extract key information from the drawing:",
+        "list": {
+          "item1": "part type",
+          "item2": "basic dimensions and envelope",
+          "item3": "material",
+          "item4": "tolerances and GD&T",
+          "item5": "surface or heat treatment notes",
+          "item6": "drawing revision"
+        },
+        "outro": "This information is then entered into ERP systems, spreadsheets or notes. Everyone does it differently, without a consistent structure. The same work is repeated again and again."
+      },
+      "chaos": {
+        "title": "Why are drawings scattered across folders and nobody can find anything?",
+        "p1": "After a few months of operation, it often looks the same in many companies: drawings in emails, local folders, shared drives.",
+        "p2": "There is no unified overview, decision history, or an easy way to return to drawings. Every new RFQ is handled as if it were the first one ever."
+      },
+      "taxonomy": {
+        "title": "Why is there no consistent taxonomy and overview of parts?",
+        "p1": "Each drawing is described differently. One person writes “shaft”, another “axle”, someone else uses an internal name. Without a consistent taxonomy, data cannot be analyzed or learned from.",
+        "p2": "Yet the history of drawings and decisions is extremely valuable — it’s just locked inside unstructured documents."
+      },
+      "firstMinutes": {
+        "title": "What can be decided within the first minutes of looking at a drawing?",
+        "p1": "An experienced technologist often knows within minutes whether the part fits production, whether it is risky, or whether it makes no sense to quote at all.",
+        "p2": "The problem isn’t decision-making itself — it’s that each decision costs time and mental capacity, and there are many such decisions every day."
+      },
+      "rfqTriage": {
+        "title": "How can automation speed up the RFQ phase (RFQ triage)?",
+        "p1": "If the drawing were analyzed automatically, key information structured, and the result available within minutes, it would change the nature of the RFQ phase entirely.",
+        "p2": "Manual processing of each drawing would become fast decision-making over ready-to-use information."
+      },
+      "partonomy": {
+        "title": "Where Partonomy fits in",
+        "p1": "Partonomy was created directly from this reality. It doesn’t focus only on “reading” the drawing, but on truly understanding the part and its manufacturing implications.",
+        "list": {
+          "item1": "drawing summary and key highlights",
+          "item2": "identification of critical points and cost drivers",
+          "item3": "expected manufacturing approach",
+          "item4": "personalized recommendations based on the company profile",
+          "item5": "drawing revision change detection",
+          "item6": "a clear drawing list and RFQ workflow"
+        },
+        "outro": "The goal is not to replace the technologist, but to eliminate manual transcription, reduce chaos, and free up people’s capacity for decisions that truly require experience."
+      },
+      "cta": {
+        "backLink": "← Back to homepage"
+      }
+    }
   }
 }

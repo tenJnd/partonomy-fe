@@ -308,5 +308,241 @@
   "permissions": {
     "noPermission": "Sie haben keine Berechtigung, Organisationseinstellungen zu verwalten.",
     "contactAdmin": "Kontaktieren Sie den Eigentümer oder Administrator Ihrer Organisation."
+  },
+  "landing": {
+    "nav": {
+      "howItWorks": "So funktioniert’s",
+      "features": "Funktionen",
+      "pricing": "Preise",
+      "faq": "FAQ",
+      "insights": "Einblicke",
+      "login": "Anmelden",
+      "goToApp": "Zur App",
+      "tryFree": "Kostenlos testen"
+    },
+    "hero": {
+      "badge": "KI-Assistent für die Verarbeitung technischer Zeichnungen in der Fertigung",
+      "headline1": "Verkürzen Sie die Bearbeitung technischer Zeichnungen",
+      "headline2": "von 20 Minuten auf 3",
+      "description": "Partonomy liest technische Zeichnungen automatisch, extrahiert wichtige Metadaten, bewertet die Fertigungskomplexität und mehr – so entscheiden Sie schnell: Lohnt sich ein Angebot oder sollte man sofort absagen? Mit jeder hochgeladenen Zeichnung bauen Sie eine Teile-Datenbank in einem einheitlichen, strukturierten Format auf.",
+      "uploadFirstDrawing": "Erste Zeichnung hochladen",
+      "loginToAccount": "In Konto anmelden",
+      "stat1Value": "bis zu 80%",
+      "stat1Label": "Zeitersparnis",
+      "stat2Value": "15–20 Std.",
+      "stat2Label": "typisch gespart / Monat",
+      "stat3Value": "bis zu 90%",
+      "stat3Label": "Zeichnungen ohne manuelle Übertragung"
+    },
+    "howItWorks": {
+      "title": "So funktioniert’s",
+      "subtitle": "Drei einfache Schritte für schnellere Entscheidungen.",
+      "step1": "Zeichnungen hochladen",
+      "step1Desc": "Laden Sie Zeichnungen einfach als PDF, TIFF, PNG oder JPEG hoch – funktioniert auch mit normalen Scans aus E-Mails. Empfehlung: 1 Teil = 1 Seite für die besten Ergebnisse.",
+      "step2": "KI liest die Zeichnung",
+      "step2Desc": "Das System extrahiert Material, Abmessungen, Toleranzen, GD&T und erkennt kritische Stellen sowie Kostentreiber. Metadaten werden strukturiert gespeichert – bereit für die weitere Nutzung in Ihrem System.",
+      "step3": "Sofort entscheiden",
+      "step3Desc": "Jedes Teil erhält einen übersichtlichen Report und einen einfachen Score. RFQ-Triage dauert Minuten statt Stunden. Gleichzeitig werden Zeichnungen zu einer klaren Teile-Datenbank, mit der Sie weiterarbeiten können."
+    },
+    "features": {
+      "title": "Was Sie bekommen",
+      "subtitle": "Sagen Sie manueller Übertragung aus PDFs und TIFFs Lebewohl!",
+      "list": {
+        "title": "Zeichnungsliste",
+        "desc": "Alle Zeichnungen an einem Ort. Sortiert, mit Bearbeitungsstatus markiert und bereit für Entscheidungen. Sie sehen die Teile-Hüllmaße, eine Basisbeschreibung, die Fertigungskomplexität und wie gut das Teil zu Ihren Fähigkeiten passt.",
+        "complexity": "Schnelle Bewertung der Fertigungskomplexität",
+        "complexityDesc": "Die KI sucht nach kritischen Toleranzen, GD&T, Oberflächen-/Wärmebehandlungen und weiteren typischen Kostenfaktoren. Ergebnis ist ein kurzer, verständlicher Report je Teil – in der Sprache Ihres Teams. Außerdem können Sie den Report z. B. nach Excel exportieren.",
+        "classification": "Automatische Teileklassifikation",
+        "classificationDesc": "Das System erkennt automatisch die Teile-Taxonomie und vergibt Scores (Komplexität, Risiko, Alignment) nach typischen Fertigungskriterien. Alles wird als strukturierte Daten gespeichert – mit jeder Zeichnung bauen Sie eine Teile-Datenbank auf und können Daten in Ihren Prozess exportieren.",
+        "customOutput": "Ausgabe auf Ihr Unternehmen zugeschnitten",
+        "customOutputDesc": "Beschreiben Sie einfach Ihr Werkstattprofil – welche Materialien Sie bearbeiten, welche Toleranzen Sie bevorzugen und worin Sie stark sind. Das System bewertet dann die Shop-Passung je Teil danach, wie gut es zu Ihren Möglichkeiten passt. „Zukauf oder schaffen wir’s selbst?“",
+        "revisions": "Revisions- und Änderungsmanagement",
+        "revisionsDesc": "Wenn eine neue Revisionskennung ankommt, warnt Partonomy automatisch. Im Inbox sehen Sie sofort, dass es sich um eine neuere Zeichnungsversion handelt – ohne manuelles Prüfen von Tabellen und Dateivergleichen.",
+        "projects": "Projekte und Team-Workflow",
+        "projectsDesc": "In der Pro-Version erstellen Sie Projekte, verknüpfen Teile mit einer konkreten Angebotsanfrage und das Team arbeitet gemeinsam in einem Workflow. Statt E-Mail-Chaos haben Sie einen Ort für RFQ-Triage, interne Entscheidungen und Folgeschritte."
+      },
+      "earlyAccess": "Partonomy befindet sich derzeit im Early-Access-Modus. Wir fokussieren uns auf RFQs (Angebotsanfragen) für Zerspanung und Fertigung und ergänzen schrittweise weitere Funktionen basierend auf Feedback unserer ersten Nutzer."
+    },
+    "faq": {
+      "title": "Häufig gestellte Fragen",
+      "subtitle": "Antworten auf die häufigsten Fragen, die wir von Fertigungsunternehmen bekommen.",
+      "q1": "Welche Arten von Zeichnungen unterstützt Partonomy?",
+      "a1": "Partonomy ist speziell für 2D-Technikzeichnungen im Rasterformat entwickelt, die typischerweise als Anhänge in RFQ-E-Mails ankommen. Wir unterstützen PDF, TIFF, PNG und JPEG – einschließlich Scans und älterer Dokumentation.",
+      "q2": "Unterstützt Partonomy CAD-Zeichnungen oder 3D-Modelle?",
+      "a2": "Nein. Partonomy arbeitet nicht mit CAD oder 3D-Modellen (STEP, DWG, IGES usw.). Wir konzentrieren uns ausschließlich auf 2D-Zeichnungen, da diese den Großteil der RFQs ausmachen und am aufwändigsten manuell zu verarbeiten sind.",
+      "q3": "Muss die Zeichnung perfekt lesbar sein?",
+      "a3": "Nein. Partonomy kommt auch mit normalen Scans, schlechter Qualität oder aus E-Mails weitergeleiteten Zeichnungen zurecht. Bessere Eingangsqualität bedeutet bessere Ergebnisse – das System ist jedoch für den realen RFQ-Alltag ausgelegt.",
+      "q4": "Wie genau ist die KI-Analyse?",
+      "a4": "Ziel ist nicht, den Technologen oder Kalkulator zu ersetzen, sondern die erste Zeichnungsanalyse und Entscheidung deutlich zu beschleunigen. Die KI bewertet Zeichnungen anhand typischer Fertigungsmuster und hilft schnell zu entscheiden, ob sich ein Angebot lohnt.",
+      "q5": "Für wen ist Partonomy nicht geeignet?",
+      "a5": "Partonomy ist nicht für detaillierte Arbeitsvorbereitung, CAD-Analyse oder die finale Preiskalkulation gedacht. Den größten Nutzen bringt es in der RFQ-Triage – also in der Phase der schnellen Entscheidung über eingehende Anfragen.",
+      "q6": "Wie schnell kann ich starten und kann ich es testen?",
+      "a6": "Sie starten in wenigen Minuten. Einfach registrieren, anmelden und die erste Zeichnung hochladen. Sie erhalten 14 Tage kostenlosen Testzugang — ohne Installation und ohne Kreditkarte."
+    },
+    "insights": {
+      "title": "Aus der Praxis der RFQ-Zeichnungsbearbeitung",
+      "subtitle": "Ein umfassender Artikel über die Realität von RFQ-Prozessen in der Fertigung – und wie sich die Angebotsphase deutlich beschleunigen lässt.",
+      "openFullArticle": "Ganzen Artikel öffnen",
+      "card1Title": "Warum RFQ heute der Engpass ist",
+      "card1Desc": "Wenige Leute, viele Anfragen und Druck, schnell zu entscheiden. Warum RFQ zum Engpass im gesamten Unternehmen wird.",
+      "card1Link": "Abschnitt lesen",
+      "card2Title": "Warum PDF/TIFF aus E-Mails entscheiden",
+      "card2Desc": "Die meisten RFQs kommen nicht als CAD, sondern als 2D-Rasteranhänge per E-Mail. Warum das so ist und was es mit dem Prozess macht.",
+      "card3Title": "Wie Partonomy in der Angebotsphase hilft",
+      "card3Desc": "Nicht nur Metadaten: Summary, Highlights, Kostentreiber, Empfehlungen nach Unternehmensprofil, Revisions-Erkennung und Workflow über die Zeichnungsliste.",
+      "tip": "Tipp: Von diesen Karten verlinken wir direkt auf bestimmte Abschnitte des Artikels, damit Sie schnell zum Wesentlichen kommen."
+    },
+    "cta": {
+      "title": "Bereit, jeden Monat Dutzende Stunden zu sparen?",
+      "subtitle": "Starten Sie die Zeichnungsanalyse in 3 Minuten statt 20. Erster Monat kostenlos, keine Kreditkarte, keine Verpflichtungen.",
+      "startFree": "Kostenlos starten"
+    },
+    "footer": {
+      "privacy": "Datenschutz",
+      "terms": "AGB",
+      "contact": "Kontakt"
+    }
+  },
+  "pricing": {
+    "title": "Einfache Preise",
+    "subtitle": "Kostenlos starten, flexibel bezahlen",
+    "billedLabel": "Abrechnung:",
+    "yearly": "Jährlich",
+    "monthly": "Monatlich",
+    "discount": "Rabatt",
+    "monthlyBilledYearly": "monatlich, jährlich abgerechnet",
+    "monthlyBilledMonthly": "monatlich, monatlich abgerechnet",
+    "starter": {
+      "name": "Starter",
+      "drawings": "Zeichnungen",
+      "description": "Ideal für kleinere Werkstätten und den Pilotbetrieb",
+      "trialNote": "Testphase läuft ({days} Tag{plural} verbleibend). Der gewählte Plan startet nach Ende der Testphase.",
+      "features": {
+        "drawings": "80 Zeichnungen pro Monat",
+        "users": "2 Nutzer",
+        "analysis": "Zeichnungsanalyse aus Raster-PDFs/Bildern",
+        "customReport": "Individueller Report pro Teil",
+        "bomParsing": "Stücklisten-Parsing und Revisionshistorie",
+        "revisionAlert": "Benachrichtigungen bei Revisionsänderungen",
+        "dataExport": "Datenexport",
+        "emailSupport": "E-Mail-Support"
+      },
+      "selectButton": "Starter wählen",
+      "currentPlan": "Aktueller Plan",
+      "downgrade": "Auf Starter downgraden"
+    },
+    "pro": {
+      "name": "Pro",
+      "mostPopular": "Am beliebtesten",
+      "drawings": "Zeichnungen",
+      "description": "Für Unternehmen mit Dutzenden bis Hunderten Zeichnungen pro Monat.",
+      "trialNote": "Testphase läuft ({days} Tag{plural} verbleibend). Der gewählte Plan startet nach Ende der Testphase.",
+      "features": {
+        "everythingStarter": "Alles aus dem Starter-Plan",
+        "drawings": "400 Zeichnungen pro Monat",
+        "users": "10 Nutzer",
+        "projects": "Projekte erstellen",
+        "favorites": "Favoriten und eigene Workflow-Status",
+        "tags": "Interne Tags zur Organisation",
+        "prioritization": "Priorisierung von Teilen",
+        "prioritySupport": "Priority-Support",
+        "api": "API (in Kürze)"
+      },
+      "selectButton": "Pro wählen",
+      "currentPlan": "Aktueller Plan",
+      "upgrade": "Auf Pro upgraden"
+    },
+    "individual": {
+      "name": "Individuell",
+      "badge": "Sonderkonditionen",
+      "description1": "Für Unternehmen, denen Standardlimits oder die Abrechnungsart nicht passen. Geeignet für größere Teams, höhere Zeichnungsvolumina oder wenn Rechnungsstellung und individuelle Vereinbarung erforderlich sind.",
+      "description2": "Wir stimmen gemeinsam Volumen, Abrechnungsmodell und Support ab, damit Partonomy in Ihren Prozess passt.",
+      "features": {
+        "customLimits": "Individuelle Limits für Zeichnungen und Nutzer",
+        "invoicing": "Klassische Rechnung möglich (monatlich / quartalsweise)",
+        "customTerms": "Individuelle Vertragskonditionen",
+        "workshopSetup": "Gemeinsames Setup von Workflow und Werkstattprofil",
+        "earlyAccess": "Priorisierter Zugang zu neuen Funktionen"
+      },
+      "consultButton": "Beratungstermin vereinbaren"
+    },
+    "cta": {
+      "landing": "Kostenlos starten",
+      "billing": "Sie brauchen höhere Limits oder klassische Rechnungsstellung? Kontaktieren Sie uns."
+    }
+  },
+  "insightsRFQ": {
+    "header": {
+      "brand": "Partonomy.ai",
+      "back": "← Zurück zur Startseite"
+    },
+    "intro": {
+      "title": "Warum die Verarbeitung von RFQ-Zeichnungen in der Fertigung so anspruchsvoll ist",
+      "subtitle": "(und wie sie deutlich vereinfacht werden kann)",
+      "lead": "Die Bearbeitung von Angebotsanfragen (RFQ) ist in Fertigungsunternehmen oft einer der größten Engpässe. Nicht weil es an Know-how fehlt, sondern weil das Arbeitsvolumen steigt, während Kapazitäten und Werkzeuge gleich bleiben."
+    },
+    "sections": {
+      "rfqProblem": {
+        "title": "Warum ist die Verarbeitung von RFQ-Zeichnungen heute ein so großes Problem?",
+        "p1": "In den meisten Fertigungsbetrieben ist das Szenario ähnlich. RFQs kommen in hoher Anzahl, oft unter Zeitdruck, und jede Zeichnung ist anders. Die Entscheidung, ob man sich überhaupt mit dem Auftrag beschäftigt, muss schnell fallen.",
+        "p2": "Die Verantwortung liegt dabei häufig bei ein oder zwei Schlüsselpersonen — Technologe, Kalkulator/Angebotsbearbeiter oder Senior in der Produktion. Diese Personen werden zum Engpass des gesamten Prozesses.",
+        "p3": "Jede RFQ bedeutet: Zeichnung öffnen, verstehen, in den Fertigungskontext einordnen und eine erste qualifizierte Entscheidung treffen. Und das wiederholt, mehrmals pro Tag."
+      },
+      "rasterDrawings": {
+        "title": "Warum kommen die meisten RFQs als Rasterzeichnungen per E-Mail?",
+        "p1": "In Präsentationen geht es oft um CAD-Daten, digitale Zwillinge und vernetzte Systeme. Die Realität der RFQ-Prozesse ist jedoch deutlich nüchterner.",
+        "p2": "Die meisten Anfragen kommen per E-Mail als Anhang — PDF, TIFF, PNG, manchmal sogar als Scan älterer Dokumentation. Diese Zeichnungen sind nicht strukturiert und nicht maschinenlesbar.",
+        "p3": "Das ist kein Idealzustand, sondern die Realität in Lieferketten. Und es ist sehr unwahrscheinlich, dass sich das in naher Zukunft grundlegend ändert."
+      },
+      "manualTranscript": {
+        "title": "Was wird heute manuell aus der Zeichnung übertragen?",
+        "intro": "Um über einen Auftrag entscheiden zu können, müssen typischerweise zentrale Informationen manuell aus der Zeichnung entnommen werden:",
+        "list": {
+          "item1": "Bauteiltyp",
+          "item2": "Grundabmessungen und Bauteil-Envelope",
+          "item3": "Material",
+          "item4": "Toleranzen und GD&T",
+          "item5": "Hinweise zu Oberfläche oder Wärmebehandlung",
+          "item6": "Zeichnungsrevision"
+        },
+        "outro": "Diese Informationen werden dann in ERP, Excel oder Notizen eingetragen. Jeder anders, ohne einheitliche Struktur. Die gleiche Arbeit wiederholt sich immer wieder."
+      },
+      "chaos": {
+        "title": "Warum sind Zeichnungen über Ordner verteilt und niemand findet sich zurecht?",
+        "p1": "Nach einigen Monaten sieht es in vielen Unternehmen ähnlich aus: Zeichnungen in E-Mails, lokalen Ordnern und auf Netzlaufwerken.",
+        "p2": "Es fehlt ein einheitlicher Überblick, eine Entscheidungshistorie und die Möglichkeit, schnell zu einer Zeichnung zurückzukehren. Jede neue RFQ wird bearbeitet, als wäre sie die erste überhaupt."
+      },
+      "taxonomy": {
+        "title": "Warum fehlt eine einheitliche Taxonomie und ein Überblick über Teile?",
+        "p1": "Jede Zeichnung wird anders beschrieben. Der eine schreibt „Welle“, der andere „Achse“, wieder jemand nutzt eine interne Bezeichnung. Ohne einheitliche Taxonomie lassen sich Daten weder analysieren noch daraus lernen.",
+        "p2": "Dabei ist gerade die Historie von Zeichnungen und Entscheidungen enorm wertvoll — sie steckt jedoch in unstrukturierten Dokumenten fest."
+      },
+      "firstMinutes": {
+        "title": "Was lässt sich schon in den ersten Minuten an der Zeichnung entscheiden?",
+        "p1": "Ein erfahrener Technologe erkennt oft innerhalb weniger Minuten, ob das Teil zur Fertigung passt, ob es risikoreich ist oder ob es sich gar nicht lohnt, ein Angebot zu erstellen.",
+        "p2": "Das Problem ist nicht die Entscheidung an sich, sondern dass jede Entscheidung Zeit und mentale Kapazität kostet — und davon gibt es jeden Tag sehr viele."
+      },
+      "rfqTriage": {
+        "title": "Wie kann Automatisierung die RFQ-Phase beschleunigen (RFQ-Triage)?",
+        "p1": "Wenn die Zeichnung automatisch analysiert würde, die wichtigsten Informationen strukturiert wären und das Ergebnis innerhalb von Minuten vorläge, würde sich die gesamte RFQ-Phase verändern.",
+        "p2": "Aus manueller Zeichnungsbearbeitung würde schnelle Entscheidungsfindung auf Basis fertiger Informationen."
+      },
+      "partonomy": {
+        "title": "Wo Partonomy ins Spiel kommt",
+        "p1": "Partonomy ist direkt aus dieser Realität entstanden. Der Fokus liegt nicht nur auf dem „Lesen“ der Zeichnung, sondern auf dem echten Verständnis des Bauteils und seiner fertigungstechnischen Auswirkungen.",
+        "list": {
+          "item1": "Zusammenfassung der Zeichnung und wichtigste Highlights",
+          "item2": "Erkennung kritischer Stellen und Cost Driver",
+          "item3": "voraussichtlicher Fertigungsansatz",
+          "item4": "personalisierte Empfehlungen basierend auf dem Unternehmensprofil",
+          "item5": "Erkennung von Revisionsänderungen",
+          "item6": "übersichtliche Zeichnungsliste und RFQ-Workflow"
+        },
+        "outro": "Ziel ist nicht, den Technologen zu ersetzen, sondern manuelle Übertragung zu eliminieren, Chaos zu reduzieren und Kapazität für Entscheidungen freizumachen, die wirklich Erfahrung erfordern."
+      },
+      "cta": {
+        "backLink": "← Zurück zur Startseite"
+      }
+    }
   }
 }

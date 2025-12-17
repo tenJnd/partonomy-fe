@@ -470,5 +470,79 @@
       "landing": "Začít zdarma",
       "billing": "Potřebujete vyšší limity nebo klasickou fakturaci? Kontaktujte nás."
     }
+  },
+  "insightsRFQ": {
+    "header": {
+      "brand": "Partonomy.ai",
+      "back": "← Zpět na hlavní stránku"
+    },
+    "intro": {
+      "title": "Proč je zpracování RFQ výkresů ve strojírenství tak náročné",
+      "subtitle": "(a jak se to dá výrazně zjednodušit)",
+      "lead": "Zpracování poptávek (RFQ) je ve strojírenských firmách často jedním z největších úzkých míst. Ne proto, že by lidé nevěděli, co dělají, ale proto, že objem práce roste, zatímco kapacity a nástroje zůstávají stejné."
+    },
+    "sections": {
+      "rfqProblem": {
+        "title": "Proč je dnes zpracování RFQ výkresů takový problém?",
+        "p1": "Ve většině výrobních firem platí podobný scénář. RFQ přicházejí ve velkém objemu, často pod časovým tlakem, a každý výkres je jiný. Rozhodnutí, zda se zakázkou vůbec zabývat, musí přijít rychle.",
+        "p2": "Odpovědnost přitom často leží na jednom nebo dvou klíčových lidech – technologovi, poptávkáři nebo seniorovi ve výrobě. Tito lidé se stávají úzkým hrdlem celého procesu.",
+        "p3": "Každé RFQ znamená otevřít výkres, pochopit ho, zasadit do kontextu výroby a udělat první kvalifikované rozhodnutí. A to opakovaně, několikrát denně."
+      },
+      "rasterDrawings": {
+        "title": "Proč většina RFQ přichází jako rastrové výkresy v e-mailu?",
+        "p1": "V prezentacích se často mluví o CAD datech, digitálních dvojčatech a propojených systémech. Realita RFQ procesů je ale výrazně prozaičtější.",
+        "p2": "Většina poptávek přijde e-mailem jako příloha – PDF, TIFF, PNG, někdy i jako scan starší dokumentace. Tyto výkresy nejsou strukturované a nejsou strojově čitelné.",
+        "p3": "Nejde o ideální stav, ale o realitu dodavatelských řetězců. A je velmi nepravděpodobné, že by se v dohledné době zásadně změnila."
+      },
+      "manualTranscript": {
+        "title": "Co všechno se dnes z výkresu ručně přepisuje?",
+        "intro": "Aby bylo možné se nad zakázkou rozhodnout, musí někdo z výkresu ručně získat klíčové informace:",
+        "list": {
+          "item1": "typ součástky",
+          "item2": "základní rozměry a obálku",
+          "item3": "materiál",
+          "item4": "tolerance a GD&T",
+          "item5": "poznámky k povrchu nebo teplu",
+          "item6": "revizi výkresu"
+        },
+        "outro": "Tyto informace se pak zapisují do ERP, Excelů nebo poznámek. Každý jiným způsobem, bez jednotné struktury. Stejná práce se opakuje znovu a znovu."
+      },
+      "chaos": {
+        "title": "Proč jsou výkresy rozházené po složkách a nikdo se v nich nevyzná?",
+        "p1": "Po několika měsících provozu to ve firmách často vypadá stejně: výkresy v e-mailech, lokálních složkách, na sdílených discích.",
+        "p2": "Chybí jednotný přehled, historie rozhodnutí i možnost se k výkresům rychle vrátit. Každá nová RFQ se řeší, jako by byla první v historii."
+      },
+      "taxonomy": {
+        "title": "Proč chybí jednotná taxonomie a přehled o dílech?",
+        "p1": "Každý výkres je popsán trochu jinak. Někdo píše „hřídel“, jiný „osa“, další „shaft“. Bez jednotné taxonomie není možné data analyzovat ani se z nich učit.",
+        "p2": "Přitom právě historie výkresů a rozhodnutí má obrovskou hodnotu. Jen je zamčená v nestrukturovaných dokumentech."
+      },
+      "firstMinutes": {
+        "title": "Co se dá rozhodnout už v prvních minutách nad výkresem?",
+        "p1": "Zkušený technolog často během několika minut ví, zda díl zapadá do výroby, jestli je rizikový nebo jestli nemá smysl ho vůbec nacenit.",
+        "p2": "Problém není v rozhodování samotném, ale v tom, že každé rozhodnutí stojí čas a mentální kapacitu – a těch rozhodnutí je denně mnoho."
+      },
+      "rfqTriage": {
+        "title": "Jak může automatizace zrychlit poptávkovou fázi (RFQ triage)?",
+        "p1": "Pokud by byl výkres automaticky analyzován, klíčové informace strukturované a výsledek k dispozici během minut, změnil by se celý charakter poptávkové fáze.",
+        "p2": "Z ručního zpracování každého výkresu by se stalo rychlé rozhodování nad hotovými informacemi."
+      },
+      "partonomy": {
+        "title": "Kde do toho zapadá Partonomy",
+        "p1": "Partonomy vzniklo přímo z této reality. Nezaměřuje se jen na „přečtení“ výkresu, ale na skutečné porozumění součástce a jejím výrobním dopadům.",
+        "list": {
+          "item1": "shrnutí výkresu a hlavní highlights",
+          "item2": "identifikace kritických míst a cost driverů",
+          "item3": "předpokládaný výrobní postup",
+          "item4": "personalizovaná doporučení podle profilu firmy",
+          "item5": "detekce změn revizí výkresů",
+          "item6": "přehledný seznam výkresů a RFQ workflow"
+        },
+        "outro": "Cílem není nahradit technologa, ale odstranit manuální přepisování, snížit chaos a uvolnit kapacitu lidí pro rozhodnutí, která skutečně vyžadují jejich zkušenost."
+      },
+      "cta": {
+        "backLink": "← Zpět na hlavní stránku"
+      }
+    }
   }
 }
