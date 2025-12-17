@@ -6,8 +6,9 @@ import {
     getProjectPriorityClasses,
     getProjectStatusClasses,
     PROJECT_PRIORITY_LABELS,
-    PROJECT_STATUS_LABELS
+    PROJECT_STATUS_LABELS,
 } from "../utils/tagsFormatting.ts";
+import {useTranslation} from "react-i18next";
 
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
 
@@ -41,6 +42,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
                                                          onEdit,
                                                          onDelete,
                                                      }) => {
+    const {t} = useTranslation();
     const [openMenuId, setOpenMenuId] = React.useState<string | null>(null);
 
     const SortableHeader: React.FC<{
@@ -88,8 +90,8 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
                 status
             )}`}
         >
-        {PROJECT_STATUS_LABELS[status] ?? status}
-      </span>
+      {PROJECT_STATUS_LABELS[status] ?? status}
+    </span>
     );
 
     const renderPriorityBadge = (priority: ProjectRow["priority"]) => (
@@ -98,15 +100,17 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
                 priority
             )}`}
         >
-        {PROJECT_PRIORITY_LABELS[priority] ?? priority}
-      </span>
+      {PROJECT_PRIORITY_LABELS[priority] ?? priority}
+    </span>
     );
 
     if (loading && projects.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-20">
                 <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"/>
-                <p className="text-sm font-medium text-slate-600">Loading projects...</p>
+                <p className="text-sm font-medium text-slate-600">
+                    {t("projects.loadingProjects")}
+                </p>
             </div>
         );
     }
@@ -117,10 +121,10 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
                 className="flex flex-col items-center justify-center py-16 bg-white rounded-lg border-2 border-dashed border-gray-300">
                 <FolderKanban className="w-16 h-16 text-gray-300 mb-4" strokeWidth={1.5}/>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    No projects yet
+                    {t("projects.noProjectsYet")}
                 </h3>
                 <p className="text-sm text-gray-600">
-                    Create your first project to group related parts and RFQs.
+                    {t("projects.noProjectsYetDescription")}
                 </p>
             </div>
         );
@@ -148,23 +152,33 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
                         <col style={{width: "48px"}}/>
                         {/* Actions */}
                     </colgroup>
+
                     <thead className="bg-slate-50 border-b border-gray-200">
                     <tr>
-                        <SortableHeader field="name">Project</SortableHeader>
-                        <SortableHeader field="customer_name">Customer</SortableHeader>
-                        <SortableHeader field="external_ref">Reference</SortableHeader>
-                        <SortableHeader field="status">Status</SortableHeader>
-                        <SortableHeader field="priority">Priority</SortableHeader>
+                        <SortableHeader field="name">{t("projects.columns.project")}</SortableHeader>
+                        <SortableHeader field="customer_name">
+                            {t("projects.columns.customer")}
+                        </SortableHeader>
+                        <SortableHeader field="external_ref">
+                            {t("projects.columns.reference")}
+                        </SortableHeader>
+                        <SortableHeader field="status">{t("projects.columns.status")}</SortableHeader>
+                        <SortableHeader field="priority">
+                            {t("projects.columns.priority")}
+                        </SortableHeader>
                         <SortableHeader field="due_date">
                 <span className="inline-flex items-center gap-1">
                   <CalendarClock className="w-3 h-3"/>
-                  Due
+                    {t("projects.columns.due")}
                 </span>
                         </SortableHeader>
-                        <SortableHeader field="created_at">Created</SortableHeader>
+                        <SortableHeader field="created_at">
+                            {t("projects.columns.created")}
+                        </SortableHeader>
                         <th className="px-3 py-3"/>
                     </tr>
                     </thead>
+
                     <tbody className="divide-y divide-gray-100">
                     {projects.map((project) => (
                         <tr
@@ -187,49 +201,45 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
                                     </div>
                                 </div>
                             </td>
+
                             <td className="px-3 py-3">
                   <span className="text-sm text-gray-700 truncate block">
                     {project.customer_name || "-"}
                   </span>
                             </td>
+
                             <td className="px-3 py-3">
                   <span className="text-xs text-gray-500 truncate block">
                     {project.external_ref || "-"}
                   </span>
                             </td>
+
                             <td className="px-3 py-3">{renderStatusBadge(project.status)}</td>
+
+                            <td className="px-3 py-3">{renderPriorityBadge(project.priority)}</td>
+
                             <td className="px-3 py-3">
-                                {renderPriorityBadge(project.priority)}
+                                <span className="text-xs text-gray-500">{formatDate(project.due_date)}</span>
                             </td>
+
                             <td className="px-3 py-3">
-                  <span className="text-xs text-gray-500">
-                    {formatDate(project.due_date)}
-                  </span>
+                                <span className="text-xs text-gray-500">{formatDate(project.created_at)}</span>
                             </td>
-                            <td className="px-3 py-3">
-                  <span className="text-xs text-gray-500">
-                    {formatDate(project.created_at)}
-                  </span>
-                            </td>
+
                             <td
                                 className="px-3 py-3"
-                                onClick={(e) => e.stopPropagation()} // ať klik na menu neotvírá detail
+                                onClick={(e) => e.stopPropagation()}
                             >
                                 <div className="relative">
                                     <button
                                         onClick={() =>
                                             setOpenMenuId(
-                                                openMenuId === (project.id as string)
-                                                    ? null
-                                                    : (project.id as string)
+                                                openMenuId === (project.id as string) ? null : (project.id as string)
                                             )
                                         }
                                         className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
                                     >
-                                        <MoreVertical
-                                            className="w-4 h-4 text-gray-500"
-                                            strokeWidth={1.5}
-                                        />
+                                        <MoreVertical className="w-4 h-4 text-gray-500" strokeWidth={1.5}/>
                                     </button>
 
                                     {openMenuId === project.id && (
@@ -243,8 +253,9 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
                                                 className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
                                             >
                                                 <Edit3 className="w-4 h-4" strokeWidth={1.5}/>
-                                                Edit
+                                                {t("common.edit")}
                                             </button>
+
                                             <button
                                                 onClick={() => {
                                                     onDelete(project);
@@ -253,7 +264,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
                                                 className="flex items-center gap-2 px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 w-full text-left transition-colors"
                                             >
                                                 <Trash2 className="w-4 h-4" strokeWidth={1.5}/>
-                                                Delete
+                                                {t("common.delete")}
                                             </button>
                                         </div>
                                     )}

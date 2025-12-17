@@ -20,6 +20,7 @@ import {useProjects} from "../hooks/useProjects";
 
 
 import type {PriorityEnum, WorkflowStatusEnum,} from "../lib/database.types";
+import {useTranslation} from "react-i18next";
 
 type SimpleDocumentRef = {
     id: string;
@@ -36,6 +37,7 @@ type PriorityFilter = "all" | PriorityEnum;
 const Documents: React.FC = () => {
     const {currentOrg, user} = useAuth();
     const navigate = useNavigate();
+    const {t} = useTranslation();
 
     // === DATA HOOKY ===========================================================
     const {
@@ -1057,7 +1059,7 @@ const Documents: React.FC = () => {
                     >
                         <Upload className="w-4 h-4" strokeWidth={1.5}/>
                         <span className="text-sm font-medium">
-                            {uploading ? "Uploading..." : "Upload Documents"}
+                            {uploading ? t('common.uploading') : t('documents.uploadDocuments')}
                         </span>
                     </button>
                 </div>
@@ -1151,10 +1153,10 @@ const Documents: React.FC = () => {
                         }
                         className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
-                        <option value="all">All Time</option>
-                        <option value="7d">Last 7 days</option>
-                        <option value="30d">Last 30 days</option>
-                        <option value="90d">Last 90 days</option>
+                        <option value="all">{t('documents.allTime')}</option>
+                        <option value="7d">{t('documents.last7Days')}</option>
+                        <option value="30d">{t('documents.last30Days')}</option>
+                        <option value="90d">{t('documents.last90Days')}</option>
                     </select>
 
                     {/* Complexity */}
@@ -1167,7 +1169,7 @@ const Documents: React.FC = () => {
                         }
                         className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
-                        <option value="all">All Complexity</option>
+                        <option value="all">{t('documents.allComplexity')}</option>
                         <option value="LOW">Low</option>
                         <option value="MEDIUM">Medium</option>
                         <option value="HIGH">High</option>
@@ -1182,7 +1184,7 @@ const Documents: React.FC = () => {
                         }
                         className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
-                        <option value="all">All Fit</option>
+                        <option value="all">{t('documents.allFit')}</option>
                         <option value="GOOD">Good</option>
                         <option value="PARTIAL">Partial</option>
                         <option value="COOPERATION">Cooperation</option>
@@ -1198,7 +1200,7 @@ const Documents: React.FC = () => {
                         }
                         className="h-[38px] w-[130px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
-                        <option value="all">All Companies</option>
+                        <option value="all">{t('documents.allCompanies')}</option>
                         {uniqueCompanies.map((c) => (
                             <option key={c} value={c}>
                                 {c}
@@ -1214,7 +1216,7 @@ const Documents: React.FC = () => {
                         }
                         className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
-                        <option value="all">All Classes</option>
+                        <option value="all">{t('documents.allClasses')}</option>
                         {uniqueClasses.map((c) => (
                             <option key={c} value={c}>
                                 {c}
@@ -1232,7 +1234,7 @@ const Documents: React.FC = () => {
                         }
                         className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
-                        <option value="all">All Workflow</option>
+                        <option value="all">{t('documents.allWorkflow')}</option>
                         <option value="new">New</option>
                         <option value="in_progress">In progress</option>
                         <option value="done">Done</option>
@@ -1249,7 +1251,7 @@ const Documents: React.FC = () => {
                         }
                         className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
-                        <option value="all">All Priority</option>
+                        <option value="all">{t('documents.allPriority')}</option>
                         <option value="low">Low</option>
                         <option value="normal">Normal</option>
                         <option value="high">High</option>
@@ -1274,7 +1276,7 @@ const Documents: React.FC = () => {
                             }`}
                             strokeWidth={1.5}
                         />
-                        <span>Favourites only</span>
+                        <span>{t('documents.favouritesOnly')}</span>
                     </button>
 
                     {/* Reset filters */}
@@ -1282,7 +1284,7 @@ const Documents: React.FC = () => {
                         onClick={resetFilters}
                         className="h-[38px] px-3 bg-gray-100 border border-gray-200 rounded-lg shadow-sm hover:bg-gray-200 text-xs text-gray-700"
                     >
-                        Reset filters
+                        {t('documents.resetFilters')}
                     </button>
                 </div>
 
@@ -1343,8 +1345,8 @@ const Documents: React.FC = () => {
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
                         <h2 className="text-lg font-semibold text-gray-900 mb-3">
                             {bulkProjectPartIds && bulkProjectPartIds.length > 0
-                                ? `Add ${bulkProjectPartIds.length} parts to project`
-                                : "Add part to project"}
+                                ? `${t('documents.addPartsToProject')} ${bulkProjectPartIds.length} ${t('documents.partsToProject')}`
+                                : t('documents.addPartToProject')}
                         </h2>
 
                         {/* single režim – zobrazíme info o dílu */}
@@ -1406,7 +1408,7 @@ const Documents: React.FC = () => {
                             <div className="space-y-3">
                                 <div>
                                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                                        Project
+                                        {t('common.project')}
                                     </label>
                                     <select
                                         disabled={projectsLoading}
@@ -1418,8 +1420,8 @@ const Documents: React.FC = () => {
                                     >
                                         <option value="">
                                             {projectsLoading
-                                                ? "Loading projects..."
-                                                : "Select project..."}
+                                                ? t('common.loadingProjects')
+                                                : t('common.selectProject')}
                                         </option>
                                         {projects.map((p) => (
                                             <option key={p.id} value={p.id as string}>
@@ -1447,7 +1449,7 @@ const Documents: React.FC = () => {
                                 className="px-4 py-2 text-xs rounded-lg border border-gray-300 bg-white hover:bg-gray-50"
                                 disabled={addToProjectLoading}
                             >
-                                Cancel
+                                {t('common.cancel')}
                             </button>
                             {projects.length > 0 && (
                                 <button
@@ -1456,7 +1458,7 @@ const Documents: React.FC = () => {
                                     disabled={addToProjectLoading}
                                     className="px-4 py-2 text-xs rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium disabled:opacity-60"
                                 >
-                                    {addToProjectLoading ? "Adding..." : "Add to project"}
+                                    {addToProjectLoading ? t('common.adding') : t('common.addToProject')}
                                 </button>
                             )}
                         </div>

@@ -6,6 +6,7 @@ import { useProjects } from "../hooks/useProjects";
 import type { Database } from "../lib/database.types";
 import { Link, useNavigate } from "react-router-dom";
 import { useOrgBilling } from "../hooks/useOrgBilling";
+import { useTranslation } from "react-i18next";
 
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
 
@@ -16,6 +17,7 @@ const Projects: React.FC = () => {
   const { projects, loading, error, createProject, updateProject, deleteProject } =
     useProjects();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { billing } = useOrgBilling();
 
   const canUseProjects = !!billing?.tier?.can_use_projects; // uprav podle tvého billing shape
@@ -107,11 +109,11 @@ const Projects: React.FC = () => {
   };
 
   const handleDeleteProject = async (project: ProjectRow) => {
-    if (!window.confirm(`Delete project "${project.name}"?`)) return;
+    if (!window.confirm(t("projects.confirmDelete", { name: project.name }))) return;
     try {
       await deleteProject(project.id as string);
     } catch (err: any) {
-      setFormError(err.message ?? "Failed to delete project");
+      setFormError(err.message ?? t("projects.failedToDelete"));
     }
   };
 
@@ -129,7 +131,7 @@ const Projects: React.FC = () => {
     const due_date_raw = (formData.get("due_date") as string) || "";
 
     if (!name) {
-      setFormError("Project name is required.");
+      setFormError(t("projects.form.nameRequired"));
       return;
     }
 
@@ -164,7 +166,7 @@ const Projects: React.FC = () => {
       setFormOpen(false);
       setEditingProject(null);
     } catch (err: any) {
-      setFormError(err.message ?? "Failed to save project");
+      setFormError(err.message ?? t("projects.failedToSave"));
     } finally {
       setFormSubmitting(false);
     }
@@ -186,9 +188,11 @@ const Projects: React.FC = () => {
         <div className="p-6 mx-auto" style={{ maxWidth: "1600px" }}>
           <div className="flex items-center justify-between mb-6 gap-3">
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-semibold text-gray-900">Projects</h1>
+              <h1 className="text-2xl font-semibold text-gray-900">
+                {t("projects.title")}
+              </h1>
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase bg-amber-50 text-amber-700 border border-amber-200">
-                Upgrade
+                {t("projects.upgrade")}
               </span>
             </div>
           </div>
@@ -197,18 +201,18 @@ const Projects: React.FC = () => {
             <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5" strokeWidth={1.5} />
             <div className="text-sm text-gray-700 space-y-1">
               <p className="font-medium text-gray-900">
-                Projects are available on higher tiers.
+                {t("projects.projectsAvailableOnHigherTiers")}
               </p>
               <p className="text-xs text-gray-600">
-                Use projects to group related parts, RFQs and customers into one view.
+                {t("projects.projectsDescription")}{" "}
                 Go to{" "}
                 <Link
                   to="/app/settings/billing"
                   className="text-blue-600 hover:underline font-medium"
                 >
-                  Billing
+                  {t("billingSettings.title")}
                 </Link>{" "}
-                to upgrade and unlock project management for your team.
+                {t("projects.goToBillingToUpgrade")}
               </p>
             </div>
           </div>
@@ -222,13 +226,15 @@ const Projects: React.FC = () => {
     <div className="min-h-screen relative bg-gradient-to-br from-slate-50 via-white to-slate-50">
       <div className="p-6 mx-auto" style={{ maxWidth: "1600px" }}>
         <div className="flex items-center justify-between mb-6 gap-3">
-          <h1 className="text-2xl font-semibold text-gray-900">Projects</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            {t("projects.title")}
+          </h1>
           <button
             onClick={openCreateModal}
             className="ml-auto flex items-center gap-2 px-4 py-2 rounded-lg shadow-sm bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-all active:scale-[0.98]"
           >
             <Plus className="w-4 h-4" strokeWidth={1.5} />
-            New Project
+            {t("projects.newProject")}
           </button>
         </div>
 
@@ -248,7 +254,7 @@ const Projects: React.FC = () => {
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
             className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
           >
-            <option value="all">All Status</option>
+            <option value="all">{t("projects.allStatus")}</option>
             <option value="open">Open</option>
             <option value="in_progress">In progress</option>
             <option value="closed">Closed</option>
@@ -260,7 +266,7 @@ const Projects: React.FC = () => {
             onChange={(e) => setPriorityFilter(e.target.value as PriorityFilter)}
             className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
           >
-            <option value="all">All Priority</option>
+            <option value="all">{t("documents.allPriority")}</option>
             <option value="low">Low</option>
             <option value="normal">Normal</option>
             <option value="high">High</option>
@@ -271,7 +277,7 @@ const Projects: React.FC = () => {
             onClick={resetFilters}
             className="h-[38px] px-3 bg-gray-100 border border-gray-200 rounded-lg shadow-sm hover:bg-gray-200 text-xs text-gray-700"
           >
-            Reset filters
+            {t("documents.resetFilters")}
           </button>
         </div>
 
@@ -292,7 +298,7 @@ const Projects: React.FC = () => {
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 relative">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              {editingProject ? "Edit Project" : "New Project"}
+              {editingProject ? t("projects.form.titleEdit") : t("projects.form.titleCreate")}
             </h2>
 
             {formError && (
@@ -308,7 +314,7 @@ const Projects: React.FC = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Project name
+                  {t("projects.form.nameLabel")}
                 </label>
                 <input
                   name="name"
@@ -320,7 +326,7 @@ const Projects: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Description
+                  {t("projects.form.descriptionLabel")}
                 </label>
                 <textarea
                   name="description"
@@ -333,7 +339,7 @@ const Projects: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Customer
+                    {t("projects.form.customerLabel")}
                   </label>
                   <input
                     name="customer_name"
@@ -343,7 +349,7 @@ const Projects: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    External ref (RFQ / PO)
+                    {t("projects.form.externalRefLabel")}
                   </label>
                   <input
                     name="external_ref"
@@ -356,7 +362,7 @@ const Projects: React.FC = () => {
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Status
+                    {t("projects.form.statusLabel")}
                   </label>
                   <select
                     name="status"
@@ -372,7 +378,7 @@ const Projects: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Priority
+                    {t("projects.form.priorityLabel")}
                   </label>
                   <select
                     name="priority"
@@ -388,7 +394,7 @@ const Projects: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Due date
+                    {t("projects.form.dueDateLabel")}
                   </label>
                   <input
                     type="date"
@@ -415,7 +421,7 @@ const Projects: React.FC = () => {
                   className="px-4 py-2 text-xs rounded-lg border border-gray-300 bg-white hover:bg-gray-50"
                   disabled={formSubmitting}
                 >
-                  Cancel
+                  {t("projects.form.cancel")}
                 </button>
                 <button
                   type="submit"
@@ -423,10 +429,10 @@ const Projects: React.FC = () => {
                   className="px-4 py-2 text-xs rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium disabled:opacity-60"
                 >
                   {formSubmitting
-                    ? "Saving..."
+                    ? t("projects.form.saving")
                     : editingProject
-                    ? "Save changes"
-                    : "Create Project"}
+                    ? t("projects.form.saveChanges")
+                    : t("projects.form.create")}
                 </button>
               </div>
             </form>

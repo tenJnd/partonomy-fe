@@ -10,7 +10,7 @@ import {
     RefreshCw,
     Star,
     StarOff,
-    Trash2
+    Trash2,
 } from "lucide-react";
 import type {PartWithDocument} from "../../hooks/useParts";
 import type {PriorityEnum, WorkflowStatusEnum} from "../../lib/database.types";
@@ -23,6 +23,7 @@ import {
     PRIORITY_LABELS,
     STATUS_LABELS,
 } from "../../utils/tagsFormatting";
+import {useTranslation} from "react-i18next";
 
 export type SortField =
     | "file_name"
@@ -111,8 +112,9 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                            onBulkSetStatus,
                                                            onBulkSetPriority,
                                                            onBulkAddToProject,
-                                                           onAddToProject
+                                                           onAddToProject,
                                                        }) => {
+    const {t} = useTranslation();
     const [openMenuId, setOpenMenuId] = React.useState<string | null>(null);
 
     const selectionEnabled = !!selectedPartIds && !!onToggleSelect;
@@ -129,10 +131,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
         !!onToggleSelectAll &&
         (hasBulkStatus || hasBulkPriority || hasBulkFavorite || hasBulkProjects);
 
-    const partsIdsOnPage = React.useMemo(
-        () => parts.map((p) => p.id),
-        [parts]
-    );
+    const partsIdsOnPage = React.useMemo(() => parts.map((p) => p.id), [parts]);
 
     const selectedIdsOnPage: string[] = React.useMemo(() => {
         if (!selectionEnabled || !selectedPartIds) return [];
@@ -183,7 +182,9 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
         return (
             <div className="flex flex-col items-center justify-center py-20">
                 <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"/>
-                <p className="text-sm font-medium text-slate-600">Loading parts...</p>
+                <p className="text-sm font-medium text-slate-600">
+                    {t("documents.loadingParts")}
+                </p>
             </div>
         );
     }
@@ -194,17 +195,17 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                 className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border-2 border-dashed border-gray-300">
                 <FileText className="w-16 h-16 text-gray-300 mb-4" strokeWidth={1.5}/>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    No parts yet
+                    {t("documents.noPartsYet")}
                 </h3>
                 <p className="text-sm text-gray-600 mb-6">
-                    Upload your first technical drawing to start analyzing
+                    {t("documents.noPartsYetDescription")}
                 </p>
                 <button
                     onClick={onUploadClick}
                     className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-all"
                 >
                     <FileText className="w-4 h-4" strokeWidth={2}/>
-                    Upload Documents
+                    {t("documents.uploadDocuments")}
                 </button>
             </div>
         );
@@ -216,10 +217,8 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
             {selectionEnabled && selectedIdsOnPage.length > 0 && (
                 <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-slate-50">
           <span className="text-xs text-gray-700">
-            <span className="font-semibold">
-              {selectedIdsOnPage.length}
-            </span>{" "}
-              selected
+            <span className="font-semibold">{selectedIdsOnPage.length}</span>{" "}
+              {t("documents.bulk.selected")}
           </span>
 
                     <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -228,23 +227,19 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                             <div className="inline-flex rounded-md border border-gray-200 overflow-hidden text-xs">
                                 <button
                                     type="button"
-                                    onClick={() =>
-                                        onBulkToggleFavorite(selectedIdsOnPage, true)
-                                    }
+                                    onClick={() => onBulkToggleFavorite(selectedIdsOnPage, true)}
                                     className="px-2.5 py-1 inline-flex items-center gap-1 bg-white hover:bg-amber-50 text-amber-700"
                                 >
                                     <Star className="w-3.5 h-3.5" strokeWidth={1.5}/>
-                                    Fav
+                                    {t("documents.bulk.fav")}
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() =>
-                                        onBulkToggleFavorite(selectedIdsOnPage, false)
-                                    }
+                                    onClick={() => onBulkToggleFavorite(selectedIdsOnPage, false)}
                                     className="px-2.5 py-1 inline-flex items-center gap-1 bg-white hover:bg-gray-50 text-gray-600 border-l border-gray-200"
                                 >
                                     <StarOff className="w-3.5 h-3.5" strokeWidth={1.5}/>
-                                    Clear
+                                    {t("documents.bulk.clear")}
                                 </button>
                             </div>
                         )}
@@ -261,7 +256,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                 }}
                                 className="h-8 px-2 bg-white border border-gray-200 rounded-md text-xs shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none"
                             >
-                                <option value="">Set status…</option>
+                                <option value="">{t("documents.bulk.setStatus")}</option>
                                 {Object.entries(STATUS_LABELS).map(([value, label]) => (
                                     <option key={value} value={value}>
                                         {label}
@@ -282,7 +277,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                 }}
                                 className="h-8 px-2 bg-white border border-gray-200 rounded-md text-xs shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none"
                             >
-                                <option value="">Set priority…</option>
+                                <option value="">{t("documents.bulk.setPriority")}</option>
                                 {Object.entries(PRIORITY_LABELS).map(([value, label]) => (
                                     <option key={value} value={value}>
                                         {label}
@@ -298,7 +293,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                 onClick={() => onBulkAddToProject(selectedIdsOnPage)}
                                 className="h-8 px-3 inline-flex items-center rounded-md border border-gray-200 bg-white text-xs text-gray-700 hover:bg-gray-50 shadow-sm"
                             >
-                                Add to project
+                                {t("documents.bulk.addToProject")}
                             </button>
                         )}
                     </div>
@@ -333,6 +328,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                         <col style={{width: "48px"}}/>
                         {/* Actions */}
                     </colgroup>
+
                     <thead className="bg-slate-50 border-b border-gray-200">
                     <tr>
                         {/* header checkbox */}
@@ -366,68 +362,74 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                     </div>
                                 )}
                             </th>
-
                         )}
 
-                        <SortableHeader field="file_name">Document</SortableHeader>
-                        <SortableHeader field="primary_class">Class</SortableHeader>
-                        <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            Material
-                        </th>
-                        <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            Envelope
-                        </th>
-                        <SortableHeader field="overall_complexity">
-                            Complexity
+                        <SortableHeader field="file_name">
+                            {t("documents.columns.document")}
                         </SortableHeader>
-                        <SortableHeader field="fit_level">Fit</SortableHeader>
+
+                        <SortableHeader field="primary_class">
+                            {t("documents.columns.class")}
+                        </SortableHeader>
+
+                        <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            {t("documents.columns.material")}
+                        </th>
+
+                        <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            {t("documents.columns.envelope")}
+                        </th>
+
+                        <SortableHeader field="overall_complexity">
+                            {t("documents.columns.complexity")}
+                        </SortableHeader>
+
+                        <SortableHeader field="fit_level">
+                            {t("documents.columns.fit")}
+                        </SortableHeader>
 
                         <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                             <div className="flex items-center gap-1.5">
-                                Work Status
+                                {t("documents.columns.workStatus")}
                                 {!canSetStatus && (
-                                    <Lock
-                                        className="w-3.5 h-3.5 text-gray-400"
-                                        strokeWidth={1.5}
-                                    />
+                                    <Lock className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5}/>
                                 )}
                             </div>
                         </th>
+
                         <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                             <div className="flex items-center gap-1.5">
-                                Priority
+                                {t("documents.columns.priority")}
                                 {!canSetPriority && (
-                                    <Lock
-                                        className="w-3.5 h-3.5 text-gray-400"
-                                        strokeWidth={1.5}
-                                    />
+                                    <Lock className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5}/>
                                 )}
                             </div>
                         </th>
-                        <SortableHeader field="last_updated">Modified</SortableHeader>
-                        <SortableHeader field="last_status" className="text-center">
-                            Status
+
+                        <SortableHeader field="last_updated">
+                            {t("documents.columns.modified")}
                         </SortableHeader>
+
+                        <SortableHeader field="last_status" className="text-center">
+                            {t("documents.columns.status")}
+                        </SortableHeader>
+
                         <th className="px-3 py-3"/>
                     </tr>
                     </thead>
+
                     <tbody className="divide-y divide-gray-100">
                     {parts.map((part) => {
-                        const statusConfig = getStatusConfig(
-                            part.document?.last_status || null
-                        );
+                        const statusConfig = getStatusConfig(part.document?.last_status || null);
                         const StatusIcon = statusConfig.icon;
-                        const complexityConfig = getComplexityConfig(
-                            part.overall_complexity
-                        );
+                        const complexityConfig = getComplexityConfig(part.overall_complexity);
                         const fitConfig = getFitConfig(part.fit_level);
 
                         const isPlaceholder = part.isProcessingPlaceholder === true;
 
                         const isFavorite = favoritePartIds?.has(part.id) ?? false;
 
-                        const statusValue =
-                            (part.workflow_status as WorkflowStatus) ?? null;
+                        const statusValue = (part.workflow_status as WorkflowStatus) ?? null;
                         const priorityValue = (part.priority as Priority) ?? null;
 
                         const statusDisabled =
@@ -435,27 +437,23 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                             !canSetStatus ||
                             !onChangeWorkflowStatus ||
                             updatingStatusIds?.has(part.id);
+
                         const priorityDisabled =
                             isPlaceholder ||
                             !canSetPriority ||
                             !onChangePriority ||
                             updatingPriorityIds?.has(part.id);
 
-                        const favoriteDisabled =
-                            isPlaceholder || !canUseFavorite || !onToggleFavorite;
+                        const favoriteDisabled = isPlaceholder || !canUseFavorite || !onToggleFavorite;
 
                         return (
                             <tr
                                 key={part.id}
                                 onClick={() =>
-                                    !isPlaceholder &&
-                                    part.document &&
-                                    onRowClick(part.document.id, part.id)
+                                    !isPlaceholder && part.document && onRowClick(part.document.id, part.id)
                                 }
                                 className={`transition-colors ${
-                                    isPlaceholder
-                                        ? "bg-blue-50/30 cursor-default"
-                                        : "hover:bg-blue-50/50 cursor-pointer"
+                                    isPlaceholder ? "bg-blue-50/30 cursor-default" : "hover:bg-blue-50/50 cursor-pointer"
                                 }`}
                             >
                                 {/* row checkbox */}
@@ -475,7 +473,6 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                             }}
                                         />
                                     </td>
-
                                 )}
 
                                 {/* Document (favourite + file + page/company) */}
@@ -491,28 +488,18 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                             }}
                                             disabled={favoriteDisabled}
                                             className={`mt-0.5 inline-flex items-center justify-center w-7 h-7 rounded-full border text-xs transition
-                                            ${
+                          ${
                                                 isFavorite
                                                     ? "bg-amber-50 border-amber-300 text-amber-700"
                                                     : "bg-white border-gray-200 text-gray-400 hover:bg-gray-50"
                                             }
-                                            ${
-                                                !canUseFavorite
-                                                    ? "opacity-60 cursor-not-allowed"
-                                                    : ""
-                                            }
-                                        `}
+                          ${!canUseFavorite ? "opacity-60 cursor-not-allowed" : ""}
+                        `}
                                         >
                                             {isFavorite ? (
-                                                <Star
-                                                    className="w-3.5 h-3.5 fill-current"
-                                                    strokeWidth={1.5}
-                                                />
+                                                <Star className="w-3.5 h-3.5 fill-current" strokeWidth={1.5}/>
                                             ) : (
-                                                <StarOff
-                                                    className="w-3.5 h-3.5"
-                                                    strokeWidth={1.5}
-                                                />
+                                                <StarOff className="w-3.5 h-3.5" strokeWidth={1.5}/>
                                             )}
                                         </button>
 
@@ -523,29 +510,28 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                 }`}
                                             />
                                             <div className="flex flex-col min-w-0">
-                                              <span
-                                                  className={`text-sm font-medium truncate ${
-                                                      isPlaceholder ? "text-blue-900" : "text-gray-900"
-                                                  }`}
-                                              >
-                                                {part.document?.file_name || "Unknown"}
-                                              </span>
+                          <span
+                              className={`text-sm font-medium truncate ${
+                                  isPlaceholder ? "text-blue-900" : "text-gray-900"
+                              }`}
+                          >
+                            {part.document?.file_name || t("documents.unknown")}
+                          </span>
                                                 <span className="text-xs text-gray-500 truncate">
-                                                {isPlaceholder ? (
-                                                    <span className="italic">Processing…</span>
-                                                ) : (
-                                                    <>
-                                                        {part.page !== null ? (
-                                                            <>
-                                                                Page {part.page}
-                                                                {part.company_name && " • "}
-                                                            </>
-                                                        ) : null}
-                                                        {part.company_name ??
-                                                            (!part.page ? "—" : "")}
-                                                    </>
-                                                )}
-                                              </span>
+                            {isPlaceholder ? (
+                                <span className="italic">{t("documents.processing")}</span>
+                            ) : (
+                                <>
+                                    {part.page !== null ? (
+                                        <>
+                                            {t("documents.page", {page: part.page})}
+                                            {part.company_name && " • "}
+                                        </>
+                                    ) : null}
+                                    {part.company_name ?? (!part.page ? "—" : "")}
+                                </>
+                            )}
+                          </span>
                                             </div>
                                         </div>
                                     </div>
@@ -553,23 +539,23 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
 
                                 {/* Class */}
                                 <td className="px-3 py-3">
-                                    <span className="text-sm text-gray-500 truncate block">
-                                      {isPlaceholder ? "-" : part.primary_class || "-"}
-                                    </span>
+                    <span className="text-sm text-gray-500 truncate block">
+                      {isPlaceholder ? "-" : part.primary_class || "-"}
+                    </span>
                                 </td>
 
                                 {/* Material */}
                                 <td className="px-3 py-3">
-                                    <span className="text-sm text-gray-500 truncate block">
-                                      {isPlaceholder ? "-" : part.material || "-"}
-                                    </span>
+                    <span className="text-sm text-gray-500 truncate block">
+                      {isPlaceholder ? "-" : part.material || "-"}
+                    </span>
                                 </td>
 
                                 {/* Envelope */}
                                 <td className="px-3 py-3">
-                                    <span className="text-sm text-gray-500 truncate block">
-                                      {isPlaceholder ? "-" : part.envelope_text || "-"}
-                                    </span>
+                    <span className="text-sm text-gray-500 truncate block">
+                      {isPlaceholder ? "-" : part.envelope_text || "-"}
+                    </span>
                                 </td>
 
                                 {/* Complexity */}
@@ -580,8 +566,8 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                         <span
                                             className={`inline-flex items-center px-2 py-1 rounded text-xs border ${complexityConfig.className}`}
                                         >
-                                        {complexityConfig.label}
-                                      </span>
+                        {complexityConfig.label}
+                      </span>
                                     ) : (
                                         <span className="text-sm text-gray-400">-</span>
                                     )}
@@ -595,8 +581,8 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                         <span
                                             className={`inline-flex items-center px-2 py-1 rounded text-xs border ${fitConfig.className}`}
                                         >
-                                            {fitConfig.label}
-                                        </span>
+                        {fitConfig.label}
+                      </span>
                                     ) : (
                                         <span className="text-sm text-gray-400">-</span>
                                     )}
@@ -614,10 +600,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                             <select
                                                 value={statusValue ?? ""}
                                                 onChange={(e) =>
-                                                    onChangeWorkflowStatus(
-                                                        part,
-                                                        e.target.value as WorkflowStatusEnum
-                                                    )
+                                                    onChangeWorkflowStatus(part, e.target.value as WorkflowStatusEnum)
                                                 }
                                                 disabled={statusDisabled}
                                                 className={`pl-2 pr-7 h-8 w-full rounded-lg text-xs appearance-none bg-clip-padding border ${
@@ -626,14 +609,12 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                         : `${getStatusClasses(statusValue)} cursor-pointer`
                                                 }`}
                                             >
-                                                {!statusValue && <option value="">—</option>}
-                                                {Object.entries(STATUS_LABELS).map(
-                                                    ([value, label]) => (
-                                                        <option key={value} value={value}>
-                                                            {label}
-                                                        </option>
-                                                    )
-                                                )}
+                                                {!statusValue && <option value="">{t("common.dash")}</option>}
+                                                {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                                                    <option key={value} value={value}>
+                                                        {label}
+                                                    </option>
+                                                ))}
                                             </select>
 
                                             <ChevronDown
@@ -647,8 +628,8 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                 statusValue
                                             )}`}
                                         >
-                                            {STATUS_LABELS[statusValue as WorkflowStatusEnum]}
-                                        </span>
+                        {STATUS_LABELS[statusValue as WorkflowStatusEnum]}
+                      </span>
                                     ) : (
                                         <span className="text-xs text-gray-400">-</span>
                                     )}
@@ -665,12 +646,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                         >
                                             <select
                                                 value={priorityValue ?? ""}
-                                                onChange={(e) =>
-                                                    onChangePriority(
-                                                        part,
-                                                        e.target.value as PriorityEnum
-                                                    )
-                                                }
+                                                onChange={(e) => onChangePriority(part, e.target.value as PriorityEnum)}
                                                 disabled={priorityDisabled}
                                                 className={`pl-2 pr-7 h-8 w-full rounded-lg text-xs appearance-none bg-clip-padding border ${
                                                     priorityDisabled
@@ -678,14 +654,12 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                         : `${getPriorityClasses(priorityValue)} cursor-pointer`
                                                 }`}
                                             >
-                                                {!priorityValue && <option value="">—</option>}
-                                                {Object.entries(PRIORITY_LABELS).map(
-                                                    ([value, label]) => (
-                                                        <option key={value} value={value}>
-                                                            {label}
-                                                        </option>
-                                                    )
-                                                )}
+                                                {!priorityValue && <option value="">{t("common.dash")}</option>}
+                                                {Object.entries(PRIORITY_LABELS).map(([value, label]) => (
+                                                    <option key={value} value={value}>
+                                                        {label}
+                                                    </option>
+                                                ))}
                                             </select>
 
                                             <ChevronDown
@@ -699,8 +673,8 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                 priorityValue
                                             )}`}
                                         >
-                                        {PRIORITY_LABELS[priorityValue as PriorityEnum]}
-                                        </span>
+                        {PRIORITY_LABELS[priorityValue as PriorityEnum]}
+                      </span>
                                     ) : (
                                         <span className="text-xs text-gray-400">-</span>
                                     )}
@@ -708,13 +682,9 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
 
                                 {/* Modified */}
                                 <td className="px-3 py-3">
-                                    <span className="text-xs text-gray-500">
-                                      {isPlaceholder
-                                          ? "-"
-                                          : part.last_updated
-                                              ? formatDate(part.last_updated)
-                                              : "-"}
-                                    </span>
+                    <span className="text-xs text-gray-500">
+                      {isPlaceholder ? "-" : part.last_updated ? formatDate(part.last_updated) : "-"}
+                    </span>
                                 </td>
 
                                 {/* Doc processing status */}
@@ -736,16 +706,11 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    setOpenMenuId(
-                                                        openMenuId === part.id ? null : part.id
-                                                    );
+                                                    setOpenMenuId(openMenuId === part.id ? null : part.id);
                                                 }}
                                                 className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
                                             >
-                                                <MoreVertical
-                                                    className="w-4 h-4 text-gray-500"
-                                                    strokeWidth={1.5}
-                                                />
+                                                <MoreVertical className="w-4 h-4 text-gray-500" strokeWidth={1.5}/>
                                             </button>
 
                                             {openMenuId === part.id && part.document && (
@@ -759,12 +724,10 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                         }}
                                                         className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
                                                     >
-                                                        <RefreshCw
-                                                            className="w-4 h-4"
-                                                            strokeWidth={1.5}
-                                                        />
-                                                        Rerun
+                                                        <RefreshCw className="w-4 h-4" strokeWidth={1.5}/>
+                                                        {t("common.rerun")}
                                                     </button>
+
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
@@ -773,13 +736,11 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                         }}
                                                         className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
                                                     >
-                                                        <Download
-                                                            className="w-4 h-4"
-                                                            strokeWidth={1.5}
-                                                        />
-                                                        Download
+                                                        <Download className="w-4 h-4" strokeWidth={1.5}/>
+                                                        {t("common.download")}
                                                     </button>
-                                                    {/* ⬇️ NOVÉ – Add to project */}
+
+                                                    {/* ⬇️ Add to project */}
                                                     {canUseProjects && onAddToProject && (
                                                         <button
                                                             onClick={(e) => {
@@ -790,9 +751,10 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                             className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
                                                         >
                                                             <FolderPlus className="w-4 h-4" strokeWidth={1.5}/>
-                                                            Add to project
+                                                            {t("common.addToProject")}
                                                         </button>
                                                     )}
+
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
@@ -801,11 +763,8 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                         }}
                                                         className="flex items-center gap-2 px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 w-full text-left transition-colors"
                                                     >
-                                                        <Trash2
-                                                            className="w-4 h-4"
-                                                            strokeWidth={1.5}
-                                                        />
-                                                        Delete
+                                                        <Trash2 className="w-4 h-4" strokeWidth={1.5}/>
+                                                        {t("common.delete")}
                                                     </button>
                                                 </div>
                                             )}
