@@ -3,6 +3,7 @@ import React from "react";
 import {ChevronDown, Lock, Star, StarOff} from "lucide-react";
 import type {PriorityEnum, WorkflowStatusEnum} from "../lib/database.types";
 import {getPriorityClasses, getStatusClasses, PRIORITY_LABELS, STATUS_LABELS,} from "../utils/tagsFormatting.ts";
+import {useTranslation} from "react-i18next";
 
 type WorkflowStatus = WorkflowStatusEnum | null;
 type Priority = PriorityEnum | null;
@@ -38,6 +39,7 @@ export const PartActionsBar: React.FC<PartActionsBarProps> = ({
                                                                   onChangePriority,
                                                                   updatingPriority,
                                                               }) => {
+    const {t} = useTranslation();
     const statusDisabled = !partId || !canSetStatus || updatingStatus;
     const priorityDisabled = !partId || !canSetPriority || updatingPriority;
     const favoriteDisabled = !partId || !canUseFavorite || favoriteLoading;
@@ -69,7 +71,7 @@ export const PartActionsBar: React.FC<PartActionsBarProps> = ({
                 ) : (
                     <StarOff className="w-3.5 h-3.5" strokeWidth={1.5}/>
                 )}
-                <span>Favourite</span>
+                <span>{t('documents.bulk.fav')}</span>
                 {!canUseFavorite && (
                     <Lock className="w-3 h-3 ml-0.5 text-gray-400" strokeWidth={1.5}/>
                 )}
@@ -78,7 +80,7 @@ export const PartActionsBar: React.FC<PartActionsBarProps> = ({
             {/* Status */}
             <div className="flex flex-col gap-1 text-xs items-center">
   <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
-          Status
+          {t('documents.columns.status')}
         </span>
 
                 <div className="relative">
@@ -121,7 +123,7 @@ export const PartActionsBar: React.FC<PartActionsBarProps> = ({
             {/* Priority */}
             <div className="flex flex-col gap-1 text-xs items-center">
                   <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
-                          Priority
+                          {t('documents.columns.priority')}
                   </span>
 
                 <div className="relative">

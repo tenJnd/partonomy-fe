@@ -136,7 +136,7 @@
     "page": "Page {{page}}",
     "bulk": {
       "selected": "selected",
-      "fav": "Fav",
+      "fav": "Favorite",
       "clear": "Clear",
       "setStatus": "Set status…",
       "setPriority": "Set priority…",
@@ -153,6 +153,153 @@
       "priority": "Priority",
       "modified": "Modified",
       "status": "Status"
+    },
+    "detail": {
+      "errors": {
+        "failedToLoad": "Failed to load document"
+      },
+      "documentNotFound": {
+        "title": "Document Not Found",
+        "description": "The document you're looking for doesn't exist."
+      },
+      "backToDocuments": "Back to Documents",
+      "partsDetected": "{{count}} part detected",
+      "partsDetected_other": "{{count}} parts detected",
+      "partRenderTitle": "Part Render",
+      "export": "Export",
+      "exportToXlsx": "Export to XLSX",
+      "exportToTxt": "Export to TXT",
+      "exportToJson": "Export to JSON",
+      "part": "Part",
+      "noRenderAvailable": "No render available",
+      "noRenderForPart": "No render available for this part",
+      "selectPartToView": "Select a part to view its render",
+      "noAnalysisData": "No analysis data available",
+      "upgrade": "Upgrade",
+      "billing": "Billing",
+      "actions": {
+        "zoomOut": "Zoom out",
+        "zoomIn": "Zoom in",
+        "resetZoom": "Reset zoom",
+        "fullscreen": "Fullscreen",
+        "exitFullscreen": "Exit fullscreen",
+        "previousPart": "Previous part",
+        "nextPart": "Next part"
+      },
+      "alts": {
+        "partRender": "Part render"
+      },
+      "tabs": {
+        "report": "Report",
+        "bom": "Bill of Materials",
+        "revisions": "Revision History",
+        "comments": "Comments"
+      },
+      "bom": {
+        "headers": {
+          "partNumber": "Part number",
+          "qty": "Qty",
+          "unit": "Unit",
+          "material": "Material",
+          "weight": "Weight",
+          "std": "Std"
+        },
+        "parsedFromDrawing": "Parsed from drawing BOM",
+        "noData": "No BOM data found in this report."
+      },
+      "revisions": {
+        "headers": {
+          "date": "Date",
+          "author": "Author",
+          "rev": "Rev",
+          "description": "Description"
+        },
+        "parsedFromDrawing": "Parsed from drawing revision block",
+        "noData": "No revision history found in this report."
+      },
+      "comments": {
+        "title": "Comments",
+        "lockedPrefix": "Team comments are available on paid collaboration plans. Go to",
+        "lockedSuffix": "to upgrade and unlock comments for your team.",
+        "loading": "Loading comments…",
+        "empty": "No comments for this part yet.",
+        "userFallback": "User",
+        "addLabel": "Add comment",
+        "placeholder": "Write a note for your team…",
+        "addButton": "Add comment"
+      },
+      "report": {
+        "summary": "Summary",
+        "complexity": "Complexity",
+        "riskLevel": "Risk Level",
+        "highlights": "Highlights",
+        "shopAlignment": "Shop Alignment",
+        "fit": "Fit",
+        "fillOrgProfileNote": "Note: Fill your organization profile in Settings to get a personalized fit recommendation for your shop."
+      },
+      "sections": {
+        "costDrivers": "Cost Drivers",
+        "quoteCentric": "(Quote Centric)",
+        "processingHints": "Processing Hints",
+        "criticalPoints": "Critical Points",
+        "productionCentric": "(Production Centric)",
+        "keyRisksOpportunities": "Key Risks & Opportunities",
+        "risks": "Risks",
+        "opportunities": "Opportunities",
+        "internalNotes": "Internal Notes"
+      },
+      "processing": {
+        "routingSteps": "Routing Steps",
+        "machineCapability": "Machine Capability",
+        "inspectionFocus": "Inspection Focus"
+      },
+      "drawingInfo": {
+        "title": "Drawing Information",
+        "drawingNumber": "Drawing Number",
+        "titleLabel": "Title",
+        "partNumber": "Part Number",
+        "revision": "Revision",
+        "date": "Date",
+        "revisionDate": "Revision Date",
+        "scale": "Scale",
+        "units": "Units",
+        "author": "Author",
+        "checker": "Checker",
+        "approver": "Approver",
+        "sheet": "Sheet",
+        "of": "of",
+        "projectionType": "Projection Type",
+        "company": "Company",
+        "project": "Project"
+      },
+      "material": {
+        "title": "Material",
+        "labels": {
+          "material": "Material",
+          "note": "Note",
+          "weight": "Weight",
+          "confidence": "Confidence"
+        }
+      },
+      "blankDimensions": {
+        "title": "Blank Dimensions",
+        "labels": {
+          "dimensions": "Dimensions",
+          "note": "Note",
+          "unit": "Unit",
+          "source": "Source",
+          "confidence": "Confidence"
+        }
+      },
+      "tags": {
+        "title": "Tags",
+        "lockedPrefix": "Tags are available on collaboration plans. Go to",
+        "lockedSuffix": "to upgrade and organize parts with tags.",
+        "loading": "Loading tags…",
+        "empty": "No tags yet. Add your first one below.",
+        "placeholder": "Add tag (e.g. RFQ, Priority A)",
+        "add": "Add"
+      }
     }
   },
   "projects": {

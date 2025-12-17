@@ -153,6 +153,153 @@
       "priority": "Priorita",
       "modified": "Upraveno",
       "status": "Stav"
+    },
+    "detail": {
+      "errors": {
+        "failedToLoad": "Nepodařilo se načíst dokument"
+      },
+      "documentNotFound": {
+        "title": "Dokument nebyl nalezen",
+        "description": "Dokument, který hledáte, neexistuje."
+      },
+      "backToDocuments": "Zpět na dokumenty",
+      "partsDetected": "Detekován {{count}} díl",
+      "partsDetected_other": "Detekováno {{count}} dílů",
+      "partRenderTitle": "Náhled dílu",
+      "export": "Export",
+      "exportToXlsx": "Export do XLSX",
+      "exportToTxt": "Export do TXT",
+      "exportToJson": "Export do JSON",
+      "part": "Díl",
+      "noRenderAvailable": "Render není k dispozici",
+      "noRenderForPart": "Pro tento díl není render k dispozici",
+      "selectPartToView": "Vyberte díl pro zobrazení renderu",
+      "noAnalysisData": "Nejsou k dispozici žádná analytická data",
+      "upgrade": "Upgrade",
+      "billing": "Fakturace",
+      "actions": {
+        "zoomOut": "Oddálit",
+        "zoomIn": "Přiblížit",
+        "resetZoom": "Reset zoomu",
+        "fullscreen": "Celá obrazovka",
+        "exitFullscreen": "Ukončit celou obrazovku",
+        "previousPart": "Předchozí díl",
+        "nextPart": "Další díl"
+      },
+      "alts": {
+        "partRender": "Render dílu"
+      },
+      "tabs": {
+        "report": "Report",
+        "bom": "Kusovník",
+        "revisions": "Historie revizí",
+        "comments": "Komentáře"
+      },
+      "bom": {
+        "headers": {
+          "partNumber": "Číslo dílu",
+          "qty": "Množství",
+          "unit": "Jednotka",
+          "material": "Materiál",
+          "weight": "Hmotnost",
+          "std": "Norma"
+        },
+        "parsedFromDrawing": "Parsováno z kusovníku ve výkresu",
+        "noData": "V tomto reportu nebyla nalezena data kusovníku."
+      },
+      "revisions": {
+        "headers": {
+          "date": "Datum",
+          "author": "Autor",
+          "rev": "Rev",
+          "description": "Popis"
+        },
+        "parsedFromDrawing": "Parsováno z revizního bloku ve výkresu",
+        "noData": "V tomto reportu nebyla nalezena historie revizí."
+      },
+      "comments": {
+        "title": "Komentáře",
+        "lockedPrefix": "Týmové komentáře jsou dostupné v placených kolaboračních plánech. Přejděte do",
+        "lockedSuffix": "a upgradujte pro odemčení komentářů pro váš tým.",
+        "loading": "Načítám komentáře…",
+        "empty": "Zatím žádné komentáře k tomuto dílu.",
+        "userFallback": "Uživatel",
+        "addLabel": "Přidat komentář",
+        "placeholder": "Napište poznámku pro tým…",
+        "addButton": "Přidat komentář"
+      },
+      "report": {
+        "summary": "Souhrn",
+        "complexity": "Komplexita",
+        "riskLevel": "Úroveň rizika",
+        "highlights": "Hlavní body",
+        "shopAlignment": "Vhodnost pro výrobu",
+        "fit": "Shoda",
+        "fillOrgProfileNote": "Poznámka: Vyplňte profil organizace v Nastavení, abyste získali personalizované doporučení pro vaši výrobu."
+      },
+      "sections": {
+        "costDrivers": "Nákladové faktory",
+        "quoteCentric": "(Cenová nabídka)",
+        "processingHints": "Výrobní doporučení",
+        "criticalPoints": "Kritické body",
+        "productionCentric": "(Výroba)",
+        "keyRisksOpportunities": "Klíčová rizika a příležitosti",
+        "risks": "Rizika",
+        "opportunities": "Příležitosti",
+        "internalNotes": "Interní poznámky"
+      },
+      "processing": {
+        "routingSteps": "Postup operací",
+        "machineCapability": "Schopnosti strojů",
+        "inspectionFocus": "Kontrola kvality"
+      },
+      "drawingInfo": {
+        "title": "Informace o výkresu",
+        "drawingNumber": "Číslo výkresu",
+        "titleLabel": "Název",
+        "partNumber": "Číslo dílu",
+        "revision": "Revize",
+        "date": "Datum",
+        "revisionDate": "Datum revize",
+        "scale": "Měřítko",
+        "units": "Jednotky",
+        "author": "Autor",
+        "checker": "Kontrolor",
+        "approver": "Schválil",
+        "sheet": "List",
+        "of": "z",
+        "projectionType": "Typ promítání",
+        "company": "Společnost",
+        "project": "Projekt"
+      },
+      "material": {
+        "title": "Materiál",
+        "labels": {
+          "material": "Materiál",
+          "note": "Poznámka",
+          "weight": "Hmotnost",
+          "confidence": "Jistota"
+        }
+      },
+      "blankDimensions": {
+        "title": "Rozměry polotovaru",
+        "labels": {
+          "dimensions": "Rozměry",
+          "note": "Poznámka",
+          "unit": "Jednotka",
+          "source": "Zdroj",
+          "confidence": "Jistota"
+        }
+      },
+      "tags": {
+        "title": "Tagy",
+        "lockedPrefix": "Tagy jsou dostupné v kolaboračních plánech. Přejděte do",
+        "lockedSuffix": "a upgradujte pro možnost organizovat díly pomocí tagů.",
+        "loading": "Načítám tagy…",
+        "empty": "Zatím žádné tagy. Přidejte první níže.",
+        "placeholder": "Přidat tag (např. RFQ, Priorita A)",
+        "add": "Přidat"
+      }
     }
   },
   "projects": {

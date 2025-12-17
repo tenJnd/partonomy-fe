@@ -153,6 +153,153 @@
       "priority": "Priorität",
       "modified": "Geändert",
       "status": "Status"
+    },
+    "detail": {
+      "errors": {
+        "failedToLoad": "Dokument konnte nicht geladen werden"
+      },
+      "documentNotFound": {
+        "title": "Dokument nicht gefunden",
+        "description": "Das gesuchte Dokument existiert nicht."
+      },
+      "backToDocuments": "Zurück zu Dokumenten",
+      "partsDetected": "{{count}} Teil erkannt",
+      "partsDetected_other": "{{count}} Teile erkannt",
+      "partRenderTitle": "Teilerender",
+      "export": "Export",
+      "exportToXlsx": "Export als XLSX",
+      "exportToTxt": "Export als TXT",
+      "exportToJson": "Export als JSON",
+      "part": "Teil",
+      "noRenderAvailable": "Kein Render verfügbar",
+      "noRenderForPart": "Für dieses Teil ist kein Render verfügbar",
+      "selectPartToView": "Wähle ein Teil aus, um den Render anzuzeigen",
+      "noAnalysisData": "Keine Analysedaten verfügbar",
+      "upgrade": "Upgrade",
+      "billing": "Abrechnung",
+      "actions": {
+        "zoomOut": "Herauszoomen",
+        "zoomIn": "Hereinzoomen",
+        "resetZoom": "Zoom zurücksetzen",
+        "fullscreen": "Vollbild",
+        "exitFullscreen": "Vollbild beenden",
+        "previousPart": "Vorheriges Teil",
+        "nextPart": "Nächstes Teil"
+      },
+      "alts": {
+        "partRender": "Teilerender"
+      },
+      "tabs": {
+        "report": "Report",
+        "bom": "Stückliste",
+        "revisions": "Revisionsverlauf",
+        "comments": "Kommentare"
+      },
+      "bom": {
+        "headers": {
+          "partNumber": "Teilenummer",
+          "qty": "Menge",
+          "unit": "Einheit",
+          "material": "Material",
+          "weight": "Gewicht",
+          "std": "Norm"
+        },
+        "parsedFromDrawing": "Aus der Stückliste im Zeichnungs-BOM geparst",
+        "noData": "Keine BOM-Daten in diesem Report gefunden."
+      },
+      "revisions": {
+        "headers": {
+          "date": "Datum",
+          "author": "Autor",
+          "rev": "Rev",
+          "description": "Beschreibung"
+        },
+        "parsedFromDrawing": "Aus dem Revisionsblock der Zeichnung geparst",
+        "noData": "Kein Revisionsverlauf in diesem Report gefunden."
+      },
+      "comments": {
+        "title": "Kommentare",
+        "lockedPrefix": "Team-Kommentare sind in kostenpflichtigen Kollaborationsplänen verfügbar. Gehe zu",
+        "lockedSuffix": "um upzugraden und Kommentare für dein Team freizuschalten.",
+        "loading": "Kommentare werden geladen…",
+        "empty": "Noch keine Kommentare zu diesem Teil.",
+        "userFallback": "Benutzer",
+        "addLabel": "Kommentar hinzufügen",
+        "placeholder": "Schreibe eine Notiz für dein Team…",
+        "addButton": "Kommentar hinzufügen"
+      },
+      "report": {
+        "summary": "Zusammenfassung",
+        "complexity": "Komplexität",
+        "riskLevel": "Risikostufe",
+        "highlights": "Highlights",
+        "shopAlignment": "Shop-Ausrichtung",
+        "fit": "Passung",
+        "fillOrgProfileNote": "Hinweis: Fülle dein Organisationsprofil in den Einstellungen aus, um eine personalisierte Passungsempfehlung zu erhalten."
+      },
+      "sections": {
+        "costDrivers": "Kostenfaktoren",
+        "quoteCentric": "(Angebotsfokussiert)",
+        "processingHints": "Fertigungshinweise",
+        "criticalPoints": "Kritische Punkte",
+        "productionCentric": "(Produktionsfokussiert)",
+        "keyRisksOpportunities": "Wichtige Risiken & Chancen",
+        "risks": "Risiken",
+        "opportunities": "Chancen",
+        "internalNotes": "Interne Notizen"
+      },
+      "processing": {
+        "routingSteps": "Arbeitsfolge",
+        "machineCapability": "Maschinenfähigkeit",
+        "inspectionFocus": "Prüffokus"
+      },
+      "drawingInfo": {
+        "title": "Zeichnungsinformationen",
+        "drawingNumber": "Zeichnungsnummer",
+        "titleLabel": "Titel",
+        "partNumber": "Teilenummer",
+        "revision": "Revision",
+        "date": "Datum",
+        "revisionDate": "Revisionsdatum",
+        "scale": "Maßstab",
+        "units": "Einheiten",
+        "author": "Autor",
+        "checker": "Prüfer",
+        "approver": "Freigeber",
+        "sheet": "Blatt",
+        "of": "von",
+        "projectionType": "Projektionsart",
+        "company": "Firma",
+        "project": "Projekt"
+      },
+      "material": {
+        "title": "Material",
+        "labels": {
+          "material": "Material",
+          "note": "Hinweis",
+          "weight": "Gewicht",
+          "confidence": "Konfidenz"
+        }
+      },
+      "blankDimensions": {
+        "title": "Rohteilabmessungen",
+        "labels": {
+          "dimensions": "Abmessungen",
+          "note": "Hinweis",
+          "unit": "Einheit",
+          "source": "Quelle",
+          "confidence": "Konfidenz"
+        }
+      },
+      "tags": {
+        "title": "Tags",
+        "lockedPrefix": "Tags sind in Kollaborationsplänen verfügbar. Gehe zu",
+        "lockedSuffix": "um upzugraden und Teile mit Tags zu organisieren.",
+        "loading": "Tags werden geladen…",
+        "empty": "Noch keine Tags. Füge unten dein erstes hinzu.",
+        "placeholder": "Tag hinzufügen (z. B. RFQ, Priorität A)",
+        "add": "Hinzufügen"
+      }
     }
   },
   "projects": {

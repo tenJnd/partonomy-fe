@@ -28,12 +28,16 @@ import {usePartTags} from "../hooks/usePartTags";
 import {useOrgBilling} from "../hooks/useOrgBilling";
 import {usePartFavorite} from "../hooks/usePartFavorite";
 import {PartActionsBar} from "../components/PartActionsBar";
+import {useTranslation} from "react-i18next";
+import {useLang} from "../hooks/useLang.ts";
 
 
 type Document = Database['public']['Tables']['documents']['Row'];
 type Part = Database['public']['Tables']['parts']['Row'];
 
 const DocumentDetail: React.FC = () => {
+    const {t} = useTranslation();
+    const lang = useLang();
     const {documentId} = useParams<{ documentId: string }>();
     const [searchParams] = useSearchParams();
     const partIdFromUrl = searchParams.get('partId');
@@ -133,14 +137,14 @@ const DocumentDetail: React.FC = () => {
                     }
                 }
             } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to load document');
+                setError(err instanceof Error ? err.message : t('documents.detail.errors.failedToLoad'));
             } finally {
                 setLoading(false);
             }
         };
 
         fetchData();
-    }, [documentId, currentOrg, partIdFromUrl]);
+    }, [documentId, currentOrg, partIdFromUrl, t]);
 
     // Fetch part render URL when selected part changes
     useEffect(() => {
@@ -381,16 +385,16 @@ const DocumentDetail: React.FC = () => {
                 <div className="flex items-center justify-center min-h-[60vh]">
                     <div className="text-center">
                         <AlertCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" strokeWidth={1.5}/>
-                        <h2 className="text-xl font-semibold text-gray-900 mb-2">Document Not Found</h2>
+                        <h2 className="text-xl font-semibold text-gray-900 mb-2">{t('documents.detail.documentNotFound.title')}</h2>
                         <p className="text-sm text-gray-500 mb-4">
-                            {error || "The document you're looking for doesn't exist."}
+                            {error || t('documents.detail.documentNotFound.description')}
                         </p>
                         <Link
-                            to="/app/Documents"
+                            to={`/${lang}/app/Documents`}
                             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
                         >
                             <ArrowLeft className="w-4 h-4" strokeWidth={1.5}/>
-                            Back to Documents
+                            {t('documents.detail.backToDocuments')}
                         </Link>
                     </div>
                 </div>
@@ -431,7 +435,7 @@ const DocumentDetail: React.FC = () => {
                 <div className="flex items-center justify-between p-4 bg-black/50">
                     <div className="flex items-center gap-4">
                         <h2 className="text-lg font-semibold text-white">
-                            {selectedPart?.display_name || selectedPart?.part_number || 'Part Render'}
+                            {selectedPart?.display_name || selectedPart?.part_number || t('documents.detail.partRenderTitle')}
                         </h2>
                     </div>
                     <div className="flex items-center gap-2">
@@ -439,7 +443,7 @@ const DocumentDetail: React.FC = () => {
                             onClick={handleZoomOut}
                             disabled={zoom <= 25}
                             className="p-2 bg-white/10 hover:bg-white/20 disabled:bg-white/5 disabled:text-white/30 text-white rounded-lg transition-colors"
-                            title="Zoom out"
+                            title={t('documents.detail.actions.zoomOut')}
                         >
                             <ZoomOut className="w-5 h-5" strokeWidth={1.5}/>
                         </button>
@@ -450,14 +454,14 @@ const DocumentDetail: React.FC = () => {
                             onClick={handleZoomIn}
                             disabled={zoom >= 500}
                             className="p-2 bg-white/10 hover:bg-white/20 disabled:bg-white/5 disabled:text-white/30 text-white rounded-lg transition-colors"
-                            title="Zoom in"
+                            title={t('documents.detail.actions.zoomIn')}
                         >
                             <ZoomIn className="w-5 h-5" strokeWidth={1.5}/>
                         </button>
                         <button
                             onClick={handleResetZoom}
                             className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
-                            title="Reset zoom"
+                            title={t('documents.detail.actions.resetZoom')}
                         >
                             <RotateCw className="w-5 h-5" strokeWidth={1.5}/>
                         </button>
@@ -465,7 +469,7 @@ const DocumentDetail: React.FC = () => {
                         <button
                             onClick={toggleFullscreen}
                             className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
-                            title="Exit fullscreen"
+                            title={t('documents.detail.actions.exitFullscreen')}
                         >
                             <Minimize2 className="w-5 h-5" strokeWidth={1.5}/>
                         </button>
@@ -488,7 +492,7 @@ const DocumentDetail: React.FC = () => {
                             <img
                                 ref={imageRef}
                                 src={partRenderUrl}
-                                alt="Part render"
+                                alt={t('documents.detail.alts.partRender')}
                                 style={{
                                     maxWidth: '100%',
                                     maxHeight: '100%',
@@ -502,7 +506,7 @@ const DocumentDetail: React.FC = () => {
                         </div>
                     ) : (
                         <div className="w-full h-full flex items-center justify-center text-white">
-                            <p>No render available</p>
+                            <p>{t('documents.detail.noRenderAvailable')}</p>
                         </div>
                     )}
                 </div>
@@ -518,7 +522,7 @@ const DocumentDetail: React.FC = () => {
             <div className="flex items-center justify-between gap-4 mb-4">
                 <div className="flex items-center gap-4">
                     <Link
-                        to="/app/Documents"
+                        to={`/${lang}/app/Documents`}
                         className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
                     >
                         <ArrowLeft
@@ -529,7 +533,7 @@ const DocumentDetail: React.FC = () => {
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">{document.file_name}</h1>
                         <p className="text-sm text-gray-600">
-                            {parts.length} {parts.length === 1 ? 'part' : 'parts'} detected
+                            {t('documents.detail.partsDetected', {count: parts.length})}
                         </p>
                     </div>
                 </div>
@@ -569,7 +573,7 @@ const DocumentDetail: React.FC = () => {
                                     className="inline-flex items-center gap-2 px-4 h-9 text-sm font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 shadow-sm transition-colors"
                                 >
                                     <Download className="w-4 h-4" strokeWidth={2}/>
-                                    <span>Export</span>
+                                    <span>{t('documents.detail.export')}</span>
                                     <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2}/>
                                 </button>
 
@@ -589,7 +593,7 @@ const DocumentDetail: React.FC = () => {
                                             }}
                                             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
                                         >
-                                            Export to XLSX
+                                            {t('documents.detail.exportToXlsx')}
                                         </button>
 
                                         <button
@@ -605,7 +609,7 @@ const DocumentDetail: React.FC = () => {
                                             }}
                                             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
                                         >
-                                            Export to TXT
+                                            {t('documents.detail.exportToTxt')}
                                         </button>
 
                                         <button
@@ -621,7 +625,7 @@ const DocumentDetail: React.FC = () => {
                                             }}
                                             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
                                         >
-                                            Export to JSON
+                                            {t('documents.detail.exportToJson')}
                                         </button>
                                     </div>
                                 )}
@@ -641,13 +645,13 @@ const DocumentDetail: React.FC = () => {
                             onClick={handlePrevPartClick}
                             disabled={!hasPrevPart}
                             className="p-1 disabled:opacity-30 hover:text-gray-800 transition"
-                            title="Previous part"
+                            title={t('documents.detail.actions.previousPart')}
                         >
                             <ChevronLeft className="w-4 h-4" strokeWidth={2}/>
                         </button>
 
                         <span className="font-medium text-gray-900">
-                          {selectedPart.display_name || selectedPart.part_number || 'Part'}
+                          {selectedPart.display_name || selectedPart.part_number || t('documents.detail.part')}
                         </span>
 
                         <button
@@ -655,7 +659,7 @@ const DocumentDetail: React.FC = () => {
                             onClick={handleNextPartClick}
                             disabled={!hasNextPart}
                             className="p-1 disabled:opacity-30 hover:text-gray-800 transition"
-                            title="Next part"
+                            title={t('documents.detail.actions.nextPart')}
                         >
                             <ChevronRight className="w-4 h-4" strokeWidth={2}/>
                         </button>
@@ -683,7 +687,7 @@ const DocumentDetail: React.FC = () => {
                                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
                             >
-                                Report
+                                {t('documents.detail.tabs.report')}
                             </button>
 
                             <button
@@ -694,7 +698,7 @@ const DocumentDetail: React.FC = () => {
                                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
                             >
-                                Bill of Materials
+                                {t('documents.detail.tabs.bom')}
                             </button>
 
                             <button
@@ -705,7 +709,7 @@ const DocumentDetail: React.FC = () => {
                                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
                             >
-                                Revision History
+                                {t('documents.detail.tabs.revisions')}
                             </button>
                             <button
                                 onClick={() => setActiveReportTab("comments")}
@@ -719,7 +723,7 @@ const DocumentDetail: React.FC = () => {
                                             : "border-transparent text-gray-400 hover:text-gray-500 hover:border-gray-200"
                                 }`}
                             >
-                                Comments
+                                {t('documents.detail.tabs.comments')}
                             </button>
 
                         </div>
@@ -750,13 +754,13 @@ const DocumentDetail: React.FC = () => {
                                                 <table className="min-w-full text-xs">
                                                     <thead className="bg-slate-50">
                                                     <tr className="text-left text-[11px] uppercase tracking-wider text-gray-500">
-                                                        <th className="px-3 py-2 border-b border-gray-200">Part number
+                                                        <th className="px-3 py-2 border-b border-gray-200">{t('documents.detail.bom.headers.partNumber')}
                                                         </th>
-                                                        <th className="px-3 py-2 border-b border-gray-200">Qty</th>
-                                                        <th className="px-3 py-2 border-b border-gray-200">Unit</th>
-                                                        <th className="px-3 py-2 border-b border-gray-200">Material</th>
-                                                        <th className="px-3 py-2 border-b border-gray-200">Weight</th>
-                                                        <th className="px-3 py-2 border-b border-gray-200">Std</th>
+                                                        <th className="px-3 py-2 border-b border-gray-200">{t('documents.detail.bom.headers.qty')}</th>
+                                                        <th className="px-3 py-2 border-b border-gray-200">{t('documents.detail.bom.headers.unit')}</th>
+                                                        <th className="px-3 py-2 border-b border-gray-200">{t('documents.detail.bom.headers.material')}</th>
+                                                        <th className="px-3 py-2 border-b border-gray-200">{t('documents.detail.bom.headers.weight')}</th>
+                                                        <th className="px-3 py-2 border-b border-gray-200">{t('documents.detail.bom.headers.std')}</th>
                                                     </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-gray-100">
@@ -788,13 +792,13 @@ const DocumentDetail: React.FC = () => {
                                             </div>
                                             <div
                                                 className="px-3 py-2 text-[11px] text-gray-500 border-t border-gray-100">
-                                                Parsed from drawing BOM
+                                                {t('documents.detail.bom.parsedFromDrawing')}
                                             </div>
                                         </div>
                                     ) : (
                                         <div
                                             className="text-center py-8 text-sm text-gray-500 border border-dashed border-gray-200 rounded-lg">
-                                            No BOM data found in this report.
+                                            {t('documents.detail.bom.noData')}
                                         </div>
                                     )}
                                 </div>
@@ -812,10 +816,10 @@ const DocumentDetail: React.FC = () => {
                                                 <table className="min-w-full text-xs">
                                                     <thead className="bg-slate-50">
                                                     <tr className="text-left text-[11px] uppercase tracking-wider text-gray-500">
-                                                        <th className="px-3 py-2 border-b border-gray-200">Date</th>
-                                                        <th className="px-3 py-2 border-b border-gray-200">Author</th>
-                                                        <th className="px-3 py-2 border-b border-gray-200">Rev</th>
-                                                        <th className="px-3 py-2 border-b border-gray-200">Description</th>
+                                                        <th className="px-3 py-2 border-b border-gray-200">{t('documents.detail.revisions.headers.date')}</th>
+                                                        <th className="px-3 py-2 border-b border-gray-200">{t('documents.detail.revisions.headers.author')}</th>
+                                                        <th className="px-3 py-2 border-b border-gray-200">{t('documents.detail.revisions.headers.rev')}</th>
+                                                        <th className="px-3 py-2 border-b border-gray-200">{t('documents.detail.revisions.headers.description')}</th>
                                                     </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-gray-100">
@@ -840,13 +844,13 @@ const DocumentDetail: React.FC = () => {
                                             </div>
                                             <div
                                                 className="px-3 py-2 text-[11px] text-gray-500 border-t border-gray-100">
-                                                Parsed from drawing revision block
+                                                {t('documents.detail.revisions.parsedFromDrawing')}
                                             </div>
                                         </div>
                                     ) : (
                                         <div
                                             className="text-center py-8 text-sm text-gray-500 border border-dashed border-gray-200 rounded-lg">
-                                            No revision history found in this report.
+                                            {t('documents.detail.revisions.noData')}
                                         </div>
                                     )}
                                 </div>
@@ -860,24 +864,24 @@ const DocumentDetail: React.FC = () => {
                                 return (
                                     <div className="flex flex-col gap-4">
                                         <div className="flex items-center justify-between">
-                                            <h3 className="text-sm font-semibold text-gray-900">Comments</h3>
+                                            <h3 className="text-sm font-semibold text-gray-900">{t('documents.detail.comments.title')}</h3>
                                             <span
                                                 className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase bg-amber-50 text-amber-700 border border-amber-200">
-                                                Upgrade
+                                                {t('documents.detail.upgrade')}
                                             </span>
                                         </div>
 
                                         <div
                                             className="text-xs text-gray-600 bg-gray-50 border border-dashed border-gray-200 rounded-lg px-3 py-3">
-                                            Team comments are available on paid collaboration plans.
-                                            Go to{" "}
+                                            {t('documents.detail.comments.lockedPrefix')}
+                                            {" "}
                                             <Link
                                                 to="/Settings/Billing"
                                                 className="text-blue-600 hover:underline font-medium"
                                             >
-                                                Billing
+                                                {t('documents.detail.billing')}
                                             </Link>{" "}
-                                            to upgrade and unlock comments for your team.
+                                            {t('documents.detail.comments.lockedSuffix')}
                                         </div>
                                     </div>
                                 );
@@ -901,12 +905,12 @@ const DocumentDetail: React.FC = () => {
                                             <div
                                                 className="flex items-center justify-center py-8 text-gray-500 text-sm">
                                                 <Loader className="w-4 h-4 mr-2 animate-spin" strokeWidth={1.5}/>
-                                                Loading comments…
+                                                {t('documents.detail.comments.loading')}
                                             </div>
                                         ) : comments.length === 0 ? (
                                             <div
                                                 className="flex items-center justify-center py-8 text-gray-400 text-sm">
-                                                No comments for this part yet.
+                                                {t('documents.detail.comments.empty')}
                                             </div>
                                         ) : (
                                             <ul className="divide-y divide-gray-100">
@@ -916,7 +920,7 @@ const DocumentDetail: React.FC = () => {
                                                             <div>
                                                                 <div className="flex items-center gap-2 mb-1">
                                                                       <span className="font-medium text-gray-900">
-                                                                        {c.author_name || "User"}
+                                                                        {c.author_name || t('documents.detail.comments.userFallback')}
                                                                       </span>
                                                                     {c.created_at && (
                                                                         <span className="text-[11px] text-gray-500">
@@ -944,14 +948,14 @@ const DocumentDetail: React.FC = () => {
                                         className="space-y-2"
                                     >
                                         <label className="text-xs font-medium text-gray-700">
-                                            Add comment
+                                            {t('documents.detail.comments.addLabel')}
                                         </label>
                                         <textarea
                                             value={newComment}
                                             onChange={(e) => setNewComment(e.target.value)}
                                             rows={3}
                                             className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                                            placeholder="Write a note for your team…"
+                                            placeholder={t('documents.detail.comments.placeholder')}
                                         />
                                         <div className="flex justify-end">
                                             <button
@@ -959,7 +963,7 @@ const DocumentDetail: React.FC = () => {
                                                 disabled={!newComment.trim()}
                                                 className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-500 transition-colors"
                                             >
-                                                Add comment
+                                                {t('documents.detail.comments.addButton')}
                                             </button>
                                         </div>
                                     </form>
@@ -975,7 +979,7 @@ const DocumentDetail: React.FC = () => {
                                 {overview?.quick_summary && (
                                     <div
                                         className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-lg p-4">
-                                        <h3 className="text-sm font-semibold text-blue-900 mb-2">Summary</h3>
+                                        <h3 className="text-sm font-semibold text-blue-900 mb-2">{t('documents.detail.report.summary')}</h3>
                                         <p className="text-sm text-blue-800 leading-relaxed">{overview.quick_summary}</p>
                                     </div>
                                 )}
@@ -984,7 +988,7 @@ const DocumentDetail: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-3">
                                     {assessment?.overall_complexity && (
                                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                                            <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Complexity</dt>
+                                            <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{t('documents.detail.report.complexity')}</dt>
                                             <dd
                                                 className={`inline-flex px-2.5 py-1 rounded-md border text-xs font-semibold ${
                                                     assessment.overall_complexity === 'EXTREME' || assessment.overall_complexity === 'HIGH'
@@ -1003,7 +1007,7 @@ const DocumentDetail: React.FC = () => {
                                     {assessment?.manufacturing_risk_level && (
                                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
                                             <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                Risk Level
+                                                {t('documents.detail.report.riskLevel')}
                                             </dt>
                                             <dd
                                                 className={`inline-flex px-2.5 py-1 rounded-md border text-xs font-semibold ${
@@ -1022,7 +1026,7 @@ const DocumentDetail: React.FC = () => {
                                     )}
                                     {overview?.highlight_summary && Array.isArray(overview.highlight_summary) && (
                                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 col-span-2">
-                                            <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Highlights</dt>
+                                            <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">{t('documents.detail.report.highlights')}</dt>
                                             <dd className="text-xs text-gray-900">
                                                 <ul className="list-disc list-inside space-y-1">
                                                     {overview.highlight_summary.map((item: string, idx: number) => (
@@ -1035,11 +1039,11 @@ const DocumentDetail: React.FC = () => {
                                     {assessment?.shop_alignment && (
                                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 col-span-2">
                                             <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                Shop Alignment
+                                                {t('documents.detail.report.shopAlignment')}
                                             </dt>
                                             <dd className="text-sm">
                                                 <div className="flex items-center gap-2 mb-2">
-                                                    <span className="text-gray-700">Fit:</span>
+                                                    <span className="text-gray-700">{t('documents.detail.report.fit')}:</span>
                                                     <span
                                                         className={`inline-flex px-2.5 py-1 rounded-md border text-xs font-medium ${
                                                             assessment.shop_alignment.fit_level === 'GOOD'
@@ -1062,9 +1066,7 @@ const DocumentDetail: React.FC = () => {
                                                 {assessment?.shop_alignment?.fit_level === 'UNKNOWN' && (
                                                     <div
                                                         className="mt-3 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-2 py-1.5">
-                                                        Note: Fill your organization profile in Settings to get a
-                                                        personalized
-                                                        fit recommendation for your shop.
+                                                        {t('documents.detail.report.fillOrgProfileNote')}
                                                     </div>
                                                 )}
                                             </dd>
@@ -1084,9 +1086,9 @@ const DocumentDetail: React.FC = () => {
                                                 className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors"
                                             >
                                                 <span className="text-sm font-semibold text-gray-900">
-                                                  Cost Drivers
+                                                  {t('documents.detail.sections.costDrivers')}
                                                   <span className="ml-1 italic text-[11px] text-gray-500">
-                                                    (Quote Centric)
+                                                    {t('documents.detail.sections.quoteCentric')}
                                                   </span>
                                                 </span>
                                                 {expandedSections['cost'] ? (
@@ -1144,7 +1146,7 @@ const DocumentDetail: React.FC = () => {
                                                 className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors"
                                             >
                                                 <span className="text-sm font-semibold text-gray-900">
-                                                  Processing Hints
+                                                  {t('documents.detail.sections.processingHints')}
                                                 </span>
                                                 {expandedSections['processing'] ? (
                                                     <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2}/>
@@ -1157,7 +1159,7 @@ const DocumentDetail: React.FC = () => {
                                                     {processHints.likely_routing_steps && (
                                                         <div>
                                                             <dt className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                                                                Routing Steps
+                                                                {t('documents.detail.processing.routingSteps')}
                                                             </dt>
                                                             <div className="flex flex-wrap gap-2">
                                                                 {processHints.likely_routing_steps.map((step: string, idx: number) => (
@@ -1174,7 +1176,7 @@ const DocumentDetail: React.FC = () => {
                                                     {processHints.machine_capability_hint && (
                                                         <div>
                                                             <dt className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                                                                Machine Capability
+                                                                {t('documents.detail.processing.machineCapability')}
                                                             </dt>
                                                             <ul className="space-y-1">
                                                                 {processHints.machine_capability_hint.map((item: string, idx: number) => (
@@ -1188,7 +1190,7 @@ const DocumentDetail: React.FC = () => {
                                                     {processHints.inspection_focus && (
                                                         <div>
                                                             <dt className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                                                                Inspection Focus
+                                                                {t('documents.detail.processing.inspectionFocus')}
                                                             </dt>
                                                             <ul className="space-y-1">
                                                                 {processHints.inspection_focus.map((item: string, idx: number) => (
@@ -1212,9 +1214,9 @@ const DocumentDetail: React.FC = () => {
                                                 className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors"
                                             >
                                                 <span className="text-sm font-semibold text-gray-900">
-                                                  Critical Points
+                                                  {t('documents.detail.sections.criticalPoints')}
                                                   <span className="ml-1 italic text-[11px] text-gray-500">
-                                                    (Production Centric)
+                                                    {t('documents.detail.sections.productionCentric')}
                                                   </span>
                                                 </span>
                                                 {expandedSections['critical'] ? (
@@ -1273,7 +1275,7 @@ const DocumentDetail: React.FC = () => {
                                                 className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors"
                                             >
                                                 <span className="text-sm font-semibold text-gray-900">
-                                                  Key Risks & Opportunities
+                                                  {t('documents.detail.sections.keyRisksOpportunities')}
                                                 </span>
                                                 {expandedSections['risks'] ? (
                                                     <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2}/>
@@ -1286,7 +1288,7 @@ const DocumentDetail: React.FC = () => {
                                                     {assessment.key_risks && Array.isArray(assessment.key_risks) && (
                                                         <div>
                                                             <dt className="text-xs font-semibold text-red-600 uppercase tracking-wider mb-2">
-                                                                Risks
+                                                                {t('documents.detail.sections.risks')}
                                                             </dt>
                                                             <ul className="space-y-2">
                                                                 {assessment.key_risks.map((risk: string, idx: number) => (
@@ -1303,7 +1305,7 @@ const DocumentDetail: React.FC = () => {
                                                     {assessment.key_opportunities && Array.isArray(assessment.key_opportunities) && (
                                                         <div>
                                                             <dt className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-2">
-                                                                Opportunities
+                                                                {t('documents.detail.sections.opportunities')}
                                                             </dt>
                                                             <ul className="space-y-2">
                                                                 {assessment.key_opportunities.map((opp: string, idx: number) => (
@@ -1330,7 +1332,7 @@ const DocumentDetail: React.FC = () => {
                                                 className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors"
                                             >
                                                     <span className="text-sm font-semibold text-gray-900">
-                                                      Internal Notes
+                                                      {t('documents.detail.sections.internalNotes')}
                                                     </span>
                                                 {expandedSections['notes'] ? (
                                                     <ChevronUp className="w-4 h-4 text-gray-500" strokeWidth={2}/>
@@ -1359,7 +1361,7 @@ const DocumentDetail: React.FC = () => {
                         );
                     })() : (
                         <div className="text-center py-12 text-gray-500">
-                            <p>No analysis data available</p>
+                            <p>{t('documents.detail.noAnalysisData')}</p>
                         </div>
                     )}
                 </div>
@@ -1399,7 +1401,7 @@ const DocumentDetail: React.FC = () => {
                                             onClick={handleZoomOut}
                                             disabled={zoom <= 25}
                                             className="p-2 bg-white hover:bg-gray-100 disabled:bg-slate-50 disabled:text-gray-300 rounded-md transition-colors shadow-sm"
-                                            title="Zoom out"
+                                            title={t('documents.detail.actions.zoomOut')}
                                         >
                                             <ZoomOut className="w-4 h-4" strokeWidth={2}/>
                                         </button>
@@ -1410,14 +1412,14 @@ const DocumentDetail: React.FC = () => {
                                             onClick={handleZoomIn}
                                             disabled={zoom >= 300}
                                             className="p-2 bg-white hover:bg-gray-100 disabled:bg-slate-50 disabled:text-gray-300 rounded-md transition-colors shadow-sm"
-                                            title="Zoom in"
+                                            title={t('documents.detail.actions.zoomIn')}
                                         >
                                             <ZoomIn className="w-4 h-4" strokeWidth={2}/>
                                         </button>
                                         <button
                                             onClick={handleResetZoom}
                                             className="p-2 bg-white hover:bg-gray-100 rounded-md transition-colors shadow-sm"
-                                            title="Reset zoom"
+                                            title={t('documents.detail.actions.resetZoom')}
                                         >
                                             <RotateCw className="w-4 h-4" strokeWidth={2}/>
                                         </button>
@@ -1425,7 +1427,7 @@ const DocumentDetail: React.FC = () => {
                                         <button
                                             onClick={toggleFullscreen}
                                             className="p-2 bg-white hover:bg-gray-100 rounded-md transition-colors shadow-sm"
-                                            title="Fullscreen"
+                                            title={t('documents.detail.actions.fullscreen')}
                                         >
                                             <Maximize2 className="w-4 h-4" strokeWidth={2}/>
                                         </button>
@@ -1461,7 +1463,7 @@ const DocumentDetail: React.FC = () => {
                                 <img
                                     ref={imageRef}
                                     src={partRenderUrl}
-                                    alt="Part render"
+                                    alt={t('documents.detail.alts.partRender')}
                                     style={{
                                         maxWidth: '100%',
                                         maxHeight: '100%',
@@ -1478,13 +1480,13 @@ const DocumentDetail: React.FC = () => {
                                 className="absolute inset-0 flex items-center justify-center text-center text-gray-500">
                                 <div>
                                     <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-2" strokeWidth={1.5}/>
-                                    <p className="text-sm">No render available for this part</p>
+                                    <p className="text-sm">{t('documents.detail.noRenderForPart')}</p>
                                 </div>
                             </div>
                         ) : (
                             <div
                                 className="absolute inset-0 flex items-center justify-center text-center text-gray-500">
-                                <p className="text-sm">Select a part to view its render</p>
+                                <p className="text-sm">{t('documents.detail.selectPartToView')}</p>
                             </div>
                         )}
                     </div>
@@ -1502,13 +1504,12 @@ const DocumentDetail: React.FC = () => {
                                 {/* === Drawing Information === */}
                                 {drawingInfo && (
                                     <div className="p-6">
-                                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Drawing
-                                            Information</h3>
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('documents.detail.drawingInfo.title')}</h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             {drawingInfo.drawing_number && (
                                                 <div>
                                                     <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                        Drawing Number
+                                                        {t('documents.detail.drawingInfo.drawingNumber')}
                                                     </dt>
                                                     <dd className="text-sm text-gray-900">{drawingInfo.drawing_number}</dd>
                                                 </div>
@@ -1516,7 +1517,7 @@ const DocumentDetail: React.FC = () => {
                                             {drawingInfo.drawing_title && (
                                                 <div>
                                                     <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                        Title
+                                                        {t('documents.detail.drawingInfo.titleLabel')}
                                                     </dt>
                                                     <dd className="text-sm text-gray-900">{drawingInfo.drawing_title}</dd>
                                                 </div>
@@ -1524,7 +1525,7 @@ const DocumentDetail: React.FC = () => {
                                             {drawingInfo.part_number && (
                                                 <div>
                                                     <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                        Part Number
+                                                        {t('documents.detail.drawingInfo.partNumber')}
                                                     </dt>
                                                     <dd className="text-sm text-gray-900">{drawingInfo.part_number}</dd>
                                                 </div>
@@ -1532,7 +1533,7 @@ const DocumentDetail: React.FC = () => {
                                             {drawingInfo.revision && (
                                                 <div>
                                                     <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                        Revision
+                                                        {t('documents.detail.drawingInfo.revision')}
                                                     </dt>
                                                     <dd className="text-sm text-gray-900">{drawingInfo.revision}</dd>
                                                 </div>
@@ -1540,7 +1541,7 @@ const DocumentDetail: React.FC = () => {
                                             {drawingInfo.date && (
                                                 <div>
                                                     <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                        Date
+                                                        {t('documents.detail.drawingInfo.date')}
                                                     </dt>
                                                     <dd className="text-sm text-gray-900">{drawingInfo.date}</dd>
                                                 </div>
@@ -1548,7 +1549,7 @@ const DocumentDetail: React.FC = () => {
                                             {drawingInfo.revision_date && (
                                                 <div>
                                                     <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                        Revision Date
+                                                        {t('documents.detail.drawingInfo.revisionDate')}
                                                     </dt>
                                                     <dd className="text-sm text-gray-900">{drawingInfo.revision_date}</dd>
                                                 </div>
@@ -1556,7 +1557,7 @@ const DocumentDetail: React.FC = () => {
                                             {drawingInfo.scale && (
                                                 <div>
                                                     <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                        Scale
+                                                        {t('documents.detail.drawingInfo.scale')}
                                                     </dt>
                                                     <dd className="text-sm text-gray-900">{drawingInfo.scale}</dd>
                                                 </div>
@@ -1564,7 +1565,7 @@ const DocumentDetail: React.FC = () => {
                                             {drawingInfo.base_unit && (
                                                 <div>
                                                     <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                        Units
+                                                        {t('documents.detail.drawingInfo.units')}
                                                     </dt>
                                                     <dd className="text-sm text-gray-900">{drawingInfo.base_unit}</dd>
                                                 </div>
@@ -1572,7 +1573,7 @@ const DocumentDetail: React.FC = () => {
                                             {drawingInfo.author && (
                                                 <div>
                                                     <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                        Author
+                                                        {t('documents.detail.drawingInfo.author')}
                                                     </dt>
                                                     <dd className="text-sm text-gray-900">{drawingInfo.author}</dd>
                                                 </div>
@@ -1580,7 +1581,7 @@ const DocumentDetail: React.FC = () => {
                                             {drawingInfo.checker && (
                                                 <div>
                                                     <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                        Checker
+                                                        {t('documents.detail.drawingInfo.checker')}
                                                     </dt>
                                                     <dd className="text-sm text-gray-900">{drawingInfo.checker}</dd>
                                                 </div>
@@ -1588,7 +1589,7 @@ const DocumentDetail: React.FC = () => {
                                             {drawingInfo.approver && (
                                                 <div>
                                                     <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                        Approver
+                                                        {t('documents.detail.drawingInfo.approver')}
                                                     </dt>
                                                     <dd className="text-sm text-gray-900">{drawingInfo.approver}</dd>
                                                 </div>
@@ -1596,17 +1597,17 @@ const DocumentDetail: React.FC = () => {
                                             {drawingInfo.sheet_info && (
                                                 <div>
                                                     <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                        Sheet
+                                                        {t('documents.detail.drawingInfo.sheet')}
                                                     </dt>
                                                     <dd className="text-sm text-gray-900">
-                                                        {drawingInfo.sheet_info.sheet} of {drawingInfo.sheet_info.total_sheets}
+                                                        {drawingInfo.sheet_info.sheet} {t('documents.detail.drawingInfo.of')} {drawingInfo.sheet_info.total_sheets}
                                                     </dd>
                                                 </div>
                                             )}
                                             {drawingInfo.projection_type && (
                                                 <div>
                                                     <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                        Projection Type
+                                                        {t('documents.detail.drawingInfo.projectionType')}
                                                     </dt>
                                                     <dd className="text-sm text-gray-900 capitalize">
                                                         {drawingInfo.projection_type}
@@ -1616,7 +1617,7 @@ const DocumentDetail: React.FC = () => {
                                             {drawingInfo.company_name && (
                                                 <div>
                                                     <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                        Company
+                                                        {t('documents.detail.drawingInfo.company')}
                                                     </dt>
                                                     <dd className="text-sm text-gray-900">{drawingInfo.company_name}</dd>
                                                 </div>
@@ -1624,7 +1625,7 @@ const DocumentDetail: React.FC = () => {
                                             {drawingInfo.project_name && (
                                                 <div>
                                                     <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                        Project
+                                                        {t('documents.detail.drawingInfo.project')}
                                                     </dt>
                                                     <dd className="text-sm text-gray-900">{drawingInfo.project_name}</dd>
                                                 </div>
@@ -1641,12 +1642,12 @@ const DocumentDetail: React.FC = () => {
                                             {/* Material */}
                                             {overview.material && (
                                                 <div>
-                                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Material</h3>
+                                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('documents.detail.material.title')}</h3>
                                                     <div className="space-y-3">
                                                         {overview.material.value && (
                                                             <div>
                                                                 <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                                    Material
+                                                                    {t('documents.detail.material.labels.material')}
                                                                 </dt>
                                                                 <dd className="text-sm text-gray-900">
                                                                     {overview.material.value}
@@ -1656,7 +1657,7 @@ const DocumentDetail: React.FC = () => {
                                                         {overview.material.text && (
                                                             <div>
                                                                 <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                                    Note
+                                                                    {t('documents.detail.material.labels.note')}
                                                                 </dt>
                                                                 <dd className="text-sm text-gray-900">{overview.material.text}</dd>
                                                             </div>
@@ -1666,7 +1667,7 @@ const DocumentDetail: React.FC = () => {
                                                         {overview.weight && overview.weight.value != null && (
                                                             <div>
                                                                 <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                                    Weight
+                                                                    {t('documents.detail.material.labels.weight')}
                                                                 </dt>
                                                                 <dd className="text-sm text-gray-900">
                                                                     {overview.weight.value} {overview.weight.unit}
@@ -1678,7 +1679,7 @@ const DocumentDetail: React.FC = () => {
                                                             overview.material.confidence !== null && (
                                                                 <div>
                                                                     <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                                        Confidence
+                                                                        {t('documents.detail.material.labels.confidence')}
                                                                     </dt>
                                                                     <dd className="text-sm text-gray-900">
                                                                         {(overview.material.confidence * 100).toFixed(0)}%
@@ -1692,13 +1693,12 @@ const DocumentDetail: React.FC = () => {
                                             {/* Blank Dimensions */}
                                             {overview.blank_dimensions && (
                                                 <div>
-                                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Blank
-                                                        Dimensions</h3>
+                                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('documents.detail.blankDimensions.title')}</h3>
                                                     <div className="space-y-3">
                                                         {overview.blank_dimensions.text_norm && (
                                                             <div>
                                                                 <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                                    Dimensions
+                                                                    {t('documents.detail.blankDimensions.labels.dimensions')}
                                                                 </dt>
                                                                 <dd className="text-sm text-gray-900">
                                                                     {overview.blank_dimensions.text_norm}
@@ -1708,7 +1708,7 @@ const DocumentDetail: React.FC = () => {
                                                         {overview.blank_dimensions.text && (
                                                             <div>
                                                                 <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                                    Note
+                                                                    {t('documents.detail.blankDimensions.labels.note')}
                                                                 </dt>
                                                                 <dd className="text-sm text-gray-900">
                                                                     {overview.blank_dimensions.text}
@@ -1719,7 +1719,7 @@ const DocumentDetail: React.FC = () => {
                                                             {overview.blank_dimensions.unit && (
                                                                 <div>
                                                                     <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                                        Unit
+                                                                        {t('documents.detail.blankDimensions.labels.unit')}
                                                                     </dt>
                                                                     <dd className="text-sm text-gray-900">
                                                                         {overview.blank_dimensions.unit}
@@ -1729,7 +1729,7 @@ const DocumentDetail: React.FC = () => {
                                                             {overview.blank_dimensions.source && (
                                                                 <div>
                                                                     <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                                        Source
+                                                                        {t('documents.detail.blankDimensions.labels.source')}
                                                                     </dt>
                                                                     <dd className="text-sm text-gray-900">
                                                                         {overview.blank_dimensions.source}
@@ -1740,7 +1740,7 @@ const DocumentDetail: React.FC = () => {
                                                                 overview.blank_dimensions.confidence !== null && (
                                                                     <div>
                                                                         <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                                            Confidence
+                                                                            {t('documents.detail.blankDimensions.labels.confidence')}
                                                                         </dt>
                                                                         <dd className="text-sm text-gray-900">
                                                                             {(overview.blank_dimensions.confidence * 100).toFixed(0)}%
@@ -1767,14 +1767,14 @@ const DocumentDetail: React.FC = () => {
                                 <div className="flex items-center gap-2">
                                     <Tag className="w-4 h-4 text-gray-500" strokeWidth={1.5}/>
                                     <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                      Tags
+                                      {t('documents.detail.tags.title')}
                                     </span>
                                 </div>
 
                                 {!canUseTags && (
                                     <span
                                         className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase bg-amber-50 text-amber-700 border border-amber-200">
-                                      Upgrade
+                                      {t('documents.detail.upgrade')}
                                     </span>
                                 )}
                             </div>
@@ -1783,14 +1783,14 @@ const DocumentDetail: React.FC = () => {
                             {!canUseTags ? (
                                 <div
                                     className="text-xs text-gray-600 bg-gray-50 border border-dashed border-gray-200 rounded-lg px-3 py-2">
-                                    Tags are available on collaboration plans. Go to{" "}
+                                    {t('documents.detail.tags.lockedPrefix')}{" "}
                                     <Link
                                         to="/Settings/Billing"
                                         className="text-blue-600 hover:underline font-medium"
                                     >
-                                        Billing
+                                        {t('documents.detail.billing')}
                                     </Link>{" "}
-                                    to upgrade and organize parts with tags.
+                                    {t('documents.detail.tags.lockedSuffix')}
                                 </div>
                             ) : (
                                 // Aktivní stav – chips + input
@@ -1803,21 +1803,21 @@ const DocumentDetail: React.FC = () => {
 
                                     <div className="flex flex-wrap gap-1 mb-2 min-h-[1.5rem]">
                                         {tagsLoading ? (
-                                            <span className="text-xs text-gray-500">Loading tags…</span>
+                                            <span className="text-xs text-gray-500">{t('documents.detail.tags.loading')}</span>
                                         ) : tags.length === 0 ? (
                                             <span className="text-xs text-gray-400">
-                                              No tags yet. Add your first one below.
+                                              {t('documents.detail.tags.empty')}
                                             </span>
                                         ) : (
-                                            tags.map((t) => (
+                                            tags.map((tItem) => (
                                                 <span
-                                                    key={t.id}
+                                                    key={tItem.id}
                                                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white border border-gray-200 text-xs text-gray-800"
                                                 >
-                                                    {t.label}
+                                                    {tItem.label}
                                                     <button
                                                         type="button"
-                                                        onClick={() => removeTag(t.id)}
+                                                        onClick={() => removeTag(tItem.id)}
                                                         className="ml-0.5 p-0.5 hover:bg-gray-100 rounded-full"
                                                     >
                                                     <X className="w-3 h-3 text-gray-500" strokeWidth={1.5}/>
@@ -1841,7 +1841,7 @@ const DocumentDetail: React.FC = () => {
                                             type="text"
                                             value={newTag}
                                             onChange={(e) => setNewTag(e.target.value)}
-                                            placeholder="Add tag (e.g. RFQ, Priority A)"
+                                            placeholder={t('documents.detail.tags.placeholder')}
                                             className="flex-1 text-xs border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
                                         />
                                         <button
@@ -1849,7 +1849,7 @@ const DocumentDetail: React.FC = () => {
                                             disabled={!newTag.trim()}
                                             className="px-2.5 py-1 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-500 transition-colors"
                                         >
-                                            Add
+                                            {t('documents.detail.tags.add')}
                                         </button>
                                     </form>
                                 </div>
