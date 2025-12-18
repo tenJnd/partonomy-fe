@@ -358,7 +358,7 @@ const Landing = () => {
                                         </div>
                                         <div
                                             className="flex-1 mx-3 h-7 rounded-md bg-white border border-slate-200 flex items-center px-3 text-xs text-slate-400">
-                                            partonomy.app/app/documents
+                                            partonomy.ai/app/documents
                                         </div>
                                     </div>
 
