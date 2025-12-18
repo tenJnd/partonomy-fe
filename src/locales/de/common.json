@@ -369,6 +369,8 @@
   },
   "auth": {
     "login": "Anmelden",
+    "namePlaceholder": "Wie sollen wir Sie ansprechen?",
+    "atLeastChar": "Mindestens 6 Zeichen",
     "signup": "Registrieren",
     "forgotPassword": "Passwort vergessen",
     "resetPassword": "Passwort zurücksetzen",

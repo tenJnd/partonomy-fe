@@ -339,7 +339,7 @@ const Signup: React.FC = () => {
                                     value={fullName}
                                     onChange={e => setFullName(e.target.value)}
                                     className="w-full h-11 px-3 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none"
-                                    placeholder="How should we call you?"
+                                    placeholder={t('auth.namePlaceholder')}
                                     required
                                     disabled={loading || success}
                                 />
@@ -381,7 +381,7 @@ const Signup: React.FC = () => {
                                         value={password}
                                         onChange={e => setPassword(e.target.value)}
                                         className="w-full h-11 pl-10 pr-4 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none"
-                                        placeholder="At least 6 characters"
+                                        placeholder={t('auth.atLeastChar')}
                                         required
                                         autoComplete="new-password"
                                         disabled={loading || success}
@@ -403,7 +403,7 @@ const Signup: React.FC = () => {
                                         value={confirmPassword}
                                         onChange={e => setConfirmPassword(e.target.value)}
                                         className="w-full h-11 pl-10 pr-4 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none"
-                                        placeholder="Confirm your password"
+                                        placeholder={t('auth.confirmPassword')}
                                         required
                                         autoComplete="new-password"
                                         disabled={loading || success}

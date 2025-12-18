@@ -369,6 +369,8 @@
   },
   "auth": {
     "login": "Login",
+    "namePlaceholder": "How should we call you?",
+    "atLeastChar": "At least 6 characters",
     "signup": "Sign up",
     "forgotPassword": "Forgot password",
     "resetPassword": "Reset password",

@@ -370,6 +370,8 @@
   },
   "auth": {
     "login": "Přihlásit",
+    "namePlaceholder": "Jak vám máme říkat?",
+    "atLeastChar": "Minimálně 6 znaků",
     "signup": "Registrovat",
     "forgotPassword": "Zapomenuté heslo",
     "resetPassword": "Resetovat heslo",
