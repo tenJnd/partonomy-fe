@@ -393,6 +393,7 @@
     "passwordResetSuccess": "Passwort erfolgreich zurückgesetzt! Weiterleitung zur Anmeldung...",
     "checkEmailForReset": "Überprüfen Sie Ihre E-Mails für einen Passwort-Reset-Link.",
     "resetYourPassword": "Passwort zurücksetzen",
+    "enterPassword": "Passwort eingeben",
     "enterNewPassword": "Geben Sie Ihr neues Passwort ein",
     "newPassword": "Neues Passwort",
     "acceptInvitation": "Einladung annehmen",

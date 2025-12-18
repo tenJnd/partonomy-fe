@@ -82,7 +82,7 @@ const Login: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full h-11 pl-10 pr-4 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none"
-                  placeholder="Enter your password"
+                  placeholder={t('auth.enterPassword')}
                   required
                   autoComplete="current-password"
                 />

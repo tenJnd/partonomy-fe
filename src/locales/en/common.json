@@ -393,6 +393,7 @@
     "passwordResetSuccess": "Password reset successfully! Redirecting to login...",
     "checkEmailForReset": "Check your email for a password reset link.",
     "resetYourPassword": "Reset your password",
+    "enterPassword": "Enter your password",
     "enterNewPassword": "Enter your new password",
     "newPassword": "New password",
     "acceptInvitation": "Accept Invitation",

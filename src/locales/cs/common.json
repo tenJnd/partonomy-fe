@@ -394,6 +394,7 @@
     "passwordResetSuccess": "Heslo úspěšně resetováno! Přesměrovávám na přihlášení...",
     "checkEmailForReset": "Zkontrolujte svůj e-mail pro odkaz na reset hesla.",
     "resetYourPassword": "Resetovat heslo",
+    "enterPassword": "Zadejte heslo",
     "enterNewPassword": "Zadejte nové heslo",
     "newPassword": "Nové heslo",
     "acceptInvitation": "Přijmout pozvánku",
