@@ -84,7 +84,11 @@
     "jobsThisPeriod": "Aufträge in diesem Zeitraum",
     "choosePlan": "Wählen Sie Ihren Plan",
     "choosePlanDescription": "Wählen Sie den Plan und Abrechnungszeitraum, der am besten zu Ihren Anforderungen passt.",
-    "currentPeriod": "Aktueller Zeitraum"
+    "currentPeriod": "Aktueller Zeitraum",
+    "checkoutSuccessTitle": "Zahlung erfolgreich",
+    "checkoutSuccessDesc": "Vielen Dank! Dein Abonnement wird gerade aktiviert. Diese Seite kann sich in wenigen Augenblicken aktualisieren.",
+    "checkoutCanceledTitle": "Bezahlung abgebrochen",
+    "checkoutCanceledDesc": "Kein Problem — es wurde nichts berechnet. Du kannst es jederzeit erneut versuchen."
   },
   "billing": {
     "planInactive": "Plan inaktiv",

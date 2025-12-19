@@ -1,22 +1,54 @@
 // src/pages/BillingSettings.tsx
 import React from "react";
-import {Activity, CreditCard, ExternalLink, Loader2} from "lucide-react";
+import {Activity, CheckCircle2, CreditCard, ExternalLink, Loader2, XCircle} from "lucide-react";
 import {useTranslation} from "react-i18next";
 import {useAuth} from "../contexts/AuthContext";
 import SettingsShell from "../components/SettingsShell";
 import {useOrgBilling} from "../hooks/useOrgBilling";
 import {useOrgUsage} from "../hooks/useOrgUsage";
-import {getBillingPlanDescription, getBillingPlanTitle,} from "../utils/billing";
+import {getBillingPlanDescription, getBillingPlanTitle} from "../utils/billing";
 import PricingPlans from "../components/PricingPlans";
 import {useStripeCheckout} from "../hooks/useStripeCheckout";
 import {useStripeBillingPortal} from "../hooks/useStripeBillingPortal";
 import ErrorAlert from "../components/ErrorAlert";
+import {useLocation, useNavigate} from "react-router-dom";
 
 const BillingSettings: React.FC = () => {
     const {t} = useTranslation();
     const {currentOrg} = useAuth();
     const canManageOrg =
         currentOrg?.role === "owner" || currentOrg?.role === "admin";
+
+    // ✅ Checkout status z URL (?checkout=success|cancel)
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    type CheckoutStatus = "success" | "cancel" | null;
+
+    const checkoutStatus: CheckoutStatus = React.useMemo(() => {
+        const p = new URLSearchParams(location.search);
+        const v = p.get("checkout");
+        return v === "success" || v === "cancel" ? v : null;
+    }, [location.search]);
+
+    const [showCheckoutBanner, setShowCheckoutBanner] = React.useState<CheckoutStatus>(null);
+
+    React.useEffect(() => {
+        if (!checkoutStatus) return;
+
+        // zobraz banner
+        setShowCheckoutBanner(checkoutStatus);
+
+        // odstraň checkout z query stringu (ostatní parametry nech)
+        const p = new URLSearchParams(location.search);
+        p.delete("checkout");
+        const qs = p.toString();
+
+        navigate(
+            {pathname: location.pathname, search: qs ? `?${qs}` : ""},
+            {replace: true}
+        );
+    }, [checkoutStatus, location.pathname, location.search, navigate]);
 
     // 🔹 Hooks – vždy nahoře, bez podmínek
     const {billing, loading: billingLoading} = useOrgBilling();
@@ -33,7 +65,7 @@ const BillingSettings: React.FC = () => {
     } = useStripeBillingPortal();
 
     if (!currentOrg) {
-        return <div className="p-6 max-w-4xl mx-auto">{t('common.loading')}</div>;
+        return <div className="p-6 max-w-4xl mx-auto">{t("common.loading")}</div>;
     }
 
     const planTitle = getBillingPlanTitle(billing);
@@ -54,13 +86,63 @@ const BillingSettings: React.FC = () => {
             ).toLocaleDateString()}`
             : "Current period";
 
-
     return (
         <SettingsShell
-            title={t('billingSettings.title')}
-            description={t('billingSettings.description')}
+            title={t("billingSettings.title")}
+            description={t("billingSettings.description")}
             canManageOrg={canManageOrg}
         >
+            {/* ✅ Checkout success/cancel banner */}
+            {showCheckoutBanner === "success" && (
+                <div
+                    className="bg-green-50 border border-green-200 text-green-800 rounded-xl px-4 py-3 flex items-start gap-3 mb-4">
+                    <CheckCircle2 className="w-5 h-5 mt-0.5"/>
+                    <div className="text-sm">
+                        <div className="font-medium">
+                            {t("billingSettings.checkoutSuccessTitle", "Payment successful")}
+                        </div>
+                        <div className="text-green-700/90">
+                            {t(
+                                "billingSettings.checkoutSuccessDesc",
+                                "Thanks! Your subscription is being activated. This page may update in a few moments."
+                            )}
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => setShowCheckoutBanner(null)}
+                        className="ml-auto text-green-800/70 hover:text-green-900 text-sm"
+                        type="button"
+                    >
+                        {t("common.close", "Close")}
+                    </button>
+                </div>
+            )}
+
+            {showCheckoutBanner === "cancel" && (
+                <div
+                    className="bg-yellow-50 border border-yellow-200 text-yellow-900 rounded-xl px-4 py-3 flex items-start gap-3 mb-4">
+                    <XCircle className="w-5 h-5 mt-0.5"/>
+                    <div className="text-sm">
+                        <div className="font-medium">
+                            {t("billingSettings.checkoutCanceledTitle", "Checkout canceled")}
+                        </div>
+                        <div className="text-yellow-800/90">
+                            {t(
+                                "billingSettings.checkoutCanceledDesc",
+                                "No worries — you weren’t charged. You can try again anytime."
+                            )}
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => setShowCheckoutBanner(null)}
+                        className="ml-auto text-yellow-900/70 hover:text-yellow-900 text-sm"
+                        type="button"
+                    >
+                        {t("common.close", "Close")}
+                    </button>
+                </div>
+            )}
+
             {/* Checkout error */}
             {checkoutError && <ErrorAlert message={checkoutError}/>}
             {/* PortalError error */}
@@ -72,10 +154,10 @@ const BillingSettings: React.FC = () => {
                     <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                         <div>
                             <h2 className="text-lg font-semibold text-gray-900">
-                                {t('billingSettings.currentPlan')}
+                                {t("billingSettings.currentPlan")}
                             </h2>
                             <p className="text-sm text-gray-500 mt-1">
-                                {t('billingSettings.currentPlanDescription')}
+                                {t("billingSettings.currentPlanDescription")}
                             </p>
                         </div>
                     </div>
@@ -83,7 +165,7 @@ const BillingSettings: React.FC = () => {
                     <div className="p-6">
                         {billingLoading ? (
                             <div className="text-sm text-gray-500">
-                                {t('billingSettings.loadingBillingInfo')}
+                                {t("billingSettings.loadingBillingInfo")}
                             </div>
                         ) : (
                             <div className="text-center space-y-3">
@@ -107,13 +189,14 @@ const BillingSettings: React.FC = () => {
                                         ) : (
                                             <ExternalLink className="w-4 h-4" strokeWidth={1.5}/>
                                         )}
-                                        {portalLoading ? t('common.openingBillingPortal') : t('common.manageBilling')}
+                                        {portalLoading
+                                            ? t("common.openingBillingPortal")
+                                            : t("common.manageBilling")}
                                     </button>
                                 )}
                             </div>
                         )}
                     </div>
-
                 </div>
 
                 {/* USAGE */}
@@ -121,10 +204,10 @@ const BillingSettings: React.FC = () => {
                     <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                         <div>
                             <h2 className="text-lg font-semibold text-gray-900">
-                                {t('billingSettings.usageInCurrentPeriod')}
+                                {t("billingSettings.usageInCurrentPeriod")}
                             </h2>
                             <p className="text-sm text-gray-500 mt-1">
-                                {t('billingSettings.usageDescription')}
+                                {t("billingSettings.usageDescription")}
                             </p>
                         </div>
                         <div className="hidden md:flex items-center gap-2 text-xs text-gray-500">
@@ -136,11 +219,11 @@ const BillingSettings: React.FC = () => {
                     <div className="p-6">
                         {usageLoading || billingLoading ? (
                             <div className="text-sm text-gray-500">
-                                {t('billingSettings.loadingUsage')}
+                                {t("billingSettings.loadingUsage")}
                             </div>
                         ) : maxJobs == null ? (
                             <p className="text-sm text-gray-500">
-                                {t('billingSettings.usageLimitsNotConfigured')}
+                                {t("billingSettings.usageLimitsNotConfigured")}
                             </p>
                         ) : (
                             <div className="space-y-3">
@@ -149,9 +232,7 @@ const BillingSettings: React.FC = () => {
                     {jobsUsed} / {maxJobs} jobs this period
                   </span>
                                     {usagePercent !== null && (
-                                        <span className="text-xs text-gray-500">
-                      {usagePercent}%
-                    </span>
+                                        <span className="text-xs text-gray-500">{usagePercent}%</span>
                                     )}
                                 </div>
                                 <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -172,16 +253,16 @@ const BillingSettings: React.FC = () => {
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-100">
                         <h2 className="text-lg font-semibold text-gray-900">
-                            {t('billingSettings.choosePlan')}
+                            {t("billingSettings.choosePlan")}
                         </h2>
                         <p className="text-sm text-gray-500 mt-1">
-                            {t('billingSettings.choosePlanDescription')}
+                            {t("billingSettings.choosePlanDescription")}
                         </p>
                     </div>
                     <div className="p-6">
                         {billingLoading ? (
                             <div className="text-sm text-gray-500">
-                                {t('billingSettings.loadingBillingInfo')}
+                                {t("billingSettings.loadingBillingInfo")}
                             </div>
                         ) : (
                             <div className="relative">
@@ -191,7 +272,7 @@ const BillingSettings: React.FC = () => {
                                         className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm">
                                         <Loader2 className="w-6 h-6 animate-spin mb-2" strokeWidth={1.5}/>
                                         <p className="text-sm text-gray-600">
-                                            {t('common.redirectingToCheckout')}
+                                            {t("common.redirectingToCheckout")}
                                         </p>
                                     </div>
                                 )}
@@ -210,7 +291,6 @@ const BillingSettings: React.FC = () => {
                             </div>
                         )}
                     </div>
-
                 </div>
             </div>
         </SettingsShell>

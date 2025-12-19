@@ -84,7 +84,11 @@
     "jobsThisPeriod": "úloh v tomto období",
     "choosePlan": "Vyberte svůj plán",
     "choosePlanDescription": "Vyberte plán a fakturační období, které nejlépe vyhovuje vašim potřebám.",
-    "currentPeriod": "Aktuální období"
+    "currentPeriod": "Aktuální období",
+    "checkoutSuccessTitle": "Platba proběhla úspěšně",
+    "checkoutSuccessDesc": "Děkujeme! Vaše předplatné se právě aktivuje. Tato stránka se může během chvilky aktualizovat.",
+    "checkoutCanceledTitle": "Platba byla zrušena",
+    "checkoutCanceledDesc": "Nic se nestalo — platba nebyla provedena. Kdykoliv to můžete zkusit znovu."
   },
   "billing": {
     "planInactive": "Plán je neaktivní",

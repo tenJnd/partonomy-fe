@@ -84,7 +84,11 @@
     "jobsThisPeriod": "jobs this period",
     "choosePlan": "Choose your plan",
     "choosePlanDescription": "Select the plan and billing period that best fits your needs.",
-    "currentPeriod": "Current period"
+    "currentPeriod": "Current period",
+    "checkoutSuccessTitle": "Payment successful",
+    "checkoutSuccessDesc": "Thanks! Your subscription is being activated. This page may update in a few moments.",
+    "checkoutCanceledTitle": "Checkout canceled",
+    "checkoutCanceledDesc": "No worries — you weren’t charged. You can try again anytime."
   },
   "billing": {
     "planInactive": "Plan inactive",
