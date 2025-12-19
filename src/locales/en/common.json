@@ -153,6 +153,7 @@
     "unknown": "Unknown",
     "processing": "Processing…",
     "page": "Page {{page}}",
+    "newRevision": "New revision!",
     "bulk": {
       "selected": "selected",
       "fav": "Favorite",

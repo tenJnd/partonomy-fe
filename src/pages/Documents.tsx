@@ -21,6 +21,7 @@ import {useProjects} from "../hooks/useProjects";
 
 import type {PriorityEnum, WorkflowStatusEnum,} from "../lib/database.types";
 import {useTranslation} from "react-i18next";
+import {useLang} from "../hooks/useLang.ts";
 
 type SimpleDocumentRef = {
     id: string;
@@ -38,6 +39,7 @@ const Documents: React.FC = () => {
     const {currentOrg, user} = useAuth();
     const navigate = useNavigate();
     const {t} = useTranslation();
+    const lang = useLang()
 
     // === DATA HOOKY ===========================================================
     const {
@@ -325,7 +327,7 @@ const Documents: React.FC = () => {
     };
 
     const handleRowClick = (documentId: string, partId: string) => {
-        navigate(`/app/documents/${documentId}?partId=${partId}`);
+        navigate(`/${lang}/app/documents/${documentId}?partId=${partId}`);
     };
 
     // === HANDLERY: SORT =======================================================

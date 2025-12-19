@@ -510,29 +510,37 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                 }`}
                                             />
                                             <div className="flex flex-col min-w-0">
-                          <span
-                              className={`text-sm font-medium truncate ${
-                                  isPlaceholder ? "text-blue-900" : "text-gray-900"
-                              }`}
-                          >
-                            {part.document?.file_name || t("documents.unknown")}
-                          </span>
+  <span
+      className={`text-sm font-medium truncate ${
+          isPlaceholder ? "text-blue-900" : "text-gray-900"
+      }`}
+  >
+    {part.document?.file_name || t("documents.unknown")}
+  </span>
+
+                                                {!isPlaceholder && part.revision_changed && (
+                                                    <span className="text-[11px] leading-4 text-amber-700 font-medium">
+      {t("documents.newRevision")}
+    </span>
+                                                )}
+
                                                 <span className="text-xs text-gray-500 truncate">
-                            {isPlaceholder ? (
-                                <span className="italic">{t("documents.processing")}</span>
-                            ) : (
-                                <>
-                                    {part.page !== null ? (
-                                        <>
-                                            {t("documents.page", {page: part.page})}
-                                            {part.company_name && " • "}
-                                        </>
-                                    ) : null}
-                                    {part.company_name ?? (!part.page ? "—" : "")}
-                                </>
-                            )}
-                          </span>
+    {isPlaceholder ? (
+        <span className="italic">{t("documents.processing")}</span>
+    ) : (
+        <>
+            {part.page !== null ? (
+                <>
+                    {t("documents.page", {page: part.page})}
+                    {part.company_name && " • "}
+                </>
+            ) : null}
+            {part.company_name ?? (!part.page ? "—" : "")}
+        </>
+    )}
+  </span>
                                             </div>
+
                                         </div>
                                     </div>
                                 </td>

@@ -1043,7 +1043,8 @@ const DocumentDetail: React.FC = () => {
                                             </dt>
                                             <dd className="text-sm">
                                                 <div className="flex items-center gap-2 mb-2">
-                                                    <span className="text-gray-700">{t('documents.detail.report.fit')}:</span>
+                                                    <span
+                                                        className="text-gray-700">{t('documents.detail.report.fit')}:</span>
                                                     <span
                                                         className={`inline-flex px-2.5 py-1 rounded-md border text-xs font-medium ${
                                                             assessment.shop_alignment.fit_level === 'GOOD'
@@ -1087,7 +1088,7 @@ const DocumentDetail: React.FC = () => {
                                             >
                                                 <span className="text-sm font-semibold text-gray-900">
                                                   {t('documents.detail.sections.costDrivers')}
-                                                  <span className="ml-1 italic text-[11px] text-gray-500">
+                                                    <span className="ml-1 italic text-[11px] text-gray-500">
                                                     {t('documents.detail.sections.quoteCentric')}
                                                   </span>
                                                 </span>
@@ -1215,7 +1216,7 @@ const DocumentDetail: React.FC = () => {
                                             >
                                                 <span className="text-sm font-semibold text-gray-900">
                                                   {t('documents.detail.sections.criticalPoints')}
-                                                  <span className="ml-1 italic text-[11px] text-gray-500">
+                                                    <span className="ml-1 italic text-[11px] text-gray-500">
                                                     {t('documents.detail.sections.productionCentric')}
                                                   </span>
                                                 </span>
@@ -1535,7 +1536,15 @@ const DocumentDetail: React.FC = () => {
                                                     <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
                                                         {t('documents.detail.drawingInfo.revision')}
                                                     </dt>
-                                                    <dd className="text-sm text-gray-900">{drawingInfo.revision}</dd>
+                                                    <dd className="text-sm text-gray-900 flex items-center gap-2">
+                                                        <span>{drawingInfo.revision}</span>
+
+                                                        {drawingInfo.revision_change_text && (
+                                                            <span className="text-xs text-amber-700 font-medium">
+                                                              ({drawingInfo.revision_change_text})
+                                                            </span>
+                                                        )}
+                                                    </dd>
                                                 </div>
                                             )}
                                             {drawingInfo.date && (
@@ -1803,7 +1812,8 @@ const DocumentDetail: React.FC = () => {
 
                                     <div className="flex flex-wrap gap-1 mb-2 min-h-[1.5rem]">
                                         {tagsLoading ? (
-                                            <span className="text-xs text-gray-500">{t('documents.detail.tags.loading')}</span>
+                                            <span
+                                                className="text-xs text-gray-500">{t('documents.detail.tags.loading')}</span>
                                         ) : tags.length === 0 ? (
                                             <span className="text-xs text-gray-400">
                                               {t('documents.detail.tags.empty')}

@@ -29,6 +29,7 @@ export interface PartWithDocument {
     created_at: string;
   } | null;
   isProcessingPlaceholder?: boolean;
+  revision_changed: boolean | null;
 }
 
 // Helper – z jednoho řádku z document_parts udělá PartWithDocument
@@ -57,6 +58,7 @@ function mapDocumentPartsRowToPartWithDocument(item: any): PartWithDocument | nu
     last_updated: partData.last_updated,
     workflow_status: partData.workflow_status,
     priority: partData.priority,
+    revision_changed: partData.revision_changed ?? null,
     document: docData
       ? {
           id: docData.id,
@@ -370,6 +372,7 @@ export function useParts(currentOrg: CurrentOrg, pageSize: number = 50) {
       last_updated: doc.created_at,
       workflow_status: null,
       priority: null,
+      revision_changed: null,
       document: {
         id: doc.id,
         file_name: doc.file_name,
