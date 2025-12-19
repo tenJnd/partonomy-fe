@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {Menu} from "lucide-react";
-import {BrowserRouter as Router, Navigate, Route, Routes, useLocation} from "react-router-dom";
+import {BrowserRouter as Router, Navigate, Route, Routes, useLocation,} from "react-router-dom";
 
 import {AuthProvider} from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -27,6 +27,24 @@ import Landing from "./pages/Landing";
 
 import LanguageLayout from "./components/LanguageLayout";
 import EnvBadge from "./components/EnvBadge";
+
+// ✅ přidej importy pro lang
+import {detectBrowserLang, normalizeLang} from "./i18n/lang";
+
+const LANG_STORAGE_KEY = "ui_lang";
+
+function RootRedirect() {
+    let best = detectBrowserLang();
+
+    try {
+        const stored = normalizeLang(localStorage.getItem(LANG_STORAGE_KEY));
+        best = stored ?? best;
+    } catch {
+        // ignore (private mode / disabled storage / tests)
+    }
+
+    return <Navigate to={`/${best}`} replace/>;
+}
 
 const AppLayout: React.FC = () => {
     const location = useLocation();
@@ -87,8 +105,8 @@ const App: React.FC = () => {
         <Router>
             <AuthProvider>
                 <Routes>
-                    {/* Redirect úplně bez lang prefixu → LanguageLayout to přesměruje */}
-                    <Route path="/" element={<Navigate to="/en" replace/>}/>
+                    {/* ✅ Root: použij stored lang nebo browser lang */}
+                    <Route path="/" element={<RootRedirect/>}/>
 
                     {/* Vše pod /:lang/... */}
                     <Route path="/:lang/*" element={<LanguageLayout/>}>
@@ -116,7 +134,7 @@ const App: React.FC = () => {
                     {/* Unknown -> root */}
                     <Route path="*" element={<Navigate to="/" replace/>}/>
                 </Routes>
-                <EnvBadge />
+                <EnvBadge/>
             </AuthProvider>
         </Router>
     );
