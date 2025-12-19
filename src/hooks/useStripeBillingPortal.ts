@@ -2,11 +2,13 @@
 import {useCallback, useState} from "react";
 import {supabase} from "../lib/supabase";
 import {useAuth} from "../contexts/AuthContext";
+import {useLang} from "./useLang";
 
 export function useStripeBillingPortal() {
     const {currentOrg} = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const lang = useLang();
 
     const openPortal = useCallback(async () => {
         if (!currentOrg) {
@@ -23,6 +25,7 @@ export function useStripeBillingPortal() {
                 {
                     body: {
                         org_id: currentOrg.org_id,
+                        lang,
                     },
                 }
             );
@@ -30,7 +33,6 @@ export function useStripeBillingPortal() {
             if (error) {
                 console.error("[useStripeBillingPortal] Error:", error);
                 setError("We couldn't open the billing portal. Please try again.");
-
                 return;
             }
 
@@ -39,16 +41,14 @@ export function useStripeBillingPortal() {
                 return;
             }
 
-            // přesměrování do Stripe Customer Portalu
             window.location.href = data.url;
         } catch (err: any) {
             console.error("[useStripeBillingPortal] Exception:", err);
             setError("Something went wrong while contacting billing portal.");
-
         } finally {
             setLoading(false);
         }
-    }, [currentOrg]);
+    }, [currentOrg, lang]);
 
     return {openPortal, loading, error};
 }

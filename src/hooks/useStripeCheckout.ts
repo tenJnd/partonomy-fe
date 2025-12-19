@@ -2,6 +2,7 @@
 import {useCallback, useState} from "react";
 import {supabase} from "../lib/supabase";
 import {useAuth} from "../contexts/AuthContext";
+import {useLang} from "./useLang.ts";
 
 export type BillingPeriod = "monthly" | "yearly";
 export type Currency = "USD" | "EUR";
@@ -17,6 +18,7 @@ export function useStripeCheckout() {
     const {currentOrg, user} = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const lang = useLang();
 
     const startCheckout = useCallback(
         async ({tier, period, currency}: CheckoutArgs) => {
@@ -38,6 +40,7 @@ export function useStripeCheckout() {
                             currency,
                             org_id: currentOrg.org_id,
                             user_id: user.id,
+                            lang
                         },
                     }
                 );
@@ -61,7 +64,7 @@ export function useStripeCheckout() {
                 setLoading(false);
             }
         },
-        [currentOrg, user]
+        [currentOrg, user, lang]
     );
 
     return {startCheckout, loading, error};
