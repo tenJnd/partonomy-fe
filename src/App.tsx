@@ -26,6 +26,7 @@ import InsightsRFQ from "./pages/InsightsRFQ";
 import Landing from "./pages/Landing";
 
 import LanguageLayout from "./components/LanguageLayout";
+import AuthCallback from "./pages/AuthCallback";
 import EnvBadge from "./components/EnvBadge";
 
 // ✅ přidej importy pro lang
@@ -116,6 +117,7 @@ const App: React.FC = () => {
 
                         <Route path="login" element={<Login/>}/>
                         <Route path="signup" element={<Signup/>}/>
+                        <Route path="auth/callback" element={<AuthCallback />} />
                         <Route path="invite/:token" element={<AcceptInvite/>}/>
                         <Route path="forgot-password" element={<ForgotPassword/>}/>
                         <Route path="reset-password" element={<ResetPassword/>}/>

@@ -4,7 +4,7 @@ import {AlertCircle, CheckCircle, Loader} from 'lucide-react';
 import {supabase} from '../lib/supabase';
 import {useAuth} from '../contexts/AuthContext';
 import {useTranslation} from 'react-i18next';
-import { useLang } from '../hooks/useLang';
+import {useLang} from '../hooks/useLang';
 
 const AcceptInvite: React.FC = () => {
     const {token} = useParams<{ token: string }>();
@@ -21,10 +21,28 @@ const AcceptInvite: React.FC = () => {
     useEffect(() => {
         // Pokud není user přihlášený → uložíme token a pošleme ho na signup
         if (!user && token) {
-            sessionStorage.setItem('pendingInviteToken', token);
+            // uložíme invite do pending queue (dokončí se po ověření emailu v /auth/callback)
+            try {
+                const key = "pending_actions_v1";
+                const raw = localStorage.getItem(key);
+                const arr = raw ? JSON.parse(raw) : [];
+                const next = Array.isArray(arr) ? arr : [];
+
+                next.push({
+                    kind: "invite",
+                    token,
+                    userName: "", // doplní se fallbackem v callbacku z user_metadata / emailu
+                });
+
+                localStorage.setItem(key, JSON.stringify(next));
+            } catch {
+                // ignore
+            }
+
             navigate(`/${lang}/signup`, {replace: true});
             return;
         }
+
 
         // Pokud je user přihlášený → rovnou akceptujeme invite
         if (user && token) {

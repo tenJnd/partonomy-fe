@@ -48,7 +48,8 @@
     "openingBillingPortal": "Abrechnungsportal wird geöffnet...",
     "manageBilling": "Abrechnung verwalten",
     "dash": "—",
-    "rerun": "Neu ausführen"
+    "rerun": "Neu ausführen",
+    "goToLogin": "Zum Login"
   },
   "reportSettings": {
     "title": "Berichtseinstellungen",
@@ -458,7 +459,9 @@
     "successfullyJoined": "Sie sind der Organisation erfolgreich beigetreten.",
     "redirectingToDashboard": "Weiterleitung zum Dashboard...",
     "unableToAcceptInvite": "Einladung kann nicht angenommen werden",
-    "goToLogin": "Zur Anmeldung"
+    "goToLogin": "Zur Anmeldung",
+    "resetLinkInvalidOrExpired": "Der Reset-Link ist ungültig oder abgelaufen. Fordern Sie einen neuen an.",
+    "requestNewResetLink": "Neuen Reset-Link anfordern"
   },
   "modals": {
     "invite": {

@@ -174,13 +174,18 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
     };
 
     const signUp = async (email: string, password: string, fullName?: string) => {
+        const emailRedirectTo =
+            import.meta.env.VITE_AUTH_CALLBACK_URL || `${window.location.origin}/en/auth/callback`;
+
         const {data, error} = await supabase.auth.signUp({
             email,
             password,
             options: {
                 data: fullName ? {full_name: fullName} : {},
+                emailRedirectTo,
             },
         });
+
         return {data, error};
     };
 

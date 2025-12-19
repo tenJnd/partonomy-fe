@@ -1,35 +1,46 @@
 import React, {useEffect, useState} from 'react';
-import {Link, useNavigate} from 'react-router-dom';
+import {Link} from 'react-router-dom';
 import {useAuth} from '../contexts/AuthContext';
-import {AlertCircle, Building2, CheckCircle, Lock, Mail, UserPlus,} from 'lucide-react';
-import {supabase} from '../lib/supabase';
+import {AlertCircle, Building2, CheckCircle, Lock, Mail, UserPlus} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
-import { useLang } from '../hooks/useLang';
+import {useLang} from '../hooks/useLang';
+
+type PendingAction =
+    | { kind: 'invite'; token: string; userName: string }
+    | { kind: 'create_org'; orgName: string; userName: string };
+
+const PENDING_KEY = 'pending_actions_v1';
+
+function pushPending(action: PendingAction) {
+    try {
+        const raw = localStorage.getItem(PENDING_KEY);
+        const arr = raw ? JSON.parse(raw) : [];
+        const next = Array.isArray(arr) ? [...arr, action] : [action];
+        localStorage.setItem(PENDING_KEY, JSON.stringify(next));
+    } catch {
+        localStorage.setItem(PENDING_KEY, JSON.stringify([action]));
+    }
+}
 
 const Signup: React.FC = () => {
     const [step, setStep] = useState<'account' | 'organization'>('account');
     const [email, setEmail] = useState('');
-    const [fullName, setFullName] = useState(''); // ✅ NEW: jméno / nickname
+    const [fullName, setFullName] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [organizationName, setOrganizationName] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [pendingInviteToken, setPendingInviteToken] = useState<string | null>(
-        null
-    );
-    const {signUp, refreshOrganizations} = useAuth();
+    const [pendingInviteToken, setPendingInviteToken] = useState<string | null>(null);
 
-    const navigate = useNavigate();
+    const {signUp} = useAuth();
     const {t} = useTranslation();
     const lang = useLang();
 
     useEffect(() => {
         const token = sessionStorage.getItem('pendingInviteToken');
-        if (token) {
-            setPendingInviteToken(token);
-        }
+        if (token) setPendingInviteToken(token);
     }, []);
 
     const handleAccountSubmit = async (e: React.FormEvent) => {
@@ -65,11 +76,7 @@ const Signup: React.FC = () => {
 
         try {
             console.log('[Signup] Creating user account for invite...');
-            const {data: authData, error: signUpError} = await signUp(
-                email,
-                password,
-                fullName // ✅ posíláme jméno do signUp (user_metadata)
-            );
+            const {data: authData, error: signUpError} = await signUp(email, password, fullName);
 
             if (signUpError) {
                 setError(signUpError.message || 'Failed to create account');
@@ -77,65 +84,36 @@ const Signup: React.FC = () => {
                 return;
             }
 
-            const session = authData?.session;
-            console.log('[Signup] Account created:', session?.user?.id);
+            const user = authData?.user ?? authData?.session?.user;
+            console.log('[Signup] Sign up OK, user:', user?.id);
 
-            if (!session?.user) {
-                setError('Failed to get user session');
+            if (!user) {
+                setError('Failed to create account (no user returned)');
                 setLoading(false);
                 return;
             }
 
-            console.log('[Signup] Accepting invite token...');
-            const {data: inviteData, error: inviteError} = await supabase.rpc(
-                'accept_organization_invite',
-                {
-                    p_token: pendingInviteToken,
-                    p_user_name: fullName, // ✅ nové param jméno do funkce v DB
-                }
-            );
-
-            if (inviteError) {
-                setError('Failed to accept invite: ' + inviteError.message);
+            if (!pendingInviteToken) {
+                setError('Missing invite token');
                 setLoading(false);
                 return;
             }
 
-            if (inviteData && inviteData.length > 0) {
-                const result = inviteData[0];
-                if (result.success) {
-                    console.log(
-                        '[Signup] Successfully joined organization:',
-                        result.org_id
-                    );
-                    setSuccess(true);
+            pushPending({
+                kind: 'invite',
+                token: pendingInviteToken,
+                userName: fullName.trim(),
+            });
 
-                    sessionStorage.removeItem('pendingInviteToken');
+            // sjednotíme stav: token už je uložen v pending queue
+            sessionStorage.removeItem('pendingInviteToken');
+            setPendingInviteToken(null);
 
-                    try {
-                        await refreshOrganizations(session.user.id);
-                    } catch (e) {
-                        console.error(
-                            '[Signup] Failed to refresh organizations after invite:',
-                            e
-                        );
-                    }
-
-                    setTimeout(() => {
-                        setLoading(false);
-                        navigate('/');
-                    }, 1500);
-                } else {
-                    setError('Failed to accept invite: ' + result.message);
-                    setLoading(false);
-                }
-            } else {
-                setError('Failed to accept invite: No data returned');
-                setLoading(false);
-            }
+            setSuccess(true);
+            setLoading(false);
         } catch (err: any) {
             console.error('[Signup] Error:', err);
-            setError('An unexpected error occurred: ' + err.message);
+            setError('An unexpected error occurred: ' + (err?.message ?? ''));
             setLoading(false);
         }
     };
@@ -151,7 +129,6 @@ const Signup: React.FC = () => {
         }
 
         if (!fullName.trim()) {
-            // pojistka – kdyby se někdo proklikal
             setError('Please enter your name');
             return;
         }
@@ -160,11 +137,8 @@ const Signup: React.FC = () => {
 
         try {
             console.log('[Signup] Creating user account...');
-            const {data: authData, error: signUpError} = await signUp(
-                email,
-                password,
-                fullName // ✅ signUp s jménem
-            );
+            const {data: authData, error: signUpError} = await signUp(email, password, fullName);
+
             console.log('[Signup] Sign up result:', {authData, signUpError});
 
             if (signUpError) {
@@ -173,73 +147,26 @@ const Signup: React.FC = () => {
                 return;
             }
 
-            const session = authData?.session;
-            console.log('[Signup] Session from signup:', session?.user?.id);
+            const user = authData?.user ?? authData?.session?.user;
+            console.log('[Signup] Sign up OK, user:', user?.id);
 
-            if (!session?.user) {
-                setError('Failed to get user session');
+            if (!user) {
+                setError('Failed to create account (no user returned)');
                 setLoading(false);
                 return;
             }
 
-            const userId = session.user.id;
-
-            console.log('[Signup] Calling create_organization_with_owner RPC...');
-
-            const rpcPromise = supabase.rpc('create_organization_with_owner', {
-                p_org_name: organizationName.trim(),
-                p_user_id: userId,
-                p_user_name: fullName, // ✅ nové param jméno do create_organization_with_owner
+            pushPending({
+                kind: 'create_org',
+                orgName: organizationName.trim(),
+                userName: fullName.trim(),
             });
 
-            const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('RPC timeout after 10s')), 10000)
-            );
-
-            const {data: orgData, error: orgError} = (await Promise.race([
-                rpcPromise,
-                timeoutPromise,
-            ]).catch(err => {
-                console.error('[Signup] RPC error or timeout:', err);
-                return {data: null, error: err};
-            })) as any;
-
-            console.log('[Signup] RPC completed:', {orgData, orgError});
-
-            if (orgError) {
-                setError(
-                    'Failed to create organization: ' +
-                    (orgError.message || JSON.stringify(orgError))
-                );
-                setLoading(false);
-                return;
-            }
-
-            if (!orgData || orgData.length === 0) {
-                setError('Failed to create organization: No data returned');
-                setLoading(false);
-                return;
-            }
-
-            console.log('[Signup] Organization created successfully!');
             setSuccess(true);
-
-            try {
-                await refreshOrganizations(userId);
-            } catch (e) {
-                console.error(
-                    '[Signup] Failed to refresh organizations after creation:',
-                    e
-                );
-            }
-
-            setTimeout(() => {
-                setLoading(false);
-                navigate('/');
-            }, 500);
+            setLoading(false);
         } catch (err: any) {
             console.error('[Signup] Error:', err);
-            setError('An unexpected error occurred');
+            setError('An unexpected error occurred: ' + (err?.message ?? ''));
             setLoading(false);
         }
     };
@@ -254,16 +181,11 @@ const Signup: React.FC = () => {
                             {step === 'account' ? (
                                 <UserPlus className="w-6 h-6 text-blue-600" strokeWidth={2}/>
                             ) : (
-                                <Building2
-                                    className="w-6 h-6 text-blue-600"
-                                    strokeWidth={2}
-                                />
+                                <Building2 className="w-6 h-6 text-blue-600" strokeWidth={2}/>
                             )}
                         </div>
                         <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-                            {step === 'account'
-                                ? t('auth.createYourAccount')
-                                : t('auth.createYourOrganization')}
+                            {step === 'account' ? t('auth.createYourAccount') : t('auth.createYourOrganization')}
                         </h1>
                         <p className="text-sm text-gray-600">
                             {pendingInviteToken
@@ -292,14 +214,9 @@ const Signup: React.FC = () => {
 
                     {error && (
                         <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-3">
-                            <AlertCircle
-                                className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5"
-                                strokeWidth={2}
-                            />
+                            <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" strokeWidth={2}/>
                             <div className="flex-1">
-                                <p className="text-sm font-medium text-rose-900">
-                                    {t('auth.signUpError')}
-                                </p>
+                                <p className="text-sm font-medium text-rose-900">{t('auth.signUpError')}</p>
                                 <p className="text-sm text-rose-700 mt-1">{error}</p>
                             </div>
                         </div>
@@ -308,32 +225,35 @@ const Signup: React.FC = () => {
                     {success && (
                         <div
                             className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg flex items-start gap-3">
-                            <CheckCircle
-                                className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5"
-                                strokeWidth={2}
-                            />
+                            <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" strokeWidth={2}/>
                             <div className="flex-1">
                                 <p className="text-sm font-medium text-emerald-900">
-                                    {pendingInviteToken
-                                        ? t('auth.successfullyJoined')
-                                        : t('auth.accountCreatedSuccess')}
+                                    {t('auth.accountCreatedSuccess')}
                                 </p>
                                 <p className="text-sm text-emerald-700 mt-1">
-                                    {pendingInviteToken
-                                        ? t('auth.redirectingToOrganization')
-                                        : t('auth.checkEmailToVerify')}
+                                    {/* Invite i org flow – oba čekají na verifikaci */}
+                                    {t('auth.checkEmailToVerify')}
                                 </p>
+
+                                {/* malý UX bonus: link na login */}
+                                <div className="mt-3">
+                                    <Link
+                                        to={`/${lang}/login`}
+                                        className="inline-flex text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                                    >
+                                        {t('auth.goToLogin') || 'Go to login'}
+                                    </Link>
+                                </div>
                             </div>
                         </div>
                     )}
 
                     {/* Account Step Form */}
-                    {step === 'account' && (
+                    {step === 'account' && !success && (
                         <form onSubmit={handleAccountSubmit} className="space-y-5">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    {t('auth.fullName')}
-                                </label>
+                                <label
+                                    className="block text-sm font-medium text-gray-700 mb-2">{t('auth.fullName')}</label>
                                 <input
                                     type="text"
                                     value={fullName}
@@ -341,19 +261,16 @@ const Signup: React.FC = () => {
                                     className="w-full h-11 px-3 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none"
                                     placeholder={t('auth.namePlaceholder')}
                                     required
-                                    disabled={loading || success}
+                                    disabled={loading}
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    {t('auth.emailAddress')}
-                                </label>
+                                <label
+                                    className="block text-sm font-medium text-gray-700 mb-2">{t('auth.emailAddress')}</label>
                                 <div className="relative">
-                                    <Mail
-                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                                        strokeWidth={1.5}
-                                    />
+                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+                                          strokeWidth={1.5}/>
                                     <input
                                         type="email"
                                         value={email}
@@ -362,20 +279,17 @@ const Signup: React.FC = () => {
                                         placeholder="you@company.com"
                                         required
                                         autoComplete="email"
-                                        disabled={loading || success}
+                                        disabled={loading}
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    {t('auth.password')}
-                                </label>
+                                <label
+                                    className="block text-sm font-medium text-gray-700 mb-2">{t('auth.password')}</label>
                                 <div className="relative">
-                                    <Lock
-                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                                        strokeWidth={1.5}
-                                    />
+                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+                                          strokeWidth={1.5}/>
                                     <input
                                         type="password"
                                         value={password}
@@ -384,20 +298,17 @@ const Signup: React.FC = () => {
                                         placeholder={t('auth.atLeastChar')}
                                         required
                                         autoComplete="new-password"
-                                        disabled={loading || success}
+                                        disabled={loading}
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    {t('auth.confirmPassword')}
-                                </label>
+                                <label
+                                    className="block text-sm font-medium text-gray-700 mb-2">{t('auth.confirmPassword')}</label>
                                 <div className="relative">
-                                    <Lock
-                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                                        strokeWidth={1.5}
-                                    />
+                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+                                          strokeWidth={1.5}/>
                                     <input
                                         type="password"
                                         value={confirmPassword}
@@ -406,23 +317,23 @@ const Signup: React.FC = () => {
                                         placeholder={t('auth.confirmPassword')}
                                         required
                                         autoComplete="new-password"
-                                        disabled={loading || success}
+                                        disabled={loading}
                                     />
                                 </div>
                             </div>
 
                             <button
                                 type="submit"
-                                disabled={loading || success}
+                                disabled={loading}
                                 className="w-full h-11 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium text-sm transition-all active:scale-[0.98] disabled:cursor-not-allowed"
                             >
-                                {loading ? t('auth.creating') : success ? t('auth.success') : t('auth.continue')}
+                                {loading ? t('auth.creating') : t('auth.continue')}
                             </button>
                         </form>
                     )}
 
                     {/* Organization Step Form */}
-                    {step === 'organization' && (
+                    {step === 'organization' && !success && (
                         <form onSubmit={handleOrganizationSubmit} className="space-y-5">
                             <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                                 <p className="text-xs text-gray-500 mb-1">{t('auth.accountEmail')}</p>
@@ -430,14 +341,12 @@ const Signup: React.FC = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    {t('auth.organizationName')}
-                                </label>
+                                <label
+                                    className="block text-sm font-medium text-gray-700 mb-2">{t('auth.organizationName')}</label>
                                 <div className="relative">
                                     <Building2
                                         className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                                        strokeWidth={1.5}
-                                    />
+                                        strokeWidth={1.5}/>
                                     <input
                                         type="text"
                                         value={organizationName}
@@ -446,7 +355,7 @@ const Signup: React.FC = () => {
                                         placeholder="My Company Inc."
                                         required
                                         autoComplete="organization"
-                                        disabled={loading || success}
+                                        disabled={loading}
                                     />
                                 </div>
                             </div>
@@ -455,33 +364,33 @@ const Signup: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => setStep('account')}
-                                    disabled={loading || success}
+                                    disabled={loading}
                                     className="flex-1 h-11 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg font-medium text-sm transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     {t('common.back')}
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={loading || success}
+                                    disabled={loading}
                                     className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium text-sm transition-all active:scale-[0.98] disabled:cursor-not-allowed"
                                 >
-                                    {loading ? t('auth.creating') : success ? t('auth.success') : t('auth.createOrganization')}
+                                    {loading ? t('auth.creating') : t('auth.createOrganization')}
                                 </button>
                             </div>
                         </form>
                     )}
 
-                    <div className="mt-6 text-center">
-                        <p className="text-sm text-gray-600">
-                            {t('auth.alreadyHaveAccount')}{' '}
-                            <Link
-                                to={`/${lang}/login`}
-                                className="font-medium text-blue-600 hover:text-blue-700 transition-colors"
-                            >
-                                {t('auth.login')}
-                            </Link>
-                        </p>
-                    </div>
+                    {!success && (
+                        <div className="mt-6 text-center">
+                            <p className="text-sm text-gray-600">
+                                {t('auth.alreadyHaveAccount')}{' '}
+                                <Link to={`/${lang}/login`}
+                                      className="font-medium text-blue-600 hover:text-blue-700 transition-colors">
+                                    {t('auth.login')}
+                                </Link>
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 <p className="mt-6 text-center text-xs text-gray-500">

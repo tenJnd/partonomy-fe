@@ -48,7 +48,8 @@
     "openingBillingPortal": "Otevírám fakturační portál...",
     "manageBilling": "Spravovat fakturaci",
     "dash": "—",
-    "rerun": "Spustit znovu"
+    "rerun": "Spustit znovu",
+    "goToLogin": "Přejít na přihlášení"
   },
   "reportSettings": {
     "title": "Nastavení reportů",
@@ -459,7 +460,9 @@
     "successfullyJoined": "Úspěšně jste se připojili k organizaci.",
     "redirectingToDashboard": "Přesměrovávám na dashboard...",
     "unableToAcceptInvite": "Nelze přijmout pozvánku",
-    "goToLogin": "Přejít na přihlášení"
+    "goToLogin": "Přejít na přihlášení",
+    "resetLinkInvalidOrExpired": "Resetovací odkaz je neplatný nebo vypršel. Požádejte o nový.",
+    "requestNewResetLink": "Požádat o nový resetovací odkaz"
   },
   "modals": {
     "invite": {

@@ -48,7 +48,8 @@
     "openingBillingPortal": "Opening billing portal...",
     "manageBilling": "Manage billing",
     "dash": "—",
-    "rerun": "Rerun"
+    "rerun": "Rerun",
+    "goToLogin": "Go to login"
   },
   "reportSettings": {
     "title": "Report Settings",
@@ -458,7 +459,9 @@
     "successfullyJoined": "You've successfully joined the organization.",
     "redirectingToDashboard": "Redirecting you to dashboard...",
     "unableToAcceptInvite": "Unable to Accept Invite",
-    "goToLogin": "Go to Login"
+    "goToLogin": "Go to Login",
+    "resetLinkInvalidOrExpired": "The reset link is invalid or has expired. Request a new one.",
+    "requestNewResetLink": "Request a new reset link"
   },
   "modals": {
     "invite": {
