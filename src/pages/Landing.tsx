@@ -145,7 +145,7 @@ const Landing = () => {
 
                         <span
                             className="text-lg font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-                            Partonomy.ai
+                            Partonomy
                         </span>
                     </Link>
 
@@ -358,7 +358,7 @@ const Landing = () => {
                                         </div>
                                         <div
                                             className="flex-1 mx-3 h-7 rounded-md bg-white border border-slate-200 flex items-center px-3 text-xs text-slate-400">
-                                            partonomy.ai/app/documents
+                                            usepartonomy.com/app/documents
                                         </div>
                                     </div>
 
