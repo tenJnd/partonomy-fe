@@ -7,6 +7,7 @@ import {
     FileText,
     Languages,
     LightbulbIcon,
+    Menu,
     TrendingUp,
     Upload,
     Zap
@@ -16,7 +17,7 @@ import {Link, useLocation, useNavigate} from "react-router-dom";
 import PricingPlans from "../components/PricingPlans";
 import FaqItem from "../components/FaqItem";
 import {useLang} from "../hooks/useLang";
-import {SUPPORTED_LANGS, type AppLang} from "../i18n/lang";
+import {type AppLang, SUPPORTED_LANGS} from "../i18n/lang";
 import {useTranslation} from "react-i18next";
 
 const DEMO_DOCUMENTS = [
@@ -64,6 +65,7 @@ const Landing = () => {
     const [showLangMenu, setShowLangMenu] = useState(false);
     const {user, loading} = useAuth();
     const navigate = useNavigate();
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const lang = useLang();
     const {t} = useTranslation();
 
@@ -105,6 +107,23 @@ const Landing = () => {
         }, 0);
     }, [location.hash]);
 
+    useEffect(() => {
+        if (!mobileMenuOpen) return;
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setMobileMenuOpen(false);
+        };
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, [mobileMenuOpen]);
+
+    useEffect(() => {
+        document.body.style.overflow = mobileMenuOpen ? "hidden" : "";
+        return () => {
+            document.body.style.overflow = "";
+        };
+    }, [mobileMenuOpen]);
+
+
     if (loading) return null;
 
     const handleGetStarted = () => {
@@ -122,6 +141,17 @@ const Landing = () => {
         setShowLangMenu(false);
     };
 
+    const goToSection = (hash: string) => {
+        window.history.pushState(null, "", `${window.location.pathname}#${hash}`);
+        scrollToHash(`#${hash}`);
+        setMobileMenuOpen(false);
+    };
+
+    const goToInsights = () => {
+        navigate(`/${lang}/insights`);
+        setMobileMenuOpen(false);
+    };
+
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 text-slate-900">
@@ -130,11 +160,9 @@ const Landing = () => {
                 scrolled ? "bg-white/80 backdrop-blur-lg shadow-sm" : "bg-transparent"
             }`}>
 
-                <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-                    <Link
-                        to="/"
-                        className="flex items-center gap-3 hover:opacity-90 transition-opacity"
-                    >
+                <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
+
+                    <Link to="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity min-w-0">
                         <div className="relative">
                             <div className="absolute inset-0 bg-blue-600 blur-md opacity-50 rounded-lg"></div>
                             <div
@@ -202,30 +230,48 @@ const Landing = () => {
                         </Link>
                     </nav>
 
-
                     <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setShowLangMenu(false);
+                                setMobileMenuOpen(true);
+                            }}
+                            className="md:hidden h-9 w-9 inline-flex items-center justify-center rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                            aria-label="Open menu"
+                        >
+                            <Menu className="h-5 w-5"/>
+                        </button>
+
                         {/* Language Switcher */}
                         <div className="relative">
                             <button
-                                onClick={() => setShowLangMenu(!showLangMenu)}
+                                type="button"
+                                onClick={() => {
+                                    setMobileMenuOpen(false);
+                                    setShowLangMenu((v) => !v);
+                                }}
                                 className="h-9 px-3 rounded-md bg-slate-100 hover:bg-slate-200 flex items-center gap-2 text-sm font-medium text-slate-700 transition-colors"
                             >
                                 <Languages className="w-4 h-4"/>
                                 <span className="uppercase">{lang}</span>
                             </button>
+
                             {showLangMenu && (
-                                <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden z-50">
-                                    {SUPPORTED_LANGS.map(l => (
+                                <div
+                                    className="absolute right-0 top-full mt-2 w-40 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden z-50">
+                                    {SUPPORTED_LANGS.map((l) => (
                                         <button
                                             key={l}
+                                            type="button"
                                             onClick={() => handleLanguageSwitch(l)}
                                             className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
                                                 l === lang
-                                                    ? 'bg-blue-50 text-blue-700 font-medium'
-                                                    : 'text-slate-700 hover:bg-slate-50'
+                                                    ? "bg-blue-50 text-blue-700 font-medium"
+                                                    : "text-slate-700 hover:bg-slate-50"
                                             }`}
                                         >
-                                            {l === 'en' ? 'English' : l === 'cs' ? 'Čeština' : 'Deutsch'}
+                                            {l === "en" ? "English" : l === "cs" ? "Čeština" : "Deutsch"}
                                         </button>
                                     ))}
                                 </div>
@@ -243,7 +289,7 @@ const Landing = () => {
 
                         <button
                             onClick={handleGetStarted}
-                            className="group px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/40 hover:-translate-y-0.5">
+                            className="group px-3.5 py-2 text-sm sm:px-5 sm:py-2.5 sm:text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/40 hover:-translate-y-0.5">
                             {user ? t('landing.nav.goToApp') : t('landing.nav.tryFree')}
                             <ChevronRight
                                 className="inline-block ml-1 w-4 h-4 group-hover:translate-x-1 transition-transform"/>
@@ -251,6 +297,93 @@ const Landing = () => {
                     </div>
                 </div>
             </header>
+
+            {/* Mobile menu */}
+            {mobileMenuOpen && (
+                <div className="fixed inset-0 z-[60] md:hidden">
+                    {/* overlay */}
+                    <button
+                        type="button"
+                        className="absolute inset-0 bg-black/30"
+                        onClick={() => setMobileMenuOpen(false)}
+                        aria-label="Close menu"
+                    />
+
+                    {/* panel */}
+                    <div className="absolute top-0 left-0 right-0 bg-white shadow-xl border-b border-slate-200">
+                        <div className="px-4 pt-4 pb-3 flex items-center justify-between">
+                            <div className="font-semibold text-slate-900">Menu</div>
+                            <button
+                                type="button"
+                                onClick={() => setMobileMenuOpen(false)}
+                                className="h-9 w-9 inline-flex items-center justify-center rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                                aria-label="Close menu"
+                            >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                    <path d="M6 6l12 12M18 6l-12 12" stroke="currentColor" strokeWidth="2"
+                                          strokeLinecap="round"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div className="px-2 pb-4">
+                            <button
+                                type="button"
+                                onClick={() => goToSection("how-it-works")}
+                                className="w-full text-left px-3 py-3 rounded-lg hover:bg-slate-50 text-slate-700 font-medium"
+                            >
+                                {t("landing.nav.howItWorks")}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => goToSection("features")}
+                                className="w-full text-left px-3 py-3 rounded-lg hover:bg-slate-50 text-slate-700 font-medium"
+                            >
+                                {t("landing.nav.features")}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => goToSection("pricing")}
+                                className="w-full text-left px-3 py-3 rounded-lg hover:bg-slate-50 text-slate-700 font-medium"
+                            >
+                                {t("landing.nav.pricing")}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => goToSection("faq")}
+                                className="w-full text-left px-3 py-3 rounded-lg hover:bg-slate-50 text-slate-700 font-medium"
+                            >
+                                {t("landing.nav.faq")}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={goToInsights}
+                                className="w-full text-left px-3 py-3 rounded-lg hover:bg-slate-50 text-slate-700 font-medium"
+                            >
+                                {t("landing.nav.insights")}
+                            </button>
+
+                            {!user && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        handleLogin();
+                                        setMobileMenuOpen(false);
+                                    }}
+                                    className="mt-2 w-full text-left px-3 py-3 rounded-lg hover:bg-slate-50 text-slate-700 font-medium"
+                                >
+                                    {t("landing.nav.login")}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
 
             {/* Hero section */}
             <main className="pt-24">
@@ -262,10 +395,10 @@ const Landing = () => {
                             className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-200/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
                     </div>
 
-                    <div className="relative mx-auto max-w-7xl px-6 py-20 lg:py-28">
-                        <div className="grid lg:grid-cols-2 gap-12 items-center">
+                    <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16 lg:py-28">
+                        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
                             {/* Left content */}
-                            <div className="space-y-8">
+                            <div className="space-y-6 sm:space-y-8">
                                 <div
                                     className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100/50 shadow-sm">
                                   <span className="relative flex h-2 w-2">
@@ -278,26 +411,27 @@ const Landing = () => {
                                         </span>
                                 </div>
 
-                                <h1 className="text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
-                                      <span
-                                          className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
-                                        {t('landing.hero.headline1')}
-                                      </span>
-                                    <br/>
+                                <h1 className="font-bold tracking-tight leading-[1.05] text-[clamp(32px,6vw,64px)]">
                                     <span
-                                        className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                                      {t('landing.hero.headline2')}
+                                        className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
+                                        {t('landing.hero.headline1')}
+                                    </span>
+                                    <span className="block sm:inline"> </span>
+                                    <span
+                                        className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                        {t('landing.hero.headline2')}
                                     </span>
                                 </h1>
 
-                                <p className="text-lg text-slate-600 leading-relaxed max-w-xl">
+
+                                <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl">
                                     {t('landing.hero.description')}
                                 </p>
 
                                 <div className="flex flex-wrap items-center gap-4">
                                     <button
                                         onClick={handleGetStarted}
-                                        className="group px-8 py-4 text-base font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-xl shadow-blue-600/30 hover:shadow-2xl hover:shadow-blue-600/40 hover:-translate-y-1">
+                                        className="group px-3.5 py-2 text-sm sm:px-5 sm:py-2.5 sm:text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-xl shadow-blue-600/30 hover:shadow-2xl hover:shadow-blue-600/40 hover:-translate-y-1">
                                         {user ? t('landing.nav.goToApp') : t('landing.hero.uploadFirstDrawing')}
                                         <Upload
                                             className="inline-block ml-2 w-5 h-5 group-hover:translate-y-0.5 transition-transform"/>
@@ -316,29 +450,29 @@ const Landing = () => {
                                     <div className="flex items-center gap-2">
                                         <Clock className="w-5 h-5 text-blue-600"/>
                                         <div>
-                                            <div className="text-2xl font-bold text-slate-900">{t('landing.hero.stat1Value')}</div>
+                                            <div
+                                                className="text-2xl font-bold text-slate-900">{t('landing.hero.stat1Value')}</div>
                                             <div className="text-xs text-slate-600">{t('landing.hero.stat1Label')}</div>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <TrendingUp className="w-5 h-5 text-emerald-600"/>
                                         <div>
-                                            <div className="text-2xl font-bold text-slate-900">{t('landing.hero.stat2Value')}</div>
+                                            <div
+                                                className="text-2xl font-bold text-slate-900">{t('landing.hero.stat2Value')}</div>
                                             <div className="text-xs text-slate-600">{t('landing.hero.stat2Label')}</div>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <CheckCircle2 className="w-5 h-5 text-purple-600"/>
                                         <div>
-                                            <div className="text-2xl font-bold text-slate-900">{t('landing.hero.stat3Value')}</div>
+                                            <div
+                                                className="text-2xl font-bold text-slate-900">{t('landing.hero.stat3Value')}</div>
                                             <div className="text-xs text-slate-600">{t('landing.hero.stat3Label')}</div>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/*<p className="text-xs text-slate-500 text-center">*/}
-                                {/*  Než dopijete kafe, máte zpracované výkresy za celý týden.*/}
-                                {/*</p>*/}
                             </div>
 
                             {/* Right: Enhanced Documents Table Preview */}
@@ -347,10 +481,10 @@ const Landing = () => {
                                     className="absolute -inset-4 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-2xl blur-2xl"></div>
 
                                 <div
-                                    className="relative rounded-2xl bg-white shadow-2xl border border-slate-200/50 overflow-hidden transform hover:scale-[1.02] transition-transform duration-300">
+                                    className="relative rounded-2xl bg-white shadow-2xl border border-slate-200/50 overflow-hidden transform transition-transform duration-300 lg:hover:scale-[1.02]">
                                     {/* Browser chrome */}
                                     <div
-                                        className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+                                        className="hidden sm:flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
                                         <div className="flex gap-1.5">
                                             <div className="w-3 h-3 rounded-full bg-red-400"></div>
                                             <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
@@ -363,7 +497,7 @@ const Landing = () => {
                                     </div>
 
                                     {/* Documents Table */}
-                                    <div className="p-6 space-y-4">
+                                    <div className="p-4 sm:p-6 space-y-4">
                                         <div className="flex items-center justify-between mb-3">
                                             <h3 className="text-sm font-semibold text-slate-900">Documents</h3>
                                         </div>
