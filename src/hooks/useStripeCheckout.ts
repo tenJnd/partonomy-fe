@@ -39,7 +39,6 @@ export function useStripeCheckout() {
                             period,
                             currency,
                             org_id: currentOrg.org_id,
-                            user_id: user.id,
                             lang
                         },
                     }
