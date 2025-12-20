@@ -1,6 +1,6 @@
 // src/pages/Documents.tsx
 import React, {useEffect, useMemo, useRef, useState,} from "react";
-import {useNavigate} from "react-router-dom";
+import {useLocation, useNavigate, useSearchParams} from "react-router-dom";
 import {AlertCircle, Star, Upload} from "lucide-react";
 
 import {useAuth} from "../contexts/AuthContext";
@@ -28,7 +28,6 @@ type SimpleDocumentRef = {
     file_name?: string | null;
 };
 
-type StatusFilter = "all" | "processed" | "processing" | "error";
 type TimeFilter = "all" | "7d" | "30d" | "90d";
 type ComplexityFilter = "all" | "LOW" | "MEDIUM" | "HIGH" | "EXTREME";
 type FitFilter = "all" | "GOOD" | "PARTIAL" | "COOPERATION" | "LOW" | "UNKNOWN";
@@ -40,6 +39,8 @@ const Documents: React.FC = () => {
     const navigate = useNavigate();
     const {t} = useTranslation();
     const lang = useLang()
+    const [searchParams, setSearchParams] = useSearchParams();
+    const location = useLocation();
 
     // === DATA HOOKY ===========================================================
     const {
@@ -87,25 +88,38 @@ const Documents: React.FC = () => {
     );
 
     // Filtry
-    const [statusFilter, setStatusFilter] = useState<StatusFilter>("all"); // document last_status
-    const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
-    const [complexityFilter, setComplexityFilter] =
-        useState<ComplexityFilter>("all");
-    const [fitFilter, setFitFilter] = useState<FitFilter>("all");
-    const [companyFilter, setCompanyFilter] = useState<string>("all");
-    const [classFilter, setClassFilter] = useState<string>("all");
+    const sp = (key: string, fallback: string) => searchParams.get(key) ?? fallback;
+
+    const setSP = (patch: Record<string, string | null>) => {
+        setSearchParams((prev) => {
+            const next = new URLSearchParams(prev);
+            for (const [k, v] of Object.entries(patch)) {
+                if (v == null || v === "" || v === "all") next.delete(k);
+                else next.set(k, v);
+            }
+            return next;
+        }, {replace: true}); // replace = nezasírat historii každým klikem
+    };
+
+
+    // const [statusFilter, setStatusFilter] = useState<StatusFilter>("all"); // document last_status
+    const [timeFilter, setTimeFilter] = useState<TimeFilter>(() => sp("time", "all") as TimeFilter);
+    const [complexityFilter, setComplexityFilter] = useState<ComplexityFilter>(() => sp("cx", "all") as ComplexityFilter);
+    const [fitFilter, setFitFilter] = useState<FitFilter>(() => sp("fit", "all") as FitFilter);
+    const [companyFilter, setCompanyFilter] = useState<string>(() => sp("co", "all"));
+    const [classFilter, setClassFilter] = useState<string>(() => sp("cl", "all"));
 
     const [workflowStatusFilter, setWorkflowStatusFilter] =
-        useState<WorkflowStatusFilter>("all");
-    const [priorityFilter, setPriorityFilter] =
-        useState<PriorityFilter>("all");
-    const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+        useState<WorkflowStatusFilter>(() => sp("wf", "all") as WorkflowStatusFilter);
 
-    // Sort
-    const [sortField, setSortField] = useState<SortField>("last_updated");
-    const [sortDirection, setSortDirection] = useState<"asc" | "desc">(
-        "desc",
-    );
+    const [priorityFilter, setPriorityFilter] =
+        useState<PriorityFilter>(() => sp("prio", "all") as PriorityFilter);
+
+    const [showOnlyFavorites, setShowOnlyFavorites] = useState<boolean>(() => sp("fav", "0") === "1");
+
+    const [sortField, setSortField] = useState<SortField>(() => sp("sort", "last_updated") as SortField);
+    const [sortDirection, setSortDirection] = useState<"asc" | "desc">(() => (sp("dir", "desc") as "asc" | "desc"));
+
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -327,20 +341,25 @@ const Documents: React.FC = () => {
     };
 
     const handleRowClick = (documentId: string, partId: string) => {
-        navigate(`/${lang}/app/documents/${documentId}?partId=${partId}`);
+        navigate(`/${lang}/app/documents/${documentId}?partId=${partId}`, {
+            state: {from: location.pathname + location.search},
+        });
     };
 
     // === HANDLERY: SORT =======================================================
     const handleSortChange = (field: SortField) => {
-        setSortDirection((prevDir) =>
-            field === sortField
-                ? prevDir === "asc"
-                    ? "desc"
-                    : "asc"
-                : "asc",
-        );
+        const nextDir: "asc" | "desc" =
+            field === sortField ? (sortDirection === "asc" ? "desc" : "asc") : "asc";
+
         setSortField(field);
+        setSortDirection(nextDir);
+
+        setSP({
+            sort: field,
+            dir: nextDir,
+        });
     };
+
 
     // === HANDLERY: FAVOURITES / WORKFLOW / PRIORITY ===========================
     const handleToggleFavorite = async (part: PartWithDocument) => {
@@ -790,7 +809,7 @@ const Documents: React.FC = () => {
 
     // === HANDLERY: FILTRY =====================================================
     const resetFilters = () => {
-        setStatusFilter("all");
+        // setStatusFilter("all");
         setTimeFilter("all");
         setComplexityFilter("all");
         setFitFilter("all");
@@ -799,6 +818,22 @@ const Documents: React.FC = () => {
         setWorkflowStatusFilter("all");
         setPriorityFilter("all");
         setShowOnlyFavorites(false);
+
+        setSortField("last_updated");
+        setSortDirection("desc");
+
+        setSP({
+            time: null,
+            cx: null,
+            fit: null,
+            co: null,
+            cl: null,
+            wf: null,
+            prio: null,
+            fav: null,
+            sort: null,
+            dir: null,
+        });
     };
 
     // === DISTINCT HODNOTY PRO FILTRY =========================================
@@ -824,25 +859,6 @@ const Documents: React.FC = () => {
     // === FILTERING + SORTING ==================================================
     const filteredSortedParts = useMemo(() => {
         let result = [...parts];
-
-        // Document processing status filter (success / queued / processing / failed)
-        if (statusFilter !== "all") {
-            result = result.filter((part) => {
-                const s = part.document?.last_status;
-                if (!s) return false;
-
-                if (statusFilter === "processed") {
-                    return s === "success";
-                }
-                if (statusFilter === "processing") {
-                    return s === "processing" || s === "queued";
-                }
-                if (statusFilter === "error") {
-                    return s === "failed" || s === "error";
-                }
-                return true;
-            });
-        }
 
         // Time filter (based on part.last_updated)
         if (timeFilter !== "all") {
@@ -1013,7 +1029,7 @@ const Documents: React.FC = () => {
         return result;
     }, [
         parts,
-        statusFilter,
+        // statusFilter,
         timeFilter,
         complexityFilter,
         fitFilter,
@@ -1133,45 +1149,35 @@ const Documents: React.FC = () => {
 
                 {/* FILTERS BAR ================================================= */}
                 <div className="flex items-center gap-3 mb-6 flex-wrap">
-                    {/* Document status (success/processing/error) */}
-                    {/*<select*/}
-                    {/*    value={statusFilter}*/}
-                    {/*    onChange={(e) =>*/}
-                    {/*        setStatusFilter(e.target.value as StatusFilter)*/}
-                    {/*    }*/}
-                    {/*    className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"*/}
-                    {/*>*/}
-                    {/*    <option value="all">All Status</option>*/}
-                    {/*    <option value="processed">Processed</option>*/}
-                    {/*    <option value="processing">Processing</option>*/}
-                    {/*    <option value="error">Error</option>*/}
-                    {/*</select>*/}
-
                     {/* Time */}
                     <select
                         value={timeFilter}
-                        onChange={(e) =>
-                            setTimeFilter(e.target.value as TimeFilter)
-                        }
+                        onChange={(e) => {
+                            const v = e.target.value as TimeFilter;
+                            setTimeFilter(v);
+                            setSP({time: v});
+                            setSelectedPartIds(new Set());
+                        }}
                         className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
-                        <option value="all">{t('documents.allTime')}</option>
-                        <option value="7d">{t('documents.last7Days')}</option>
-                        <option value="30d">{t('documents.last30Days')}</option>
-                        <option value="90d">{t('documents.last90Days')}</option>
+                        <option value="all">{t("documents.allTime")}</option>
+                        <option value="7d">{t("documents.last7Days")}</option>
+                        <option value="30d">{t("documents.last30Days")}</option>
+                        <option value="90d">{t("documents.last90Days")}</option>
                     </select>
 
                     {/* Complexity */}
                     <select
                         value={complexityFilter}
-                        onChange={(e) =>
-                            setComplexityFilter(
-                                e.target.value as ComplexityFilter,
-                            )
-                        }
+                        onChange={(e) => {
+                            const v = e.target.value as ComplexityFilter;
+                            setComplexityFilter(v);
+                            setSP({cx: v});
+                            setSelectedPartIds(new Set());
+                        }}
                         className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
-                        <option value="all">{t('documents.allComplexity')}</option>
+                        <option value="all">{t("documents.allComplexity")}</option>
                         <option value="LOW">Low</option>
                         <option value="MEDIUM">Medium</option>
                         <option value="HIGH">High</option>
@@ -1181,12 +1187,15 @@ const Documents: React.FC = () => {
                     {/* Fit */}
                     <select
                         value={fitFilter}
-                        onChange={(e) =>
-                            setFitFilter(e.target.value as FitFilter)
-                        }
+                        onChange={(e) => {
+                            const v = e.target.value as FitFilter;
+                            setFitFilter(v);
+                            setSP({fit: v});
+                            setSelectedPartIds(new Set());
+                        }}
                         className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
-                        <option value="all">{t('documents.allFit')}</option>
+                        <option value="all">{t("documents.allFit")}</option>
                         <option value="GOOD">Good</option>
                         <option value="PARTIAL">Partial</option>
                         <option value="COOPERATION">Cooperation</option>
@@ -1197,12 +1206,15 @@ const Documents: React.FC = () => {
                     {/* Company */}
                     <select
                         value={companyFilter}
-                        onChange={(e) =>
-                            setCompanyFilter(e.target.value)
-                        }
+                        onChange={(e) => {
+                            const v = e.target.value;
+                            setCompanyFilter(v);
+                            setSP({co: v});
+                            setSelectedPartIds(new Set());
+                        }}
                         className="h-[38px] w-[130px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
-                        <option value="all">{t('documents.allCompanies')}</option>
+                        <option value="all">{t("documents.allCompanies")}</option>
                         {uniqueCompanies.map((c) => (
                             <option key={c} value={c}>
                                 {c}
@@ -1213,12 +1225,15 @@ const Documents: React.FC = () => {
                     {/* Class */}
                     <select
                         value={classFilter}
-                        onChange={(e) =>
-                            setClassFilter(e.target.value)
-                        }
+                        onChange={(e) => {
+                            const v = e.target.value;
+                            setClassFilter(v);
+                            setSP({cl: v});
+                            setSelectedPartIds(new Set());
+                        }}
                         className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
-                        <option value="all">{t('documents.allClasses')}</option>
+                        <option value="all">{t("documents.allClasses")}</option>
                         {uniqueClasses.map((c) => (
                             <option key={c} value={c}>
                                 {c}
@@ -1229,14 +1244,15 @@ const Documents: React.FC = () => {
                     {/* Per-part workflow status */}
                     <select
                         value={workflowStatusFilter}
-                        onChange={(e) =>
-                            setWorkflowStatusFilter(
-                                e.target.value as WorkflowStatusFilter,
-                            )
-                        }
+                        onChange={(e) => {
+                            const v = e.target.value as WorkflowStatusFilter;
+                            setWorkflowStatusFilter(v);
+                            setSP({wf: v});
+                            setSelectedPartIds(new Set());
+                        }}
                         className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
-                        <option value="all">{t('documents.allWorkflow')}</option>
+                        <option value="all">{t("documents.allWorkflow")}</option>
                         <option value="new">New</option>
                         <option value="in_progress">In progress</option>
                         <option value="done">Done</option>
@@ -1246,25 +1262,32 @@ const Documents: React.FC = () => {
                     {/* Per-part priority */}
                     <select
                         value={priorityFilter}
-                        onChange={(e) =>
-                            setPriorityFilter(
-                                e.target.value as PriorityFilter,
-                            )
-                        }
+                        onChange={(e) => {
+                            const v = e.target.value as PriorityFilter;
+                            setPriorityFilter(v);
+                            setSP({prio: v});
+                            setSelectedPartIds(new Set());
+                        }}
                         className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-xs"
                     >
-                        <option value="all">{t('documents.allPriority')}</option>
+                        <option value="all">{t("documents.allPriority")}</option>
                         <option value="low">Low</option>
                         <option value="normal">Normal</option>
                         <option value="high">High</option>
                         <option value="hot">Hot</option>
                     </select>
 
+
+                    {/* Favourites only toggle */}
                     {/* Favourites only toggle */}
                     <button
                         type="button"
                         onClick={() =>
-                            setShowOnlyFavorites((prev) => !prev)
+                            setShowOnlyFavorites((prev) => {
+                                const next = !prev;
+                                setSP({fav: next ? "1" : null});
+                                return next;
+                            })
                         }
                         className={`h-[38px] px-3 inline-flex items-center gap-1 rounded-lg border text-xs shadow-sm transition-all ${
                             showOnlyFavorites
@@ -1273,13 +1296,12 @@ const Documents: React.FC = () => {
                         }`}
                     >
                         <Star
-                            className={`w-3.5 h-3.5 ${
-                                showOnlyFavorites ? "fill-current" : ""
-                            }`}
+                            className={`w-3.5 h-3.5 ${showOnlyFavorites ? "fill-current" : ""}`}
                             strokeWidth={1.5}
                         />
-                        <span>{t('documents.favouritesOnly')}</span>
+                        <span>{t("documents.favouritesOnly")}</span>
                     </button>
+
 
                     {/* Reset filters */}
                     <button

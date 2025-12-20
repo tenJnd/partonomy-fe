@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Link, useParams, useSearchParams} from 'react-router-dom';
+import {Link, useLocation, useParams, useSearchParams} from 'react-router-dom';
 import {
     AlertCircle,
     ArrowLeft,
@@ -74,6 +74,9 @@ const DocumentDetail: React.FC = () => {
     const [updatingStatus, setUpdatingStatus] = useState(false);
     const [updatingPriority, setUpdatingPriority] = useState(false);
 
+    const location = useLocation();
+    const backTo =
+        (location.state as any)?.from ?? `/${lang}/app/documents`;
 
     // Tabs v levém panelu
     const [activeReportTab, setActiveReportTab] = useState<'report' | 'bom' | 'revisions' | 'comments'>('report');
@@ -390,7 +393,7 @@ const DocumentDetail: React.FC = () => {
                             {error || t('documents.detail.documentNotFound.description')}
                         </p>
                         <Link
-                            to={`/${lang}/app/Documents`}
+                            to={backTo}
                             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
                         >
                             <ArrowLeft className="w-4 h-4" strokeWidth={1.5}/>
@@ -522,7 +525,7 @@ const DocumentDetail: React.FC = () => {
             <div className="flex items-center justify-between gap-4 mb-4">
                 <div className="flex items-center gap-4">
                     <Link
-                        to={`/${lang}/app/Documents`}
+                        to={backTo}
                         className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
                     >
                         <ArrowLeft
