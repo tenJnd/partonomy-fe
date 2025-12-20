@@ -1,0 +1,57 @@
+name: Deploy Supabase Edge Functions
+
+on:
+  push:
+    branches:
+      - dev
+#      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Select project ref
+        id: proj
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_NAME}" == "dev" ]]; then
+            echo "project_ref=${{ secrets.SUPABASE_DEV_PROJECT_REF }}" >> $GITHUB_OUTPUT
+            echo "env_name=dev" >> $GITHUB_OUTPUT
+          elif [[ "${GITHUB_REF_NAME}" == "prod" ]]; then
+            echo "project_ref=${{ secrets.SUPABASE_PROD_PROJECT_REF }}" >> $GITHUB_OUTPUT
+            echo "env_name=prod" >> $GITHUB_OUTPUT
+          else
+            echo "Unsupported branch: ${GITHUB_REF_NAME}"
+            exit 1
+          fi
+
+      - name: Deploy Edge Functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PROJECT_REF: ${{ steps.proj.outputs.project_ref }}
+          ENV_NAME: ${{ steps.proj.outputs.env_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Deploying to ${ENV_NAME} (${PROJECT_REF})"
+
+          FUNCTIONS=(
+            "stripe-webhook"
+            "create-checkout-session"
+            "create-billing-portal-session"
+          )
+
+          for FN in "${FUNCTIONS[@]}"; do
+            echo "Deploying function: ${FN}"
+            npx supabase@latest functions deploy "${FN}" --project-ref "${PROJECT_REF}"
+            echo "OK: ${FN}"
+          done
