@@ -166,6 +166,8 @@
     "columns": {
       "document": "Dokument",
       "class": "Klasse",
+      "drawingNumber": "Zeichnungsnummer",
+      "displayName": "Typ",
       "material": "Material",
       "envelope": "Hülle",
       "complexity": "Komplexität",

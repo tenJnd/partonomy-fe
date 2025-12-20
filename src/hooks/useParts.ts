@@ -9,6 +9,7 @@ export interface PartWithDocument {
   id: string;
   page: number | null;
   drawing_title: string | null;
+  display_name: string | null;
   part_number: string | null;
   drawing_number: string | null;
   company_name: string | null;
@@ -45,6 +46,7 @@ function mapDocumentPartsRowToPartWithDocument(item: any): PartWithDocument | nu
     id: partData.id,
     page: partData.page ?? null,
     drawing_title: partData.drawing_title ?? null,
+    display_name: partData.display_name ?? null,
     part_number: partData.part_number ?? null,
     drawing_number: partData.drawing_number ?? null,
     company_name: partData.company_name ?? null,
@@ -359,6 +361,7 @@ export function useParts(currentOrg: CurrentOrg, pageSize: number = 50) {
       id: `processing-${doc.id}`,
       page: null,
       drawing_title: null,
+      display_name: null,
       part_number: null,
       drawing_number: null,
       company_name: null,

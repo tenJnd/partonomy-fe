@@ -167,6 +167,8 @@
     "columns": {
       "document": "Dokument",
       "class": "Třída",
+      "drawingNumber": "Číslo výkresu",
+      "displayName": "Typ",
       "material": "Materiál",
       "envelope": "Obálka",
       "complexity": "Komplexita",

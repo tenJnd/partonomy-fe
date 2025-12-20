@@ -307,12 +307,12 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                         {selectionEnabled && <col style={{width: "36px"}}/>}
                         <col style={{width: "24%"}}/>
                         {/* Document */}
-                        <col style={{width: "8%"}}/>
+                        <col style={{width: "12%"}}/>
                         {/* Class */}
+                        <col style={{width: "12%"}}/>
+                        {/* Drawing number */}
                         <col style={{width: "10%"}}/>
                         {/* Material */}
-                        <col style={{width: "10%"}}/>
-                        {/* Envelope */}
                         <col style={{width: "8%"}}/>
                         {/* Complexity */}
                         <col style={{width: "8%"}}/>
@@ -372,13 +372,14 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                             {t("documents.columns.class")}
                         </SortableHeader>
 
+                        <SortableHeader field="primary_class">
+                            {t("documents.columns.drawingNumber")}
+                        </SortableHeader>
+
                         <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                             {t("documents.columns.material")}
                         </th>
 
-                        <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            {t("documents.columns.envelope")}
-                        </th>
 
                         <SortableHeader field="overall_complexity">
                             {t("documents.columns.complexity")}
@@ -510,35 +511,35 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                 }`}
                                             />
                                             <div className="flex flex-col min-w-0">
-  <span
-      className={`text-sm font-medium truncate ${
-          isPlaceholder ? "text-blue-900" : "text-gray-900"
-      }`}
-  >
-    {part.document?.file_name || t("documents.unknown")}
-  </span>
+                                              <span
+                                                  className={`text-sm font-medium truncate ${
+                                                      isPlaceholder ? "text-blue-900" : "text-gray-900"
+                                                  }`}
+                                              >
+                                                {part.document?.file_name || t("documents.unknown")}
+                                              </span>
 
                                                 {!isPlaceholder && part.revision_changed && (
                                                     <span className="text-[11px] leading-4 text-amber-700 font-medium">
-      {t("documents.newRevision")}
-    </span>
+                                                  {t("documents.newRevision")}
+                                                </span>
                                                 )}
 
                                                 <span className="text-xs text-gray-500 truncate">
-    {isPlaceholder ? (
-        <span className="italic">{t("documents.processing")}</span>
-    ) : (
-        <>
-            {part.page !== null ? (
-                <>
-                    {t("documents.page", {page: part.page})}
-                    {part.company_name && " • "}
-                </>
-            ) : null}
-            {part.company_name ?? (!part.page ? "—" : "")}
-        </>
-    )}
-  </span>
+                                                {isPlaceholder ? (
+                                                    <span className="italic">{t("documents.processing")}</span>
+                                                ) : (
+                                                    <>
+                                                        {part.page !== null ? (
+                                                            <>
+                                                                {t("documents.page", {page: part.page})}
+                                                                {part.company_name && " • "}
+                                                            </>
+                                                        ) : null}
+                                                        {part.company_name ?? (!part.page ? "—" : "")}
+                                                    </>
+                                                )}
+                                              </span>
                                             </div>
 
                                         </div>
@@ -547,24 +548,34 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
 
                                 {/* Class */}
                                 <td className="px-3 py-3">
-                    <span className="text-sm text-gray-500 truncate block">
-                      {isPlaceholder ? "-" : part.primary_class || "-"}
-                    </span>
+                                    <div className="min-w-0">
+                                        <div className="text-sm text-gray-700 truncate">
+                                            {isPlaceholder ? "-" : part.primary_class || "-"}
+                                        </div>
+
+                                        {!isPlaceholder && part.display_name && (
+                                            <div className="text-xs text-gray-500 truncate">
+                                                {part.display_name}
+                                            </div>
+                                        )}
+                                    </div>
+                                </td>
+
+
+                                {/* Display name */}
+                                <td className="px-3 py-3">
+                                    <span className="text-sm text-gray-500 truncate block">
+                                        {isPlaceholder ? "-" : part.drawing_number|| "-"}
+                                    </span>
                                 </td>
 
                                 {/* Material */}
                                 <td className="px-3 py-3">
-                    <span className="text-sm text-gray-500 truncate block">
-                      {isPlaceholder ? "-" : part.material || "-"}
-                    </span>
+                                    <span className="text-sm text-gray-500 truncate block">
+                                      {isPlaceholder ? "-" : part.material || "-"}
+                                    </span>
                                 </td>
 
-                                {/* Envelope */}
-                                <td className="px-3 py-3">
-                    <span className="text-sm text-gray-500 truncate block">
-                      {isPlaceholder ? "-" : part.envelope_text || "-"}
-                    </span>
-                                </td>
 
                                 {/* Complexity */}
                                 <td className="px-3 py-3">
@@ -574,8 +585,8 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                         <span
                                             className={`inline-flex items-center px-2 py-1 rounded text-xs border ${complexityConfig.className}`}
                                         >
-                        {complexityConfig.label}
-                      </span>
+                                            {complexityConfig.label}
+                                        </span>
                                     ) : (
                                         <span className="text-sm text-gray-400">-</span>
                                     )}
