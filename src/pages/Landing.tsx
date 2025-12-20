@@ -62,7 +62,6 @@ const DEMO_DOCUMENTS = [
 const Landing = () => {
     const [scrolled, setScrolled] = useState(false);
     const [activeDemo, setActiveDemo] = useState(0);
-    const [showLangMenu, setShowLangMenu] = useState(false);
     const {user, loading} = useAuth();
     const navigate = useNavigate();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -135,10 +134,9 @@ const Landing = () => {
     };
 
     const handleLanguageSwitch = (newLang: AppLang) => {
-        const currentPath = window.location.pathname;
+        const currentPath = window.location.pathname + window.location.hash;
         const newPath = currentPath.replace(`/${lang}`, `/${newLang}`);
         navigate(newPath);
-        setShowLangMenu(false);
     };
 
     const goToSection = (hash: string) => {
@@ -156,27 +154,40 @@ const Landing = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 text-slate-900">
             {/* Header stays the same... */}
-            <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-                scrolled ? "bg-white/80 backdrop-blur-lg shadow-sm" : "bg-transparent"
-            }`}>
-
+            <header
+                className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+                    scrolled ? "bg-white/80 backdrop-blur-lg shadow-sm" : "bg-transparent"
+                }`}
+            >
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
+                    {/* Left: Hamburger + Brand */}
+                    <div className="flex items-center gap-3 min-w-0">
+                        <button
+                            type="button"
+                            onClick={() => setMobileMenuOpen(true)}
+                            className="md:hidden h-9 w-9 inline-flex items-center justify-center rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                            aria-label="Open menu"
+                        >
+                            <Menu className="h-5 w-5"/>
+                        </button>
 
-                    <Link to="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity min-w-0">
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-blue-600 blur-md opacity-50 rounded-lg"></div>
-                            <div
-                                className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 text-sm font-bold text-white shadow-lg">
-                                P
+                        <Link to="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity min-w-0">
+                            <div className="relative shrink-0">
+                                <div className="absolute inset-0 bg-blue-600 blur-md opacity-50 rounded-lg"></div>
+                                <div
+                                    className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 text-sm font-bold text-white shadow-lg">
+                                    P
+                                </div>
                             </div>
-                        </div>
 
-                        <span
-                            className="text-lg font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-                            Partonomy
-                        </span>
-                    </Link>
+                            <span
+                                className="text-lg font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+          Partonomy
+        </span>
+                        </Link>
+                    </div>
 
+                    {/* Desktop nav */}
                     <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
                         <button
                             type="button"
@@ -186,7 +197,7 @@ const Landing = () => {
                             }}
                             className="text-slate-600 hover:text-slate-900 transition-colors"
                         >
-                            {t('landing.nav.howItWorks')}
+                            {t("landing.nav.howItWorks")}
                         </button>
 
                         <button
@@ -197,7 +208,7 @@ const Landing = () => {
                             }}
                             className="text-slate-600 hover:text-slate-900 transition-colors"
                         >
-                            {t('landing.nav.features')}
+                            {t("landing.nav.features")}
                         </button>
 
                         <button
@@ -208,7 +219,7 @@ const Landing = () => {
                             }}
                             className="text-slate-600 hover:text-slate-900 transition-colors"
                         >
-                            {t('landing.nav.pricing')}
+                            {t("landing.nav.pricing")}
                         </button>
 
                         <button
@@ -219,84 +230,60 @@ const Landing = () => {
                             }}
                             className="text-slate-600 hover:text-slate-900 transition-colors"
                         >
-                            {t('landing.nav.faq')}
+                            {t("landing.nav.faq")}
                         </button>
 
-                        <Link
-                            to={`/${lang}/insights`}
-                            className="text-slate-600 hover:text-slate-900 transition-colors"
-                        >
-                            {t('landing.nav.insights')}
+                        <Link to={`/${lang}/insights`}
+                              className="text-slate-600 hover:text-slate-900 transition-colors">
+                            {t("landing.nav.insights")}
                         </Link>
                     </nav>
 
-                    <div className="flex items-center gap-3">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setShowLangMenu(false);
-                                setMobileMenuOpen(true);
-                            }}
-                            className="md:hidden h-9 w-9 inline-flex items-center justify-center rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                            aria-label="Open menu"
-                        >
-                            <Menu className="h-5 w-5"/>
-                        </button>
-
-                        {/* Language Switcher */}
-                        <div className="relative">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setMobileMenuOpen(false);
-                                    setShowLangMenu((v) => !v);
-                                }}
-                                className="h-9 px-3 rounded-md bg-slate-100 hover:bg-slate-200 flex items-center gap-2 text-sm font-medium text-slate-700 transition-colors"
-                            >
-                                <Languages className="w-4 h-4"/>
-                                <span className="uppercase">{lang}</span>
-                            </button>
-
-                            {showLangMenu && (
-                                <div
-                                    className="absolute right-0 top-full mt-2 w-40 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden z-50">
-                                    {SUPPORTED_LANGS.map((l) => (
-                                        <button
-                                            key={l}
-                                            type="button"
-                                            onClick={() => handleLanguageSwitch(l)}
-                                            className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
-                                                l === lang
-                                                    ? "bg-blue-50 text-blue-700 font-medium"
-                                                    : "text-slate-700 hover:bg-slate-50"
-                                            }`}
-                                        >
-                                            {l === "en" ? "English" : l === "cs" ? "Čeština" : "Deutsch"}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
+                    {/* Right side */}
+                    <div className="flex items-center gap-3 shrink-0">
+                        {/* Desktop language switcher (compact) */}
+                        <div className="hidden lg:flex items-center gap-2">
+                            <Languages className="h-4 w-4 text-slate-500"/>
+                            <div className="flex gap-1">
+                                {SUPPORTED_LANGS.map((l) => (
+                                    <button
+                                        key={l}
+                                        type="button"
+                                        onClick={() => handleLanguageSwitch(l)}
+                                        className={`px-2.5 py-1.5 rounded-md text-xs font-semibold border transition-colors ${
+                                            l === lang
+                                                ? "bg-blue-50 text-blue-700 border-blue-200"
+                                                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                                        }`}
+                                        aria-label={`Switch language to ${l}`}
+                                    >
+                                        {l.toUpperCase()}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         {!user && (
                             <button
                                 onClick={handleLogin}
-                                className="hidden sm:block px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors"
+                                className="hidden md:block px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors"
                             >
-                                {t('landing.nav.login')}
+                                {t("landing.nav.login")}
                             </button>
                         )}
 
                         <button
                             onClick={handleGetStarted}
-                            className="group px-3.5 py-2 text-sm sm:px-5 sm:py-2.5 sm:text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/40 hover:-translate-y-0.5">
-                            {user ? t('landing.nav.goToApp') : t('landing.nav.tryFree')}
+                            className="group px-3 py-2 text-sm sm:px-5 sm:py-2.5 font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/40"
+                        >
+                            {user ? t("landing.nav.goToApp") : t("landing.nav.tryFree")}
                             <ChevronRight
                                 className="inline-block ml-1 w-4 h-4 group-hover:translate-x-1 transition-transform"/>
                         </button>
                     </div>
                 </div>
             </header>
+
 
             {/* Mobile menu */}
             {mobileMenuOpen && (
@@ -310,7 +297,8 @@ const Landing = () => {
                     />
 
                     {/* panel */}
-                    <div className="absolute top-0 left-0 right-0 bg-white shadow-xl border-b border-slate-200">
+                    <div
+                        className="absolute top-0 left-0 right-0 bg-white shadow-xl border-b border-slate-200 max-h-[85vh] overflow-auto">
                         <div className="px-4 pt-4 pb-3 flex items-center justify-between">
                             <div className="font-semibold text-slate-900">Menu</div>
                             <button
@@ -320,8 +308,12 @@ const Landing = () => {
                                 aria-label="Close menu"
                             >
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                                    <path d="M6 6l12 12M18 6l-12 12" stroke="currentColor" strokeWidth="2"
-                                          strokeLinecap="round"/>
+                                    <path
+                                        d="M6 6l12 12M18 6l-12 12"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                    />
                                 </svg>
                             </button>
                         </div>
@@ -374,11 +366,41 @@ const Landing = () => {
                                         handleLogin();
                                         setMobileMenuOpen(false);
                                     }}
-                                    className="mt-2 w-full text-left px-3 py-3 rounded-lg hover:bg-slate-50 text-slate-700 font-medium"
+                                    className="mt-1 w-full text-left px-3 py-3 rounded-lg hover:bg-slate-50 text-slate-700 font-medium"
                                 >
                                     {t("landing.nav.login")}
                                 </button>
                             )}
+
+                            {/* Divider */}
+                            <div className="my-3 h-px bg-slate-200"/>
+
+                            {/* Language switcher inside menu */}
+                            <div className="px-3">
+                                <div className="text-xs font-semibold text-slate-500 mb-2">
+                                    {t("landing.nav.language") ?? "Language"}
+                                </div>
+
+                                <div className="flex gap-2">
+                                    {SUPPORTED_LANGS.map((l) => (
+                                        <button
+                                            key={l}
+                                            type="button"
+                                            onClick={() => {
+                                                handleLanguageSwitch(l);
+                                                setMobileMenuOpen(false);
+                                            }}
+                                            className={`px-3 py-2 rounded-md text-sm font-medium border transition-colors ${
+                                                l === lang
+                                                    ? "bg-blue-50 text-blue-700 border-blue-200"
+                                                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                                            }`}
+                                        >
+                                            {l.toUpperCase()}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -400,51 +422,78 @@ const Landing = () => {
                             {/* Left content */}
                             <div className="space-y-6 sm:space-y-8">
                                 <div
-                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100/50 shadow-sm">
-                                  <span className="relative flex h-2 w-2">
+                                    className="inline-flex flex-wrap items-center gap-2 px-4 py-2 rounded-2xl max-w-full sm:max-w-[520px] bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100/50 shadow-sm">
+                                      <span className="relative flex h-2 w-2 shrink-0">
                                         <span
                                             className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                                         <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
-                                  </span>
-                                    <span className="text-xs font-medium text-blue-900">
-                                        {t('landing.hero.badge')}
-                                        </span>
+                                      </span>
+
+                                    <span className="text-xs font-medium text-blue-900 leading-snug break-words">
+                                        {t("landing.hero.badge")}
+                                      </span>
                                 </div>
 
+
                                 <h1 className="font-bold tracking-tight leading-[1.05] text-[clamp(32px,6vw,64px)]">
-                                    <span
-                                        className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
-                                        {t('landing.hero.headline1')}
-                                    </span>
-                                    <span className="block sm:inline"> </span>
+                                  <span
+                                      className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
+                                    {t("landing.hero.headline1")}
+                                  </span>
+
                                     <span
                                         className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                                        {t('landing.hero.headline2')}
-                                    </span>
+                                        {/* na mobilu a desktopu: drž poslední dvě "slova" pohromadě */}
+                                        {(() => {
+                                            const s = t("landing.hero.headline2");
+                                            const parts = s.split(" ");
+                                            if (parts.length < 2) return s;
+
+                                            const last = parts.pop()!;      // "3"
+                                            const prev = parts.pop()!;      // "na"
+                                            const head = parts.join(" ");   // "z 20 minut"
+
+                                            return (
+                                                <>
+                                                    {head}{" "}
+                                                    <span className="whitespace-nowrap">
+                                                {prev} {last}
+                                              </span>
+                                                </>
+                                            );
+                                        })()}
+                                </span>
                                 </h1>
 
 
-                                <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl">
-                                    {t('landing.hero.description')}
+                                <p className="text-sm sm:text-lg text-slate-600 leading-relaxed max-w-[36ch] sm:max-w-xl">
+                                    {t("landing.hero.description")}
                                 </p>
 
-                                <div className="flex flex-wrap items-center gap-4">
+
+                                <div
+                                    className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
                                     <button
                                         onClick={handleGetStarted}
-                                        className="group px-3.5 py-2 text-sm sm:px-5 sm:py-2.5 sm:text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-xl shadow-blue-600/30 hover:shadow-2xl hover:shadow-blue-600/40 hover:-translate-y-1">
-                                        {user ? t('landing.nav.goToApp') : t('landing.hero.uploadFirstDrawing')}
+                                        className="group w-full sm:w-auto px-5 py-3 sm:px-5 sm:py-2.5 text-sm sm:text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-xl shadow-blue-600/30 hover:shadow-2xl hover:shadow-blue-600/40 hover:-translate-y-1"
+                                    >
+                                        {user ? t("landing.nav.goToApp") : t("landing.hero.uploadFirstDrawing")}
                                         <Upload
                                             className="inline-block ml-2 w-5 h-5 group-hover:translate-y-0.5 transition-transform"/>
                                     </button>
+
                                     {!user && (
                                         <button
                                             onClick={handleLogin}
-                                            className="px-8 py-4 text-base font-medium text-slate-700 hover:text-slate-900 transition-colors group">
-                                            {t('landing.hero.loginToAccount')}
+                                            className="w-full sm:w-auto px-5 py-3 sm:px-5 sm:py-2.5 text-sm sm:text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors rounded-xl hover:bg-slate-100"
+                                        >
+                                            {t("landing.hero.loginToAccount")}
                                             <ChevronRight
                                                 className="inline-block ml-1 w-5 h-5 group-hover:translate-x-1 transition-transform"/>
-                                        </button>)}
+                                        </button>
+                                    )}
                                 </div>
+
 
                                 <div className="flex flex-wrap gap-6 pt-4">
                                     <div className="flex items-center gap-2">

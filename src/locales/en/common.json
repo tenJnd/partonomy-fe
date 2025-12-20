@@ -530,7 +530,8 @@
       "insights": "Insights",
       "login": "Login",
       "goToApp": "Go to app",
-      "tryFree": "Try for free"
+      "tryFree": "Try for free",
+      "language": "Language"
     },
     "hero": {
       "badge": "AI assistant for processing technical drawings in manufacturing",
