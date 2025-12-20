@@ -1,5 +1,54 @@
 {
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "partonomy.cz"
+        }
+      ],
+      "destination": "https://usepartonomy.com/cs/$1",
+      "permanent": true
+    },
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.partonomy.cz"
+        }
+      ],
+      "destination": "https://usepartonomy.com/cs/$1",
+      "permanent": true
+    },
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "partonomy.eu"
+        }
+      ],
+      "destination": "https://usepartonomy.com/en/$1",
+      "permanent": true
+    },
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.partonomy.eu"
+        }
+      ],
+      "destination": "https://usepartonomy.com/en/$1",
+      "permanent": true
+    }
+  ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }
