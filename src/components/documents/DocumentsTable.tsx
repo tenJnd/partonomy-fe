@@ -4,10 +4,10 @@ import {Lock, Star, StarOff} from "lucide-react";
 import {useTranslation} from "react-i18next";
 
 import DocumentsDesktopTable from "./DocumentsDesktopTable";
-import DocumentsCards from "./DocumentsCards.tsx";
+import DocumentsCards from "./DocumentsCards";
 import type {DocumentsTableProps} from "./documentsTable.types";
+import {PriorityEnum, WorkflowStatusEnum} from "../../lib/database.types";
 import {PRIORITY_LABELS, STATUS_LABELS} from "../../utils/tagsFormatting";
-import type {PriorityEnum, WorkflowStatusEnum} from "../../lib/database.types";
 
 const DocumentsTable: React.FC<DocumentsTableProps> = (props) => {
     const {t} = useTranslation();

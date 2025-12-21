@@ -11,9 +11,6 @@ export type SortField =
     | "last_status"
     | "last_updated";
 
-export type WorkflowStatus = WorkflowStatusEnum | null;
-export type Priority = PriorityEnum | null;
-
 export interface DocumentsTableProps {
     parts: PartWithDocument[];
     loading: boolean;

@@ -7,6 +7,7 @@ import type { Database } from "../lib/database.types";
 import { Link, useNavigate } from "react-router-dom";
 import { useOrgBilling } from "../hooks/useOrgBilling";
 import { useTranslation } from "react-i18next";
+import {useLang} from "../hooks/useLang.ts";
 
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
 
@@ -18,6 +19,7 @@ const Projects: React.FC = () => {
     useProjects();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const lang = useLang();
   const { billing } = useOrgBilling();
 
   const canUseProjects = !!billing?.tier?.can_use_projects; // uprav podle tvého billing shape
@@ -178,7 +180,7 @@ const Projects: React.FC = () => {
   };
 
   const handleRowClick = (projectId: string) => {
-    navigate(`/app/projects/${projectId}`);
+    navigate(`/${lang}/app/projects/${projectId}`);
   };
 
   // 🔒 Tady jen rozhodneme, CO vrátit – ale všechny hooky výše už běží vždy

@@ -14,7 +14,7 @@ import {
     Trash2,
 } from "lucide-react";
 
-import type {DocumentsTableProps, SortField, WorkflowStatus, Priority} from "./documentsTable.types.ts";
+import type {DocumentsTableProps, SortField} from "./documentsTable.types";
 import {
     getComplexityConfig,
     getFitConfig,
@@ -25,7 +25,7 @@ import {
     STATUS_LABELS,
 } from "../../utils/tagsFormatting";
 import {useTranslation} from "react-i18next";
-import type {PriorityEnum, WorkflowStatusEnum} from "../../lib/database.types.ts";
+import type {PriorityEnum, WorkflowStatusEnum} from "../../lib/database.types";
 
 const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                            parts,
@@ -375,8 +375,8 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
 
                         const isFavorite = favoritePartIds?.has(part.id) ?? false;
 
-                        const statusValue = (part.workflow_status as WorkflowStatus) ?? null;
-                        const priorityValue = (part.priority as Priority) ?? null;
+                        const statusValue = (part.workflow_status as WorkflowStatusEnum) ?? null;
+                        const priorityValue = (part.priority as PriorityEnum) ?? null;
 
                         const statusDisabled =
                             isPlaceholder ||
