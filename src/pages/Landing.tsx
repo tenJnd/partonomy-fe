@@ -626,7 +626,7 @@ const Landing = () => {
                 <section id="how-it-works" className="py-20 bg-white">
                     <div className="mx-auto max-w-7xl px-6">
                         <div className="text-center mb-16">
-                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-4">{t('landing.howItWorks.title')}</h2>
+                            <h2 className="text-4xl font-bold text-slate-900 mb-4">{t('landing.howItWorks.title')}</h2>
                             <p className="text-lg text-slate-600 max-w-2xl mx-auto">
                                 {t('landing.howItWorks.subtitle')}
                             </p>
@@ -687,7 +687,7 @@ const Landing = () => {
                 <section id="features" className="py-20 bg-gradient-to-br from-slate-50 to-blue-50/30">
                     <div className="mx-auto max-w-7xl px-6">
                         <div className="text-center mb-16">
-                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+                            <h2 className="text-4xl font-bold text-slate-900 mb-4">
                                 {t('landing.features.title')}</h2>
                             <p className="text-lg text-slate-600">{t('landing.features.subtitle')}</p>
                         </div>
@@ -767,7 +767,7 @@ const Landing = () => {
                 <section id="faq" className="py-20 bg-gradient-to-br from-slate-50 to-blue-50/30">
                     <div className="mx-auto max-w-4xl px-6">
                         <div className="text-center mb-14">
-                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+                            <h2 className="text-4xl font-bold text-slate-900 mb-4">
 
                                 {t('landing.faq.title')}
                             </h2>
@@ -815,7 +815,7 @@ const Landing = () => {
                 <section className="py-16 bg-gradient-to-br from-slate-50 to-blue-50/30">
                     <div className="mx-auto max-w-7xl px-6">
                         <div className="text-center mb-12">
-                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+                            <h2 className="text-4xl font-bold text-slate-900 mb-4">
                                 {t('landing.insights.title')}
                             </h2>
 
