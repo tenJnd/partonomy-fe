@@ -26,37 +26,78 @@ import {
 import {useTranslation} from "react-i18next";
 import type {PriorityEnum, WorkflowStatusEnum} from "../../lib/database.types";
 
-const DocumentsDesktopTable: React.FC<DocumentsTableProps> = ({
-                                                                  parts,
-                                                                  loading,
-                                                                  uploading,
-                                                                  sortField,
-                                                                  sortDirection,
-                                                                  onSortChange,
-                                                                  onUploadClick,
-                                                                  onRerun,
-                                                                  onDownload,
-                                                                  onDelete,
-                                                                  onRowClick,
-                                                                  canUseProjects = false,
-                                                                  canUseFavorite = false,
-                                                                  canSetStatus = false,
-                                                                  canSetPriority = false,
-                                                                  favoritePartIds,
-                                                                  onToggleFavorite,
-                                                                  onChangeWorkflowStatus,
-                                                                  onChangePriority,
-                                                                  updatingStatusIds,
-                                                                  updatingPriorityIds,
-                                                                  // selection
-                                                                  selectedPartIds,
-                                                                  onToggleSelect,
-                                                                  onAddToProject,
-                                                              }) => {
+const DocumentsDesktopTable: React.FC<DocumentsTableProps> = (props) => {
     const {t} = useTranslation();
+
+    const {
+        parts,
+        loading,
+        uploading,
+        sortField,
+        sortDirection,
+        onSortChange,
+        onUploadClick,
+        onRerun,
+        onDownload,
+        onDelete,
+        onRowClick,
+
+        canUseProjects = false,
+        canUseFavorite = false,
+        canSetStatus = false,
+        canSetPriority = false,
+
+        favoritePartIds,
+        onToggleFavorite,
+        onChangeWorkflowStatus,
+        onChangePriority,
+        updatingStatusIds,
+        updatingPriorityIds,
+
+        selectedPartIds,
+        onToggleSelect,
+        onAddToProject,
+
+        capabilities,
+    } = props;
+
     const [openMenuId, setOpenMenuId] = React.useState<string | null>(null);
 
-    const selectionEnabled = !!selectedPartIds && !!onToggleSelect;
+    // single source of truth inside the component (uses computed capabilities if provided)
+    const caps = React.useMemo(() => {
+        if (capabilities) return capabilities;
+
+        const selection = !!selectedPartIds && !!onToggleSelect;
+
+        return {
+            selection,
+
+            editStatus: canSetStatus && !!onChangeWorkflowStatus,
+            editPriority: canSetPriority && !!onChangePriority,
+            favorite: canUseFavorite && !!onToggleFavorite,
+            projects: canUseProjects && !!onAddToProject,
+
+            bulkStatus: false,
+            bulkPriority: false,
+            bulkFavorite: false,
+            bulkProjects: false,
+            bulkActions: false,
+        };
+    }, [
+        capabilities,
+        selectedPartIds,
+        onToggleSelect,
+        canSetStatus,
+        canSetPriority,
+        canUseFavorite,
+        canUseProjects,
+        onChangeWorkflowStatus,
+        onChangePriority,
+        onToggleFavorite,
+        onAddToProject,
+    ]);
+
+    const selectionEnabled = caps.selection;
 
     const SortableHeader: React.FC<{
         field: SortField;
@@ -138,33 +179,32 @@ const DocumentsDesktopTable: React.FC<DocumentsTableProps> = ({
                     <colgroup>
                         {/* selection sloupec */}
                         {selectionEnabled && <col style={{width: "48px"}}/>}
-                        <col style={{width: "24%"}}/>
                         {/* Document */}
-                        <col style={{width: "12%"}}/>
+                        <col style={{width: "24%"}}/>
                         {/* Class */}
                         <col style={{width: "12%"}}/>
                         {/* Drawing number */}
-                        <col style={{width: "10%"}}/>
+                        <col style={{width: "12%"}}/>
                         {/* Material */}
-                        <col style={{width: "8%"}}/>
+                        <col style={{width: "10%"}}/>
                         {/* Complexity */}
                         <col style={{width: "8%"}}/>
                         {/* Fit */}
                         <col style={{width: "8%"}}/>
                         {/* Workflow */}
-                        <col style={{width: "7%"}}/>
+                        <col style={{width: "8%"}}/>
                         {/* Priority */}
-                        <col style={{width: "10%"}}/>
+                        <col style={{width: "7%"}}/>
                         {/* Modified */}
-                        <col style={{width: "48px"}}/>
+                        <col style={{width: "10%"}}/>
                         {/* Doc Status */}
                         <col style={{width: "48px"}}/>
                         {/* Actions */}
+                        <col style={{width: "48px"}}/>
                     </colgroup>
 
                     <thead className="bg-slate-50 border-b border-gray-200">
                     <tr>
-                        {/* header checkbox - bulk is now in parent DocumentsTable.tsx */}
                         {selectionEnabled && <th className="px-3 py-3"/>}
 
                         <SortableHeader field="file_name">
@@ -183,7 +223,6 @@ const DocumentsDesktopTable: React.FC<DocumentsTableProps> = ({
                             {t("documents.columns.material")}
                         </th>
 
-
                         <SortableHeader field="overall_complexity">
                             {t("documents.columns.complexity")}
                         </SortableHeader>
@@ -192,20 +231,28 @@ const DocumentsDesktopTable: React.FC<DocumentsTableProps> = ({
                             {t("documents.columns.fit")}
                         </SortableHeader>
 
+                        {/* Workflow header */}
                         <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                             <div className="flex items-center gap-1.5">
                                 {t("documents.columns.workStatus")}
-                                {!canSetStatus && (
-                                    <Lock className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5}/>
+                                {!caps.editStatus && (
+                                    <Lock
+                                        className="w-3.5 h-3.5 text-gray-400"
+                                        strokeWidth={1.5}
+                                    />
                                 )}
                             </div>
                         </th>
 
+                        {/* Priority header */}
                         <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                             <div className="flex items-center gap-1.5">
                                 {t("documents.columns.priority")}
-                                {!canSetPriority && (
-                                    <Lock className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5}/>
+                                {!caps.editPriority && (
+                                    <Lock
+                                        className="w-3.5 h-3.5 text-gray-400"
+                                        strokeWidth={1.5}
+                                    />
                                 )}
                             </div>
                         </th>
@@ -237,17 +284,16 @@ const DocumentsDesktopTable: React.FC<DocumentsTableProps> = ({
 
                         const statusDisabled =
                             isPlaceholder ||
-                            !canSetStatus ||
-                            !onChangeWorkflowStatus ||
+                            !caps.editStatus ||
                             updatingStatusIds?.has(part.id);
 
                         const priorityDisabled =
                             isPlaceholder ||
-                            !canSetPriority ||
-                            !onChangePriority ||
+                            !caps.editPriority ||
                             updatingPriorityIds?.has(part.id);
 
-                        const favoriteDisabled = isPlaceholder || !canUseFavorite || !onToggleFavorite;
+                        const favoriteDisabled =
+                            isPlaceholder || !caps.favorite;
 
                         return (
                             <tr
@@ -256,7 +302,9 @@ const DocumentsDesktopTable: React.FC<DocumentsTableProps> = ({
                                     !isPlaceholder && part.document && onRowClick(part.document.id, part.id)
                                 }
                                 className={`transition-colors ${
-                                    isPlaceholder ? "bg-blue-50/30 cursor-default" : "hover:bg-blue-50/50 cursor-pointer"
+                                    isPlaceholder
+                                        ? "bg-blue-50/30 cursor-default"
+                                        : "hover:bg-blue-50/50 cursor-pointer"
                                 }`}
                             >
                                 {/* row checkbox */}
@@ -294,7 +342,7 @@ const DocumentsDesktopTable: React.FC<DocumentsTableProps> = ({
                                                     ? "bg-amber-50 border-amber-300 text-amber-700"
                                                     : "bg-white border-gray-200 text-gray-400 hover:bg-gray-50"
                                             }
-                          ${!canUseFavorite ? "opacity-60 cursor-not-allowed" : ""}
+                          ${!caps.favorite ? "opacity-60 cursor-not-allowed" : ""}
                         `}
                                         >
                                             {isFavorite ? (
@@ -311,37 +359,36 @@ const DocumentsDesktopTable: React.FC<DocumentsTableProps> = ({
                                                 }`}
                                             />
                                             <div className="flex flex-col min-w-0">
-                                              <span
-                                                  className={`text-sm font-medium truncate ${
-                                                      isPlaceholder ? "text-blue-900" : "text-gray-900"
-                                                  }`}
-                                              >
-                                                {part.document?.file_name || t("documents.unknown")}
-                                              </span>
+                          <span
+                              className={`text-sm font-medium truncate ${
+                                  isPlaceholder ? "text-blue-900" : "text-gray-900"
+                              }`}
+                          >
+                            {part.document?.file_name || t("documents.unknown")}
+                          </span>
 
                                                 {!isPlaceholder && part.revision_changed && (
                                                     <span className="text-[11px] leading-4 text-amber-700 font-medium">
-                                                  {t("documents.newRevision")}
-                                                </span>
+                              {t("documents.newRevision")}
+                            </span>
                                                 )}
 
                                                 <span className="text-xs text-gray-500 truncate">
-                                                {isPlaceholder ? (
-                                                    <span className="italic">{t("documents.processing")}</span>
-                                                ) : (
-                                                    <>
-                                                        {part.page !== null ? (
-                                                            <>
-                                                                {t("documents.page", {page: part.page})}
-                                                                {part.company_name && " • "}
-                                                            </>
-                                                        ) : null}
-                                                        {part.company_name ?? (!part.page ? "—" : "")}
-                                                    </>
-                                                )}
-                                              </span>
+                            {isPlaceholder ? (
+                                <span className="italic">{t("documents.processing")}</span>
+                            ) : (
+                                <>
+                                    {part.page !== null ? (
+                                        <>
+                                            {t("documents.page", {page: part.page})}
+                                            {part.company_name && " • "}
+                                        </>
+                                    ) : null}
+                                    {part.company_name ?? (!part.page ? "—" : "")}
+                                </>
+                            )}
+                          </span>
                                             </div>
-
                                         </div>
                                     </div>
                                 </td>
@@ -361,21 +408,19 @@ const DocumentsDesktopTable: React.FC<DocumentsTableProps> = ({
                                     </div>
                                 </td>
 
-
                                 {/* Drawing number */}
                                 <td className="px-3 py-3">
-                                    <span className="text-sm text-gray-500 truncate block">
-                                        {isPlaceholder ? "-" : part.drawing_number || "-"}
-                                    </span>
+                    <span className="text-sm text-gray-500 truncate block">
+                      {isPlaceholder ? "-" : part.drawing_number || "-"}
+                    </span>
                                 </td>
 
                                 {/* Material */}
                                 <td className="px-3 py-3">
-                                    <span className="text-sm text-gray-500 truncate block">
-                                      {isPlaceholder ? "-" : part.material || "-"}
-                                    </span>
+                    <span className="text-sm text-gray-500 truncate block">
+                      {isPlaceholder ? "-" : part.material || "-"}
+                    </span>
                                 </td>
-
 
                                 {/* Complexity */}
                                 <td className="px-3 py-3">
@@ -385,8 +430,8 @@ const DocumentsDesktopTable: React.FC<DocumentsTableProps> = ({
                                         <span
                                             className={`inline-flex items-center px-2 py-1 rounded text-xs border ${complexityConfig.className}`}
                                         >
-                                            {complexityConfig.label}
-                                        </span>
+                        {complexityConfig.label}
+                      </span>
                                     ) : (
                                         <span className="text-sm text-gray-400">-</span>
                                     )}
@@ -411,7 +456,7 @@ const DocumentsDesktopTable: React.FC<DocumentsTableProps> = ({
                                 <td className="px-3 py-3">
                                     {isPlaceholder ? (
                                         <span className="text-xs text-gray-400">-</span>
-                                    ) : canSetStatus && onChangeWorkflowStatus ? (
+                                    ) : caps.editStatus ? (
                                         <div
                                             className="relative inline-block w-full"
                                             onClick={(e) => e.stopPropagation()}
@@ -419,7 +464,10 @@ const DocumentsDesktopTable: React.FC<DocumentsTableProps> = ({
                                             <select
                                                 value={statusValue ?? ""}
                                                 onChange={(e) =>
-                                                    onChangeWorkflowStatus(part, e.target.value as WorkflowStatusEnum)
+                                                    onChangeWorkflowStatus?.(
+                                                        part,
+                                                        e.target.value as WorkflowStatusEnum
+                                                    )
                                                 }
                                                 disabled={statusDisabled}
                                                 className={`pl-2 pr-7 h-8 w-full rounded-lg text-xs appearance-none bg-clip-padding border ${
@@ -458,14 +506,16 @@ const DocumentsDesktopTable: React.FC<DocumentsTableProps> = ({
                                 <td className="px-3 py-3">
                                     {isPlaceholder ? (
                                         <span className="text-xs text-gray-400">-</span>
-                                    ) : canSetPriority && onChangePriority ? (
+                                    ) : caps.editPriority ? (
                                         <div
                                             className="relative inline-block w-full"
                                             onClick={(e) => e.stopPropagation()}
                                         >
                                             <select
                                                 value={priorityValue ?? ""}
-                                                onChange={(e) => onChangePriority(part, e.target.value as PriorityEnum)}
+                                                onChange={(e) =>
+                                                    onChangePriority?.(part, e.target.value as PriorityEnum)
+                                                }
                                                 disabled={priorityDisabled}
                                                 className={`pl-2 pr-7 h-8 w-full rounded-lg text-xs appearance-none bg-clip-padding border ${
                                                     priorityDisabled
@@ -502,7 +552,11 @@ const DocumentsDesktopTable: React.FC<DocumentsTableProps> = ({
                                 {/* Modified */}
                                 <td className="px-3 py-3">
                     <span className="text-xs text-gray-500">
-                      {isPlaceholder ? "-" : part.last_updated ? formatDate(part.last_updated) : "-"}
+                      {isPlaceholder
+                          ? "-"
+                          : part.last_updated
+                              ? formatDate(part.last_updated)
+                              : "-"}
                     </span>
                                 </td>
 
@@ -559,12 +613,11 @@ const DocumentsDesktopTable: React.FC<DocumentsTableProps> = ({
                                                         {t("common.download")}
                                                     </button>
 
-                                                    {/* Add to project */}
-                                                    {canUseProjects && onAddToProject && (
+                                                    {caps.projects && (
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                onAddToProject(part);
+                                                                onAddToProject?.(part);
                                                                 setOpenMenuId(null);
                                                             }}
                                                             className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"

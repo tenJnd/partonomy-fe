@@ -1,6 +1,6 @@
 // src/components/documents/DocumentsCards.tsx
 import React from "react";
-import {Download, FileText, FolderPlus, Lock, MoreVertical, RefreshCw, Star, StarOff, Trash2,} from "lucide-react";
+import {Download, FileText, FolderPlus, MoreVertical, RefreshCw, Star, StarOff, Trash2,} from "lucide-react";
 import {useTranslation} from "react-i18next";
 
 import type {DocumentsTableProps} from "./documentsTable.types";
@@ -15,50 +15,98 @@ import {
 } from "../../utils/tagsFormatting";
 import type {PriorityEnum, WorkflowStatusEnum} from "../../lib/database.types";
 
-const DocumentsCards: React.FC<DocumentsTableProps> = ({
-                                                           parts,
-                                                           onRowClick,
-                                                           onRerun,
-                                                           onDownload,
-                                                           onDelete,
-                                                           onAddToProject,
+const DocumentsCards: React.FC<DocumentsTableProps> = (props) => {
+    const {
+        parts,
+        onRowClick,
+        onRerun,
+        onDownload,
+        onDelete,
+        onAddToProject,
 
-                                                           canUseProjects = false,
-                                                           canUseFavorite = false,
-                                                           canSetStatus = false,
-                                                           canSetPriority = false,
+        canUseProjects = false,
+        canUseFavorite = false,
+        canSetStatus = false,
+        canSetPriority = false,
 
-                                                           favoritePartIds,
-                                                           onToggleFavorite,
-                                                           onChangeWorkflowStatus,
-                                                           onChangePriority,
+        favoritePartIds,
+        onToggleFavorite,
+        onChangeWorkflowStatus,
+        onChangePriority,
 
-                                                           updatingStatusIds,
-                                                           updatingPriorityIds,
+        updatingStatusIds,
+        updatingPriorityIds,
 
-                                                           selectedPartIds,
-                                                           onToggleSelect,
-                                                           onToggleSelectAll,
-                                                           onBulkSetStatus,
-                                                           onBulkSetPriority,
-                                                           onBulkToggleFavorite,
-                                                           onBulkAddToProject,
-                                                       }) => {
+        selectedPartIds,
+        onToggleSelect,
+        onToggleSelectAll,
+        onBulkSetStatus,
+        onBulkSetPriority,
+        onBulkToggleFavorite,
+        onBulkAddToProject,
+
+        capabilities,
+    } = props;
+
     const {t} = useTranslation();
     const [openMenuId, setOpenMenuId] = React.useState<string | null>(null);
 
-    const selectionEnabled = !!selectedPartIds && !!onToggleSelect;
+    // Capabilities fallback (for safety / backwards compatibility)
+    const caps = React.useMemo(() => {
+        if (capabilities) return capabilities;
 
-    const hasBulkStatus = canSetStatus && !!onBulkSetStatus;
-    const hasBulkPriority = canSetPriority && !!onBulkSetPriority;
-    const hasBulkFavorite = canUseFavorite && !!onBulkToggleFavorite;
-    const hasBulkProjects = canUseProjects && !!onBulkAddToProject;
+        const selection = !!selectedPartIds && !!onToggleSelect;
 
-    const hasBulkActions =
-        !!selectedPartIds &&
-        !!onToggleSelect &&
-        !!onToggleSelectAll &&
-        (hasBulkStatus || hasBulkPriority || hasBulkFavorite || hasBulkProjects);
+        const editStatus = canSetStatus && !!onChangeWorkflowStatus;
+        const editPriority = canSetPriority && !!onChangePriority;
+        const favorite = canUseFavorite && !!onToggleFavorite;
+        const projects = canUseProjects && !!onAddToProject;
+
+        const bulkStatus = canSetStatus && !!onBulkSetStatus;
+        const bulkPriority = canSetPriority && !!onBulkSetPriority;
+        const bulkFavorite = canUseFavorite && !!onBulkToggleFavorite;
+        const bulkProjects = canUseProjects && !!onBulkAddToProject;
+
+        const bulkActions =
+            selection &&
+            !!onToggleSelectAll &&
+            (bulkStatus || bulkPriority || bulkFavorite || bulkProjects);
+
+        return {
+            selection,
+
+            editStatus,
+            editPriority,
+            favorite,
+            projects,
+
+            bulkStatus,
+            bulkPriority,
+            bulkFavorite,
+            bulkProjects,
+
+            bulkActions,
+        };
+    }, [
+        capabilities,
+        selectedPartIds,
+        onToggleSelect,
+        onToggleSelectAll,
+        canSetStatus,
+        canSetPriority,
+        canUseFavorite,
+        canUseProjects,
+        onChangeWorkflowStatus,
+        onChangePriority,
+        onToggleFavorite,
+        onAddToProject,
+        onBulkSetStatus,
+        onBulkSetPriority,
+        onBulkToggleFavorite,
+        onBulkAddToProject,
+    ]);
+
+    const selectionEnabled = caps.selection;
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -87,19 +135,14 @@ const DocumentsCards: React.FC<DocumentsTableProps> = ({
                 const statusValue = (part.workflow_status as WorkflowStatusEnum | null) ?? null;
                 const priorityValue = (part.priority as PriorityEnum | null) ?? null;
 
+                // ✅ Unified disabled flags (capability-driven)
                 const statusDisabled =
-                    isPlaceholder ||
-                    !canSetStatus ||
-                    !onChangeWorkflowStatus ||
-                    updatingStatusIds?.has(part.id);
+                    isPlaceholder || !caps.editStatus || updatingStatusIds?.has(part.id);
 
                 const priorityDisabled =
-                    isPlaceholder ||
-                    !canSetPriority ||
-                    !onChangePriority ||
-                    updatingPriorityIds?.has(part.id);
+                    isPlaceholder || !caps.editPriority || updatingPriorityIds?.has(part.id);
 
-                const favoriteDisabled = isPlaceholder || !canUseFavorite || !onToggleFavorite;
+                const favoriteDisabled = isPlaceholder || !caps.favorite;
 
                 return (
                     <div
@@ -112,23 +155,17 @@ const DocumentsCards: React.FC<DocumentsTableProps> = ({
                         }}
                     >
                         <div className="flex items-start gap-3">
-                            {/* checkbox */}
-                            {selectionEnabled && (
+                            {/* checkbox – jen když má bulk smysl */}
+                            {selectionEnabled && caps.bulkActions && (
                                 <div className="pt-1">
-                                    {hasBulkActions ? (
-                                        <input
-                                            type="checkbox"
-                                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                            checked={selectedPartIds?.has(part.id) ?? false}
-                                            disabled={part.isProcessingPlaceholder}
-                                            onClick={(e) => e.stopPropagation()}
-                                            onChange={() => onToggleSelect?.(part.id)}
-                                        />
-                                    ) : (
-                                        <div className="inline-flex items-center justify-center w-4 h-4 text-gray-300">
-                                            <Lock className="w-3 h-3" strokeWidth={1.5}/>
-                                        </div>
-                                    )}
+                                    <input
+                                        type="checkbox"
+                                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        checked={selectedPartIds?.has(part.id) ?? false}
+                                        disabled={part.isProcessingPlaceholder}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onChange={() => onToggleSelect?.(part.id)}
+                                    />
                                 </div>
                             )}
 
@@ -191,7 +228,7 @@ const DocumentsCards: React.FC<DocumentsTableProps> = ({
                                                 isFavorite
                                                     ? "bg-amber-50 border-amber-300 text-amber-700"
                                                     : "bg-white border-gray-200 text-gray-400 hover:bg-gray-50"
-                                            } ${!canUseFavorite ? "opacity-60 cursor-not-allowed" : ""}`}
+                                            } ${!caps.favorite ? "opacity-60 cursor-not-allowed" : ""}`}
                                         >
                                             {isFavorite ? (
                                                 <Star className="w-4 h-4 fill-current" strokeWidth={1.5}/>
@@ -241,11 +278,12 @@ const DocumentsCards: React.FC<DocumentsTableProps> = ({
                                                             {t("common.download")}
                                                         </button>
 
-                                                        {canUseProjects && onAddToProject && (
+                                                        {/* ✅ use caps.projects */}
+                                                        {caps.projects && (
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                    onAddToProject(part);
+                                                                    onAddToProject?.(part);
                                                                     setOpenMenuId(null);
                                                                 }}
                                                                 className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left"
@@ -276,35 +314,36 @@ const DocumentsCards: React.FC<DocumentsTableProps> = ({
                                 {/* meta grid */}
                                 <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                                     <div className="min-w-0">
-                                        <div
-                                            className="text-[10px] uppercase text-gray-400">{t("documents.columns.class")}</div>
+                                        <div className="text-[10px] uppercase text-gray-400">
+                                            {t("documents.columns.class")}
+                                        </div>
                                         <div className="text-gray-800 truncate">
                                             {isPlaceholder ? "-" : part.primary_class || "-"}
                                         </div>
-                                        {/* display_name pod class (pokud máš v PartWithDocument) */}
                                         {"display_name" in part && (part as any).display_name ? (
-                                            <div className="text-gray-500 truncate">
-                                                {(part as any).display_name}
-                                            </div>
+                                            <div className="text-gray-500 truncate">{(part as any).display_name}</div>
                                         ) : null}
                                     </div>
 
                                     <div className="min-w-0">
-                                        <div
-                                            className="text-[10px] uppercase text-gray-400">{t("documents.columns.material")}</div>
+                                        <div className="text-[10px] uppercase text-gray-400">
+                                            {t("documents.columns.material")}
+                                        </div>
                                         <div className="text-gray-800 truncate">
                                             {isPlaceholder ? "-" : part.material || "-"}
                                         </div>
                                     </div>
 
                                     <div className="min-w-0">
-                                        <div
-                                            className="text-[10px] uppercase text-gray-400">{t("documents.columns.complexity")}</div>
+                                        <div className="text-[10px] uppercase text-gray-400">
+                                            {t("documents.columns.complexity")}
+                                        </div>
                                         {isPlaceholder ? (
                                             <div className="text-gray-400">-</div>
                                         ) : complexityConfig ? (
                                             <span
-                                                className={`inline-flex items-center px-2 py-1 rounded text-xs border ${complexityConfig.className}`}>
+                                                className={`inline-flex items-center px-2 py-1 rounded text-xs border ${complexityConfig.className}`}
+                                            >
                         {complexityConfig.label}
                       </span>
                                         ) : (
@@ -313,13 +352,15 @@ const DocumentsCards: React.FC<DocumentsTableProps> = ({
                                     </div>
 
                                     <div className="min-w-0">
-                                        <div
-                                            className="text-[10px] uppercase text-gray-400">{t("documents.columns.fit")}</div>
+                                        <div className="text-[10px] uppercase text-gray-400">
+                                            {t("documents.columns.fit")}
+                                        </div>
                                         {isPlaceholder ? (
                                             <div className="text-gray-400">-</div>
                                         ) : fitConfig ? (
                                             <span
-                                                className={`inline-flex items-center px-2 py-1 rounded text-xs border ${fitConfig.className}`}>
+                                                className={`inline-flex items-center px-2 py-1 rounded text-xs border ${fitConfig.className}`}
+                                            >
                         {fitConfig.label}
                       </span>
                                         ) : (
@@ -334,10 +375,12 @@ const DocumentsCards: React.FC<DocumentsTableProps> = ({
                                     <div className="flex-1" onClick={(e) => e.stopPropagation()}>
                                         {isPlaceholder ? (
                                             <div className="text-xs text-gray-400">-</div>
-                                        ) : canSetStatus && onChangeWorkflowStatus ? (
+                                        ) : caps.editStatus ? (
                                             <select
                                                 value={statusValue ?? ""}
-                                                onChange={(e) => onChangeWorkflowStatus(part, e.target.value as WorkflowStatusEnum)}
+                                                onChange={(e) =>
+                                                    onChangeWorkflowStatus?.(part, e.target.value as WorkflowStatusEnum)
+                                                }
                                                 disabled={statusDisabled}
                                                 className={`pl-2 pr-2 h-8 w-full rounded-lg text-xs border ${
                                                     statusDisabled
@@ -354,7 +397,10 @@ const DocumentsCards: React.FC<DocumentsTableProps> = ({
                                             </select>
                                         ) : statusValue ? (
                                             <span
-                                                className={`inline-flex items-center px-2 py-1 rounded text-xs border ${getStatusClasses(statusValue)}`}>
+                                                className={`inline-flex items-center px-2 py-1 rounded text-xs border ${getStatusClasses(
+                                                    statusValue
+                                                )}`}
+                                            >
                         {STATUS_LABELS[statusValue as WorkflowStatusEnum]}
                       </span>
                                         ) : (
@@ -366,10 +412,12 @@ const DocumentsCards: React.FC<DocumentsTableProps> = ({
                                     <div className="flex-1" onClick={(e) => e.stopPropagation()}>
                                         {isPlaceholder ? (
                                             <div className="text-xs text-gray-400">-</div>
-                                        ) : canSetPriority && onChangePriority ? (
+                                        ) : caps.editPriority ? (
                                             <select
                                                 value={priorityValue ?? ""}
-                                                onChange={(e) => onChangePriority(part, e.target.value as PriorityEnum)}
+                                                onChange={(e) =>
+                                                    onChangePriority?.(part, e.target.value as PriorityEnum)
+                                                }
                                                 disabled={priorityDisabled}
                                                 className={`pl-2 pr-2 h-8 w-full rounded-lg text-xs border ${
                                                     priorityDisabled
@@ -386,7 +434,10 @@ const DocumentsCards: React.FC<DocumentsTableProps> = ({
                                             </select>
                                         ) : priorityValue ? (
                                             <span
-                                                className={`inline-flex items-center px-2 py-1 rounded text-xs border ${getPriorityClasses(priorityValue)}`}>
+                                                className={`inline-flex items-center px-2 py-1 rounded text-xs border ${getPriorityClasses(
+                                                    priorityValue
+                                                )}`}
+                                            >
                         {PRIORITY_LABELS[priorityValue as PriorityEnum]}
                       </span>
                                         ) : (
@@ -394,6 +445,24 @@ const DocumentsCards: React.FC<DocumentsTableProps> = ({
                                         )}
                                     </div>
                                 </div>
+
+                                {/* Optional: show tiny locks if user can’t edit (pure UX nicety) */}
+                                {/*{!isPlaceholder && (!caps.editStatus || !caps.editPriority) && (*/}
+                                {/*    <div className="mt-2 flex items-center gap-3 text-[10px] text-gray-400">*/}
+                                {/*        {!caps.editStatus && (*/}
+                                {/*            <span className="inline-flex items-center gap-1">*/}
+                                {/*                <Lock className="w-3 h-3" strokeWidth={1.5}/>*/}
+                                {/*                                        {t("documents.columns.workStatus")}*/}
+                                {/*              </span>*/}
+                                {/*        )}*/}
+                                {/*        {!caps.editPriority && (*/}
+                                {/*            <span className="inline-flex items-center gap-1">*/}
+                                {/*                <Lock className="w-3 h-3" strokeWidth={1.5}/>*/}
+                                {/*                                        {t("documents.columns.priority")}*/}
+                                {/*              </span>*/}
+                                {/*        )}*/}
+                                {/*    </div>*/}
+                                {/*)}*/}
                             </div>
                         </div>
                     </div>
