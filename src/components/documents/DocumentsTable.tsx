@@ -63,11 +63,28 @@ const DocumentsTable: React.FC<DocumentsTableProps> = (props) => {
             {/* 🔥 Bulk bar (společná pro mobile i desktop) */}
             {selectionEnabled && selectedIdsOnPage.length > 0 && (
                 <div
-                    className="sticky top-0 z-20 flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-slate-50">
-          <span className="text-xs text-gray-700">
-            <span className="font-semibold">{selectedIdsOnPage.length}</span>{" "}
-              {t("documents.bulk.selected")}
-          </span>
+                        className="sticky top-0 z-20 flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-slate-50">
+                        <div className="flex items-center gap-3">
+                            {/* "Select All" Checkbox pro Mobile i Desktop */}
+                            {hasBulkActions ? (
+                                <input
+                                    type="checkbox"
+                                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                    onChange={() => onToggleSelectAll(partsIdsOnPage)}
+                                    checked={
+                                        partsIdsOnPage.length > 0 &&
+                                        partsIdsOnPage.every((id) => selectedPartIds.has(id))
+                                    }
+                                />
+                            ) : (
+                                <Lock className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5} />
+                            )}
+
+                            <span className="text-xs text-gray-700">
+                                <span className="font-semibold">{selectedIdsOnPage.length}</span>{" "}
+                                {t("documents.bulk.selected")}
+                            </span>
+                        </div>
 
                     <div className="flex items-center gap-2 flex-wrap justify-end">
                         {/* Favorite */}

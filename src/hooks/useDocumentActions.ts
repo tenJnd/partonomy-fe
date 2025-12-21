@@ -70,21 +70,49 @@ export function useDocumentActions(
 
     const handleBulkToggleFavorite = useCallback(async (partIds: string[], favorite: boolean) => {
         if (!currentOrg || !user) return;
-        if (favorite) {
-            const rows = partIds.map(id => ({org_id: currentOrg.org_id, user_id: user.id, part_id: id}));
-            await supabase.from("part_favorites").upsert(rows);
-            setFavoritePartIds(prev => {
-                const n = new Set(prev);
-                partIds.forEach(id => n.add(id));
-                return n;
-            });
-        } else {
-            await supabase.from("part_favorites").delete().eq("org_id", currentOrg.org_id).eq("user_id", user.id).in("part_id", partIds);
-            setFavoritePartIds(prev => {
-                const n = new Set(prev);
-                partIds.forEach(id => n.delete(id));
-                return n;
-            });
+        try {
+            if (favorite) {
+                // Odfiltrujeme ID, která už v oblíbených jsou, abychom se vyhnuli chybám při insertu
+                const newIdsToInsert = partIds.filter(id => !favoritePartIds.has(id));
+
+                if (newIdsToInsert.length > 0) {
+                    const rows = newIdsToInsert.map(id => ({
+                        org_id: currentOrg.org_id,
+                        user_id: user.id,
+                        part_id: id
+                    }));
+
+                    const {error} = await supabase
+                        .from("part_favorites")
+                        .insert(rows);
+
+                    if (error) throw error;
+                }
+
+                setFavoritePartIds(prev => {
+                    const n = new Set(prev);
+                    partIds.forEach(id => n.add(id));
+                    return n;
+                });
+            } else {
+                const {error} = await supabase
+                    .from("part_favorites")
+                    .delete()
+                    .eq("org_id", currentOrg.org_id)
+                    .eq("user_id", user.id)
+                    .in("part_id", partIds);
+
+                if (error) throw error;
+
+                setFavoritePartIds(prev => {
+                    const n = new Set(prev);
+                    partIds.forEach(id => n.delete(id));
+                    return n;
+                });
+            }
+        } catch (err: any) {
+            console.error("Bulk favorite error:", err);
+            setError(err.message);
         }
     }, [currentOrg, user, setFavoritePartIds]);
 

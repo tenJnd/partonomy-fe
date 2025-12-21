@@ -1,4 +1,3 @@
-// src/components/documents/DocumentsDesktopTable.tsx
 import React from "react";
 import {
     ChevronDown,
@@ -27,54 +26,37 @@ import {
 import {useTranslation} from "react-i18next";
 import type {PriorityEnum, WorkflowStatusEnum} from "../../lib/database.types";
 
-const DocumentsTable: React.FC<DocumentsTableProps> = ({
-                                                           parts,
-                                                           loading,
-                                                           uploading,
-                                                           sortField,
-                                                           sortDirection,
-                                                           onSortChange,
-                                                           onUploadClick,
-                                                           onRerun,
-                                                           onDownload,
-                                                           onDelete,
-                                                           onRowClick,
-                                                           canUseProjects = false,
-                                                           canUseFavorite = false,
-                                                           canSetStatus = false,
-                                                           canSetPriority = false,
-                                                           favoritePartIds,
-                                                           onToggleFavorite,
-                                                           onChangeWorkflowStatus,
-                                                           onChangePriority,
-                                                           updatingStatusIds,
-                                                           updatingPriorityIds,
-                                                           // selection + bulk
-                                                           selectedPartIds,
-                                                           onToggleSelect,
-                                                           onToggleSelectAll,
-                                                           onBulkToggleFavorite,
-                                                           onBulkSetStatus,
-                                                           onBulkSetPriority,
-                                                           onBulkAddToProject,
-                                                           onAddToProject,
-                                                       }) => {
+const DocumentsDesktopTable: React.FC<DocumentsTableProps> = ({
+                                                                  parts,
+                                                                  loading,
+                                                                  uploading,
+                                                                  sortField,
+                                                                  sortDirection,
+                                                                  onSortChange,
+                                                                  onUploadClick,
+                                                                  onRerun,
+                                                                  onDownload,
+                                                                  onDelete,
+                                                                  onRowClick,
+                                                                  canUseProjects = false,
+                                                                  canUseFavorite = false,
+                                                                  canSetStatus = false,
+                                                                  canSetPriority = false,
+                                                                  favoritePartIds,
+                                                                  onToggleFavorite,
+                                                                  onChangeWorkflowStatus,
+                                                                  onChangePriority,
+                                                                  updatingStatusIds,
+                                                                  updatingPriorityIds,
+                                                                  // selection
+                                                                  selectedPartIds,
+                                                                  onToggleSelect,
+                                                                  onAddToProject,
+                                                              }) => {
     const {t} = useTranslation();
     const [openMenuId, setOpenMenuId] = React.useState<string | null>(null);
 
     const selectionEnabled = !!selectedPartIds && !!onToggleSelect;
-    // 👉 tady přidej:
-    const hasBulkStatus = canSetStatus && !!onBulkSetStatus;
-    const hasBulkPriority = canSetPriority && !!onBulkSetPriority;
-    const hasBulkFavorite = canUseFavorite && !!onBulkToggleFavorite;
-    const hasBulkProjects = canUseProjects && !!onBulkAddToProject;
-
-    // je-li false, checkboxy budou zamčené
-    const hasBulkActions =
-        !!selectedPartIds &&
-        !!onToggleSelect &&
-        !!onToggleSelectAll &&
-        (hasBulkStatus || hasBulkPriority || hasBulkFavorite || hasBulkProjects);
 
     const SortableHeader: React.FC<{
         field: SortField;
@@ -150,14 +132,12 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
     }
 
     return (
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-
-
+        <div className="bg-white overflow-hidden">
             <div className="overflow-x-auto">
                 <table className="w-full table-fixed">
                     <colgroup>
                         {/* selection sloupec */}
-                        {selectionEnabled && <col style={{width: "36px"}}/>}
+                        {selectionEnabled && <col style={{width: "48px"}}/>}
                         <col style={{width: "24%"}}/>
                         {/* Document */}
                         <col style={{width: "12%"}}/>
@@ -184,38 +164,8 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
 
                     <thead className="bg-slate-50 border-b border-gray-200">
                     <tr>
-                        {/* header checkbox */}
-                        {selectionEnabled && (
-                            <th className="px-3 py-3 text-center align-middle">
-                                {hasBulkActions ? (
-                                    <input
-                                        type="checkbox"
-                                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                        onClick={(e) => e.stopPropagation()}
-                                        onChange={() => {
-                                            if (!hasBulkActions || !onToggleSelectAll || !selectedPartIds) return;
-
-                                            const idsOnPage = parts
-                                                .filter((p) => !p.isProcessingPlaceholder)
-                                                .map((p) => p.id);
-
-                                            onToggleSelectAll(idsOnPage);
-                                        }}
-                                        checked={
-                                            !!selectedPartIds &&
-                                            parts
-                                                .filter((p) => !p.isProcessingPlaceholder)
-                                                .every((p) => selectedPartIds.has(p.id)) &&
-                                            parts.length > 0
-                                        }
-                                    />
-                                ) : (
-                                    <div className="inline-flex items-center justify-center w-4 h-4 text-gray-300">
-                                        <Lock className="w-3 h-3" strokeWidth={1.5}/>
-                                    </div>
-                                )}
-                            </th>
-                        )}
+                        {/* header checkbox - bulk is now in parent DocumentsTable.tsx */}
+                        {selectionEnabled && <th className="px-3 py-3"/>}
 
                         <SortableHeader field="file_name">
                             {t("documents.columns.document")}
@@ -280,7 +230,6 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                         const fitConfig = getFitConfig(part.fit_level);
 
                         const isPlaceholder = part.isProcessingPlaceholder === true;
-
                         const isFavorite = favoritePartIds?.has(part.id) ?? false;
 
                         const statusValue = (part.workflow_status as WorkflowStatusEnum) ?? null;
@@ -315,14 +264,12 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                     <td className="px-3 py-3 text-center">
                                         <input
                                             type="checkbox"
-                                            className={`w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 ${
-                                                !hasBulkActions ? "cursor-not-allowed opacity-40" : ""
-                                            }`}
-                                            disabled={!hasBulkActions || part.isProcessingPlaceholder}
+                                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            disabled={part.isProcessingPlaceholder}
                                             checked={selectedPartIds?.has(part.id) ?? false}
                                             onClick={(e) => e.stopPropagation()}
                                             onChange={() => {
-                                                if (!hasBulkActions || !onToggleSelect) return;
+                                                if (!onToggleSelect) return;
                                                 onToggleSelect(part.id);
                                             }}
                                         />
@@ -415,7 +362,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                 </td>
 
 
-                                {/* Display name */}
+                                {/* Drawing number */}
                                 <td className="px-3 py-3">
                                     <span className="text-sm text-gray-500 truncate block">
                                         {isPlaceholder ? "-" : part.drawing_number || "-"}
@@ -612,7 +559,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
                                                         {t("common.download")}
                                                     </button>
 
-                                                    {/* ⬇️ Add to project */}
+                                                    {/* Add to project */}
                                                     {canUseProjects && onAddToProject && (
                                                         <button
                                                             onClick={(e) => {
@@ -653,4 +600,4 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
     );
 };
 
-export default DocumentsTable;
+export default DocumentsDesktopTable;
