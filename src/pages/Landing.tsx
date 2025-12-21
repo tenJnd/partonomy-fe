@@ -705,7 +705,7 @@ const Landing = () => {
                     <div className="mx-auto max-w-7xl px-6">
                         <div className="text-center mb-16">
                             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-{t('landing.features.title')}</h2>
+                                {t('landing.features.title')}</h2>
                             <p className="text-lg text-slate-600">{t('landing.features.subtitle')}</p>
                         </div>
 
