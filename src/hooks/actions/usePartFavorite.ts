@@ -1,7 +1,7 @@
 // src/hooks/usePartFavorite.ts
 import {useCallback, useEffect, useState} from "react";
-import {supabase} from "../lib/supabase";
-import type {Database} from "../lib/database.types";
+import {supabase} from "../../lib/supabase";
+import type {Database} from "../../lib/database.types";
 
 type PartFavoriteRow = Database["public"]["Tables"]["part_favorites"]["Row"];
 

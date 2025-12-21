@@ -23,13 +23,13 @@ import type {Database, PriorityEnum, WorkflowStatusEnum} from '../lib/database.t
 import {exportJsonToExcel} from '../utils/exportJsonToExcel';
 import {exportJsonToText} from '../utils/exportJsonToText';
 import {exportJson} from '../utils/exportJson';
-import {usePartComments} from '../hooks/usePartComments';
-import {usePartTags} from "../hooks/usePartTags";
+import {usePartComments} from '../hooks/actions/usePartComments';
+import {usePartTags} from "../hooks/actions/usePartTags";
 import {useOrgBilling} from "../hooks/useOrgBilling";
-import {usePartFavorite} from "../hooks/usePartFavorite";
 import {PartActionsBar} from "../components/PartActionsBar";
 import {useTranslation} from "react-i18next";
 import {useLang} from "../hooks/useLang.ts";
+import {usePartDetailActions} from "../hooks/actions/usePartDetailActions";
 
 
 type Document = Database['public']['Tables']['documents']['Row'];
@@ -69,10 +69,6 @@ const DocumentDetail: React.FC = () => {
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
     const [newComment, setNewComment] = useState("");
     const [newTag, setNewTag] = useState("");
-    const [workflowStatus, setWorkflowStatus] = useState<WorkflowStatusEnum | null>(null);
-    const [priority, setPriority] = useState<PriorityEnum | null>(null);
-    const [updatingStatus, setUpdatingStatus] = useState(false);
-    const [updatingPriority, setUpdatingPriority] = useState(false);
 
     const location = useLocation();
     const backTo =
@@ -192,6 +188,15 @@ const DocumentDetail: React.FC = () => {
         fetchPartRender();
     }, [selectedPartId, parts]);
 
+    const detailActions = usePartDetailActions({
+        selectedPartId: selectedPartId ?? null,
+        setParts,
+        orgId: currentOrg?.org_id ?? null,
+        userId: user?.id ?? null,
+        canSetStatus,
+        canSetPriority,
+    });
+
 
     const handleZoomIn = () => {
         setZoom(prev => Math.min(prev + 25, 500));
@@ -271,8 +276,13 @@ const DocumentDetail: React.FC = () => {
         return () => window.removeEventListener('resize', updateWidth);
     }, []);
 
-    const selectedPart = parts.find(p => p.id === selectedPartId);
+    const selectedPart = parts.find((p) => p.id === selectedPartId);
     const selectedPartReport = selectedPart?.report_json as any | undefined;
+
+// ✅ odvozené hodnoty – vždy reflektují setParts optimistic update
+    const workflowStatus = (selectedPart?.workflow_status as WorkflowStatusEnum | null) ?? null;
+    const priority = (selectedPart?.priority as PriorityEnum | null) ?? null;
+
     const {
         comments,
         loading: commentsLoading,
@@ -286,86 +296,6 @@ const DocumentDetail: React.FC = () => {
         addTag,
         removeTag,
     } = usePartTags(selectedPartId ?? null, currentOrg?.org_id);
-    const {
-        isFavorite,
-        loading: favoriteLoading,
-        // error: favoriteError,
-        toggleFavorite,
-    } = usePartFavorite(
-        selectedPartId ?? null,
-        currentOrg?.org_id ?? null,
-        user?.id ?? null
-    );
-
-    useEffect(() => {
-        if (selectedPart) {
-            setWorkflowStatus(
-                (selectedPart as any).workflow_status ?? null
-            );
-            setPriority(
-                (selectedPart as any).priority ?? null
-            );
-        } else {
-            setWorkflowStatus(null);
-            setPriority(null);
-        }
-    }, [selectedPart?.id]);
-
-    const handleWorkflowStatusChange = async (value: WorkflowStatusEnum) => {
-        if (!selectedPart || !currentOrg) return;
-        if (!canSetStatus) return;
-
-        setUpdatingStatus(true);
-        setWorkflowStatus(value);
-
-        const {error} = await supabase
-            .from("parts")
-            .update({workflow_status: value})
-            .eq("id", selectedPart.id)
-            .eq("org_id", currentOrg.org_id);
-
-        if (error) {
-            console.error("[DocumentDetail] Error updating workflow_status:", error);
-            // případně revert:
-            // setWorkflowStatus(selectedPart.workflow_status ?? null);
-        } else {
-            setParts((prev) =>
-                prev.map((p) =>
-                    p.id === selectedPart.id ? {...p, workflow_status: value} : p
-                )
-            );
-        }
-
-        setUpdatingStatus(false);
-    };
-
-    const handlePriorityChange = async (value: PriorityEnum) => {
-        if (!selectedPart || !currentOrg) return;
-        if (!canSetPriority) return;
-
-        setUpdatingPriority(true);
-        setPriority(value);
-
-        const {error} = await supabase
-            .from("parts")
-            .update({priority: value})
-            .eq("id", selectedPart.id)
-            .eq("org_id", currentOrg.org_id);
-
-        if (error) {
-            console.error("[DocumentDetail] Error updating priority:", error);
-            // případně revert:
-            // setPriority(selectedPart.priority ?? null);
-        } else {
-            setParts((prev) =>
-                prev.map((p) =>
-                    p.id === selectedPart.id ? {...p, priority: value} : p
-                )
-            );
-        }
-
-        setUpdatingPriority(false);
-    };
 
 
     // Calculate container height based on aspect ratio
@@ -548,17 +478,18 @@ const DocumentDetail: React.FC = () => {
                             canUseFavorite={canSetFavourite}
                             canSetStatus={canSetStatus}
                             canSetPriority={canSetPriority}
-                            isFavorite={isFavorite}
-                            onToggleFavorite={toggleFavorite}
-                            favoriteLoading={favoriteLoading}
+                            isFavorite={detailActions.isFavorite}
+                            onToggleFavorite={detailActions.toggleFavorite}
+                            favoriteLoading={detailActions.favoriteLoading}
                             workflowStatus={workflowStatus}
-                            onChangeWorkflowStatus={handleWorkflowStatusChange}
-                            updatingStatus={updatingStatus}
+                            onChangeWorkflowStatus={detailActions.onChangeWorkflowStatus}
+                            updatingStatus={detailActions.updatingStatus}
                             priority={priority}
-                            onChangePriority={handlePriorityChange}
-                            updatingPriority={updatingPriority}
+                            onChangePriority={detailActions.onChangePriority}
+                            updatingPriority={detailActions.updatingPriority}
                         />
                     )}
+
 
                     {/* Export ve vlastním "sloupci" – stejné zarovnání jako Status / Priority */}
                     {selectedPartReport && (

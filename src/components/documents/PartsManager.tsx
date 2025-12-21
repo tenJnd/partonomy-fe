@@ -6,12 +6,13 @@ import {useLang} from "../../hooks/useLang";
 import {useAuth} from "../../contexts/AuthContext";
 import {supabase} from "../../lib/supabase";
 import {PartWithDocument} from "../../hooks/useParts";
-import {useDocumentActions} from "../../hooks/useDocumentActions";
 import {SortField} from "./documentsTable.types";
 import DocumentsTable from "./DocumentsTable";
 import DeleteDocumentModal from "../DeleteDocumentModal";
 import RemovePartFromProjectModal from "../RemovePartFromProjectModal";
 import AddToProjectModal from "./AddToProjectModal";
+import {usePartsListActions} from "../../hooks/actions/usePartsListActions";
+
 
 interface PartsManagerProps {
     parts: PartWithDocument[];
@@ -49,7 +50,12 @@ const PartsManager: React.FC<PartsManagerProps> = (props) => {
     const [searchParams, setSearchParams] = useSearchParams();
 
     const [favoritePartIds, setFavoritePartIds] = useState<Set<string>>(new Set());
-    const actions = useDocumentActions(setParts, favoritePartIds, setFavoritePartIds);
+    const actions = usePartsListActions({
+        setParts,
+        favoritePartIds,
+        setFavoritePartIds,
+    });
+
 
     // --- URL FILTRY ---
     const getParam = (k: string, fb: string) => searchParams.get(k) ?? fb;
