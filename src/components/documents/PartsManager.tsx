@@ -171,6 +171,7 @@ const PartsManager: React.FC<PartsManagerProps> = (props) => {
                     <option value="new">New</option>
                     <option value="in_progress">In Progress</option>
                     <option value="done">Done</option>
+                    <option value="ignored">Ignored</option>
                 </select>
                 <select value={priorityFilter} onChange={e => {
                     setPriorityFilter(e.target.value);
