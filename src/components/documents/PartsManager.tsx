@@ -127,6 +127,12 @@ const PartsManager: React.FC<PartsManagerProps> = (props) => {
         setParam({time: null, cx: null, wf: null, prio: null, co: null, fav: null});
     };
 
+    const handleRowClick = (documentId: string, partId: string) => {
+        navigate(`/${lang}/app/documents/${documentId}?partId=${partId}`, {
+            state: {from: location.pathname + location.search}
+        });
+    };
+
     return (
         <div className="space-y-4">
             {actions.error && (
@@ -212,7 +218,7 @@ const PartsManager: React.FC<PartsManagerProps> = (props) => {
                     setSortField(f);
                     setParam({sort: f, dir: nd});
                 }}
-                onRowClick={(docId, partId) => navigate(`/${lang}/app/documents/${docId}?partId=${partId}`)}
+                onRowClick={handleRowClick}
                 onUploadClick={onUploadClick || (() => {
                 })}
                 onRerun={async (id) => {

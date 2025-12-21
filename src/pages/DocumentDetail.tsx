@@ -403,7 +403,6 @@ const DocumentDetail: React.FC = () => {
                 </div>
             </div>
         );
-
     }
 
 
