@@ -1,47 +1,26 @@
-// src/components/projects/ProjectsTable.tsx
+// src/components/projects/ProjectsDesktopTable.tsx
 import React from "react";
 import {CalendarClock, ChevronDown, ChevronUp, Edit3, FolderKanban, MoreVertical, Trash2,} from "lucide-react";
-import type {Database} from "../lib/database.types";
+import {useTranslation} from "react-i18next";
+
+import type {ProjectRow, ProjectSortField, ProjectsTableProps} from "./projectsTable.types";
 import {
     getProjectPriorityClasses,
     getProjectStatusClasses,
     PROJECT_PRIORITY_LABELS,
     PROJECT_STATUS_LABELS,
-} from "../utils/tagsFormatting.ts";
-import {useTranslation} from "react-i18next";
+} from "../../utils/tagsFormatting";
 
-type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
-
-export type ProjectSortField =
-    | "name"
-    | "customer_name"
-    | "external_ref"
-    | "status"
-    | "priority"
-    | "due_date"
-    | "created_at";
-
-interface ProjectsTableProps {
-    projects: ProjectRow[];
-    loading: boolean;
-    sortField: ProjectSortField;
-    sortDirection: "asc" | "desc";
-    onSortChange: (field: ProjectSortField) => void;
-    onRowClick: (projectId: string) => void;
-    onEdit: (project: ProjectRow) => void;
-    onDelete: (project: ProjectRow) => void;
-}
-
-const ProjectsTable: React.FC<ProjectsTableProps> = ({
-                                                         projects,
-                                                         loading,
-                                                         sortField,
-                                                         sortDirection,
-                                                         onSortChange,
-                                                         onRowClick,
-                                                         onEdit,
-                                                         onDelete,
-                                                     }) => {
+const ProjectsDesktopTable: React.FC<ProjectsTableProps> = ({
+                                                                projects,
+                                                                loading,
+                                                                sortField,
+                                                                sortDirection,
+                                                                onSortChange,
+                                                                onRowClick,
+                                                                onEdit,
+                                                                onDelete,
+                                                            }) => {
     const {t} = useTranslation();
     const [openMenuId, setOpenMenuId] = React.useState<string | null>(null);
 
@@ -51,6 +30,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
         className?: string;
     }> = ({field, children, className = ""}) => {
         const isActive = sortField === field;
+
         return (
             <th
                 onClick={() => onSortChange(field)}
@@ -108,9 +88,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
         return (
             <div className="flex flex-col items-center justify-center py-20">
                 <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"/>
-                <p className="text-sm font-medium text-slate-600">
-                    {t("projects.loadingProjects")}
-                </p>
+                <p className="text-sm font-medium text-slate-600">{t("projects.loadingProjects")}</p>
             </div>
         );
     }
@@ -120,12 +98,8 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
             <div
                 className="flex flex-col items-center justify-center py-16 bg-white rounded-lg border-2 border-dashed border-gray-300">
                 <FolderKanban className="w-16 h-16 text-gray-300 mb-4" strokeWidth={1.5}/>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    {t("projects.noProjectsYet")}
-                </h3>
-                <p className="text-sm text-gray-600">
-                    {t("projects.noProjectsYetDescription")}
-                </p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{t("projects.noProjectsYet")}</h3>
+                <p className="text-sm text-gray-600">{t("projects.noProjectsYetDescription")}</p>
             </div>
         );
     }
@@ -136,45 +110,29 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
                 <table className="w-full table-fixed">
                     <colgroup>
                         <col style={{width: "22%"}}/>
-                        {/* Name */}
                         <col style={{width: "18%"}}/>
-                        {/* Customer */}
                         <col style={{width: "16%"}}/>
-                        {/* External ref */}
                         <col style={{width: "12%"}}/>
-                        {/* Status */}
                         <col style={{width: "12%"}}/>
-                        {/* Priority */}
                         <col style={{width: "12%"}}/>
-                        {/* Due date */}
                         <col style={{width: "12%"}}/>
-                        {/* Created */}
                         <col style={{width: "48px"}}/>
-                        {/* Actions */}
                     </colgroup>
 
                     <thead className="bg-slate-50 border-b border-gray-200">
                     <tr>
                         <SortableHeader field="name">{t("projects.columns.project")}</SortableHeader>
-                        <SortableHeader field="customer_name">
-                            {t("projects.columns.customer")}
-                        </SortableHeader>
-                        <SortableHeader field="external_ref">
-                            {t("projects.columns.reference")}
-                        </SortableHeader>
+                        <SortableHeader field="customer_name">{t("projects.columns.customer")}</SortableHeader>
+                        <SortableHeader field="external_ref">{t("projects.columns.reference")}</SortableHeader>
                         <SortableHeader field="status">{t("projects.columns.status")}</SortableHeader>
-                        <SortableHeader field="priority">
-                            {t("projects.columns.priority")}
-                        </SortableHeader>
+                        <SortableHeader field="priority">{t("projects.columns.priority")}</SortableHeader>
                         <SortableHeader field="due_date">
                 <span className="inline-flex items-center gap-1">
                   <CalendarClock className="w-3 h-3"/>
                     {t("projects.columns.due")}
                 </span>
                         </SortableHeader>
-                        <SortableHeader field="created_at">
-                            {t("projects.columns.created")}
-                        </SortableHeader>
+                        <SortableHeader field="created_at">{t("projects.columns.created")}</SortableHeader>
                         <th className="px-3 py-3"/>
                     </tr>
                     </thead>
@@ -183,39 +141,35 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
                     {projects.map((project) => (
                         <tr
                             key={project.id}
-                            onClick={() => onRowClick(project.id)}
+                            onClick={() => onRowClick(project.id as string)}
                             className="cursor-pointer hover:bg-blue-50/50 transition-colors"
                         >
                             <td className="px-3 py-3">
                                 <div className="flex items-center gap-2">
                                     <FolderKanban className="w-4 h-4 text-blue-500 flex-shrink-0"/>
-                                    <div className="flex flex-col">
+                                    <div className="flex flex-col min-w-0">
                       <span className="text-sm font-medium text-gray-900 truncate">
                         {project.name}
                       </span>
                                         {project.description && (
-                                            <span className="text-xs text-gray-500 truncate">
-                          {project.description}
-                        </span>
+                                            <span
+                                                className="text-xs text-gray-500 truncate">{project.description}</span>
                                         )}
                                     </div>
                                 </div>
                             </td>
 
                             <td className="px-3 py-3">
-                  <span className="text-sm text-gray-700 truncate block">
-                    {project.customer_name || "-"}
-                  </span>
+                                <span
+                                    className="text-sm text-gray-700 truncate block">{project.customer_name || "-"}</span>
                             </td>
 
                             <td className="px-3 py-3">
-                  <span className="text-xs text-gray-500 truncate block">
-                    {project.external_ref || "-"}
-                  </span>
+                                <span
+                                    className="text-xs text-gray-500 truncate block">{project.external_ref || "-"}</span>
                             </td>
 
                             <td className="px-3 py-3">{renderStatusBadge(project.status)}</td>
-
                             <td className="px-3 py-3">{renderPriorityBadge(project.priority)}</td>
 
                             <td className="px-3 py-3">
@@ -226,16 +180,11 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
                                 <span className="text-xs text-gray-500">{formatDate(project.created_at)}</span>
                             </td>
 
-                            <td
-                                className="px-3 py-3"
-                                onClick={(e) => e.stopPropagation()}
-                            >
+                            <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
                                 <div className="relative">
                                     <button
                                         onClick={() =>
-                                            setOpenMenuId(
-                                                openMenuId === (project.id as string) ? null : (project.id as string)
-                                            )
+                                            setOpenMenuId(openMenuId === (project.id as string) ? null : (project.id as string))
                                         }
                                         className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
                                     >
@@ -279,4 +228,4 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
     );
 };
 
-export default ProjectsTable;
+export default ProjectsDesktopTable;

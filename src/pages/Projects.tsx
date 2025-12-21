@@ -1,7 +1,8 @@
 // src/pages/Projects.tsx
 import React, { useMemo, useState } from "react";
 import { AlertCircle, Plus } from "lucide-react";
-import ProjectsTable, { ProjectSortField } from "../components/ProjectsTable";
+import ProjectsTable from "../components/projects/ProjectsTable";
+import type { ProjectSortField } from "../components/projects/projectsTable.types";
 import { useProjects } from "../hooks/useProjects";
 import type { Database } from "../lib/database.types";
 import { Link, useNavigate } from "react-router-dom";
