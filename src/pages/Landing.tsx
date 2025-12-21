@@ -435,8 +435,7 @@ const Landing = () => {
                                       </span>
                                 </div>
 
-                                {/* H1 – tvoje clamp + drž poslední 2 slova pohromadě */}
-                                <h1 className="font-bold tracking-tight leading-[1.05] text-[clamp(36px,8.2vw,60px)] break-words">
+                                <h1 className="font-bold tracking-tight leading-[1.05] text-[clamp(32px,6vw,64px)]">
                                   <span
                                       className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
                                     {t("landing.hero.headline1")}
@@ -464,6 +463,7 @@ const Landing = () => {
                                     })()}
                                   </span>
                                 </h1>
+
 
                                 {/* Description – WRAP safe */}
                                 <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-full sm:max-w-xl break-words">
@@ -643,7 +643,7 @@ const Landing = () => {
                 <section id="how-it-works" className="py-20 bg-white">
                     <div className="mx-auto max-w-7xl px-6">
                         <div className="text-center mb-16">
-                            <h2 className="text-4xl font-bold text-slate-900 mb-4">{t('landing.howItWorks.title')}</h2>
+                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-4">{t('landing.howItWorks.title')}</h2>
                             <p className="text-lg text-slate-600 max-w-2xl mx-auto">
                                 {t('landing.howItWorks.subtitle')}
                             </p>
@@ -704,7 +704,8 @@ const Landing = () => {
                 <section id="features" className="py-20 bg-gradient-to-br from-slate-50 to-blue-50/30">
                     <div className="mx-auto max-w-7xl px-6">
                         <div className="text-center mb-16">
-                            <h2 className="text-4xl font-bold text-slate-900 mb-4">{t('landing.features.title')}</h2>
+                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+{t('landing.features.title')}</h2>
                             <p className="text-lg text-slate-600">{t('landing.features.subtitle')}</p>
                         </div>
 
@@ -783,7 +784,8 @@ const Landing = () => {
                 <section id="faq" className="py-20 bg-gradient-to-br from-slate-50 to-blue-50/30">
                     <div className="mx-auto max-w-4xl px-6">
                         <div className="text-center mb-14">
-                            <h2 className="text-4xl font-bold text-slate-900 mb-4">
+                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+
                                 {t('landing.faq.title')}
                             </h2>
                             <p className="text-lg text-slate-600">
@@ -830,7 +832,7 @@ const Landing = () => {
                 <section className="py-16 bg-gradient-to-br from-slate-50 to-blue-50/30">
                     <div className="mx-auto max-w-7xl px-6">
                         <div className="text-center mb-12">
-                            <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
+                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-4">
                                 {t('landing.insights.title')}
                             </h2>
 
