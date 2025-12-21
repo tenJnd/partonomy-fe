@@ -217,7 +217,9 @@
         "report": "Report",
         "bom": "Stückliste",
         "revisions": "Revisionsverlauf",
-        "comments": "Kommentare"
+        "comments": "Kommentare",
+        "preview": "Vorschau",
+        "details": "Details"
       },
       "bom": {
         "headers": {

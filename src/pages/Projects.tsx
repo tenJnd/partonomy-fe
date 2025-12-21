@@ -257,7 +257,7 @@ const Projects: React.FC = () => {
                             <p className="text-xs text-gray-600">
                                 {t("projects.projectsDescription")}{" "}
                                 <Link
-                                    to="/app/settings/billing"
+                                    to={`/${lang}/app/settings/billing`}
                                     className="text-blue-600 hover:underline font-medium"
                                 >
                                     {t("billingSettings.title")}

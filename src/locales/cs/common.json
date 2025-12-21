@@ -218,7 +218,9 @@
         "report": "Report",
         "bom": "Kusovník",
         "revisions": "Historie revizí",
-        "comments": "Komentáře"
+        "comments": "Komentáře",
+        "preview": "Náhled",
+        "details": "Detaily"
       },
       "bom": {
         "headers": {

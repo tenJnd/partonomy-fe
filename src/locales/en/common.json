@@ -217,7 +217,9 @@
         "report": "Report",
         "bom": "Bill of Materials",
         "revisions": "Revision History",
-        "comments": "Comments"
+        "comments": "Comments",
+        "preview": "Preview",
+        "details": "Details"
       },
       "bom": {
         "headers": {
