@@ -435,7 +435,7 @@ const Landing = () => {
                                       </span>
                                 </div>
 
-                                <h1 className="font-bold tracking-tight leading-[1.05] text-[clamp(32px,6vw,64px)]">
+                                <h1 className="text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
                                   <span
                                       className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
                                     {t("landing.hero.headline1")}
@@ -443,24 +443,7 @@ const Landing = () => {
 
                                     <span
                                         className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                                    {(() => {
-                                        const s = t("landing.hero.headline2");
-                                        const parts = s.split(" ");
-                                        if (parts.length < 2) return s;
-
-                                        const last = parts.pop()!;
-                                        const prev = parts.pop()!;
-                                        const head = parts.join(" ");
-
-                                        return (
-                                            <>
-                                                {head}{" "}
-                                                <span className="whitespace-nowrap">
-                                            {prev} {last}
-                                          </span>
-                                            </>
-                                        );
-                                    })()}
+                                    {t("landing.hero.headline2")}
                                   </span>
                                 </h1>
 
