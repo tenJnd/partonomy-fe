@@ -161,7 +161,8 @@
       "clear": "Clear",
       "setStatus": "Set status…",
       "setPriority": "Set priority…",
-      "addToProject": "Add to project"
+      "addToProject": "Add to project",
+      "locked": "Bulk actions are available in higher plans"
     },
     "columns": {
       "document": "Document",

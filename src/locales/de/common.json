@@ -161,7 +161,8 @@
       "clear": "Entfernen",
       "setStatus": "Status setzen…",
       "setPriority": "Priorität setzen…",
-      "addToProject": "Zum Projekt hinzufügen"
+      "addToProject": "Zum Projekt hinzufügen",
+      "locked": "Massenaktionen sind in höheren Tarifen verfügbar."
     },
     "columns": {
       "document": "Dokument",

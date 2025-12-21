@@ -162,7 +162,8 @@
       "clear": "Zrušit",
       "setStatus": "Nastavit stav…",
       "setPriority": "Nastavit prioritu…",
-      "addToProject": "Přidat do projektu"
+      "addToProject": "Přidat do projektu",
+      "locked": "Hromadné akce jsou k dispozici v vyšších tarifech."
     },
     "columns": {
       "document": "Dokument",
