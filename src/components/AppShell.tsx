@@ -34,6 +34,7 @@ const AppShell: React.FC = () => {
             try {
                 localStorage.setItem(SIDEBAR_COLLAPSED_KEY, next ? "1" : "0");
             } catch {
+                // ignore
             }
             return next;
         });
@@ -44,12 +45,17 @@ const AppShell: React.FC = () => {
             <TopBar/>
 
             <div className="flex flex-1 overflow-hidden relative">
-                <button
-                    onClick={() => setSidebarOpen(!sidebarOpen)}
-                    className="fixed top-[4.5rem] left-4 z-50 md:hidden w-10 h-10 bg-white border border-gray-200 rounded-lg shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
-                >
-                    <Menu className="w-5 h-5 text-gray-600"/>
-                </button>
+                {/* Mobile burger – pouze když je sidebar zavřený */}
+                {!sidebarOpen && (
+                    <button
+                        type="button"
+                        onClick={() => setSidebarOpen(true)}
+                        aria-label="Open sidebar"
+                        className="fixed top-[4.5rem] left-4 z-20 md:hidden w-10 h-10 bg-white border border-gray-200 rounded-lg shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                    >
+                        <Menu className="w-5 h-5 text-gray-600"/>
+                    </button>
+                )}
 
                 <Sidebar
                     isOpen={sidebarOpen}

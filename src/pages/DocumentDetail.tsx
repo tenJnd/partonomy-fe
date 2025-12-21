@@ -365,46 +365,66 @@ const DocumentDetail: React.FC = () => {
             <div className="fixed inset-0 z-50 bg-black/95 flex flex-col">
                 {/* Fullscreen Controls */}
                 <div className="flex items-center justify-between p-4 bg-black/50">
-                    <div className="flex items-center gap-4">
-                        <h2 className="text-lg font-semibold text-white">
-                            {selectedPart?.display_name || selectedPart?.part_number || t('documents.detail.partRenderTitle')}
+                    <div className="flex items-center gap-4 min-w-0">
+                        <h2 className="text-base sm:text-lg font-semibold text-white truncate">
+                            {selectedPart?.display_name ||
+                                selectedPart?.part_number ||
+                                t("documents.detail.partRenderTitle")}
                         </h2>
                     </div>
+
+                    {/* Mobile: only exit fullscreen */}
                     <div className="flex items-center gap-2">
                         <button
-                            onClick={handleZoomOut}
-                            disabled={zoom <= 25}
-                            className="p-2 bg-white/10 hover:bg-white/20 disabled:bg-white/5 disabled:text-white/30 text-white rounded-lg transition-colors"
-                            title={t('documents.detail.actions.zoomOut')}
-                        >
-                            <ZoomOut className="w-5 h-5" strokeWidth={1.5}/>
-                        </button>
-                        <span className="text-sm text-white min-w-[4rem] text-center">
-              {zoom}%
-            </span>
-                        <button
-                            onClick={handleZoomIn}
-                            disabled={zoom >= 500}
-                            className="p-2 bg-white/10 hover:bg-white/20 disabled:bg-white/5 disabled:text-white/30 text-white rounded-lg transition-colors"
-                            title={t('documents.detail.actions.zoomIn')}
-                        >
-                            <ZoomIn className="w-5 h-5" strokeWidth={1.5}/>
-                        </button>
-                        <button
-                            onClick={handleResetZoom}
-                            className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
-                            title={t('documents.detail.actions.resetZoom')}
-                        >
-                            <RotateCw className="w-5 h-5" strokeWidth={1.5}/>
-                        </button>
-                        <div className="w-px h-6 bg-white/20 mx-2"/>
-                        <button
                             onClick={toggleFullscreen}
-                            className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
-                            title={t('documents.detail.actions.exitFullscreen')}
+                            className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors sm:hidden"
+                            title={t("documents.detail.actions.exitFullscreen")}
                         >
                             <Minimize2 className="w-5 h-5" strokeWidth={1.5}/>
                         </button>
+
+                        {/* sm+: full zoom controls */}
+                        <div className="hidden sm:flex items-center gap-2">
+                            <button
+                                onClick={handleZoomOut}
+                                disabled={zoom <= 25}
+                                className="p-2 bg-white/10 hover:bg-white/20 disabled:bg-white/5 disabled:text-white/30 text-white rounded-lg transition-colors"
+                                title={t("documents.detail.actions.zoomOut")}
+                            >
+                                <ZoomOut className="w-5 h-5" strokeWidth={1.5}/>
+                            </button>
+
+                            <span className="text-sm text-white min-w-[4rem] text-center">
+                            {zoom}%
+                        </span>
+
+                            <button
+                                onClick={handleZoomIn}
+                                disabled={zoom >= 500}
+                                className="p-2 bg-white/10 hover:bg-white/20 disabled:bg-white/5 disabled:text-white/30 text-white rounded-lg transition-colors"
+                                title={t("documents.detail.actions.zoomIn")}
+                            >
+                                <ZoomIn className="w-5 h-5" strokeWidth={1.5}/>
+                            </button>
+
+                            <button
+                                onClick={handleResetZoom}
+                                className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                                title={t("documents.detail.actions.resetZoom")}
+                            >
+                                <RotateCw className="w-5 h-5" strokeWidth={1.5}/>
+                            </button>
+
+                            <div className="w-px h-6 bg-white/20 mx-2"/>
+
+                            <button
+                                onClick={toggleFullscreen}
+                                className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                                title={t("documents.detail.actions.exitFullscreen")}
+                            >
+                                <Minimize2 className="w-5 h-5" strokeWidth={1.5}/>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
