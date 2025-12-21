@@ -150,16 +150,9 @@ const Landing = () => {
         setMobileMenuOpen(false);
     };
 
-    const keepLastTokenTogether = (s: string) => {
-        const parts = s.trim().split(/\s+/);
-        if (parts.length < 2) return s;
-        const last = parts.pop()!;
-        return `${parts.join(" ")}\u00A0${last}`;
-    };
-
-
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 text-slate-900">
+        <div
+            className="min-h-screen overflow-x-hidden bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 text-slate-900">
             {/* Header stays the same... */}
             <header
                 className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -189,8 +182,8 @@ const Landing = () => {
 
                             <span
                                 className="text-lg font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-          Partonomy
-        </span>
+                              Partonomy
+                            </span>
                         </Link>
                     </div>
 
@@ -425,13 +418,15 @@ const Landing = () => {
                     </div>
 
                     <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16 lg:py-28">
-                        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                        <div className="grid gap-10 lg:grid-cols-2 lg:gap-12 items-center">
                             {/* Left content */}
-                            <div className="space-y-6 sm:space-y-8">
+                            <div className="min-w-0 space-y-6 sm:space-y-8">
+                                {/* Badge – WRAP safe */}
                                 <div
                                     className="inline-flex max-w-full sm:max-w-[520px] flex-wrap items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100/50 shadow-sm px-4 py-2">
                                       <span className="relative flex h-2 w-2 shrink-0">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                        <span
+                                            className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                                         <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
                                       </span>
 
@@ -440,11 +435,8 @@ const Landing = () => {
                                       </span>
                                 </div>
 
-
-                                <h1
-                                    className="font-bold tracking-tight leading-[1.05]"
-                                    style={{fontSize: "clamp(24px, 6vw, 60px)"}}
-                                >
+                                {/* H1 – tvoje clamp + drž poslední 2 slova pohromadě */}
+                                <h1 className="font-bold tracking-tight leading-[1.05] text-[clamp(24px,6vw,60px)] break-words">
                                   <span
                                       className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
                                     {t("landing.hero.headline1")}
@@ -452,83 +444,94 @@ const Landing = () => {
 
                                     <span
                                         className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                                    {keepLastTokenTogether(t("landing.hero.headline2"))}
+                                    {(() => {
+                                        const s = t("landing.hero.headline2");
+                                        const parts = s.split(" ");
+                                        if (parts.length < 2) return s;
+
+                                        const last = parts.pop()!;
+                                        const prev = parts.pop()!;
+                                        const head = parts.join(" ");
+
+                                        return (
+                                            <>
+                                                {head}{" "}
+                                                <span className="whitespace-nowrap">
+                                            {prev} {last}
+                                          </span>
+                                            </>
+                                        );
+                                    })()}
                                   </span>
                                 </h1>
 
-
-                                <p
-                                    className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-none sm:max-w-xl"
-                                    style={{textWrap: "pretty" as any}}
-                                >
+                                {/* Description – WRAP safe */}
+                                <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-full sm:max-w-xl break-words">
                                     {t("landing.hero.description")}
                                 </p>
 
-
-                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                                {/* Buttons – vždy full width na mobile */}
+                                <div
+                                    className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
                                     <button
                                         onClick={handleGetStarted}
-                                        className="group w-full sm:w-auto min-w-0 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-5 py-3 text-sm font-semibold text-white shadow-xl shadow-blue-600/30 transition-all hover:from-blue-700 hover:to-blue-800 hover:shadow-2xl hover:shadow-blue-600/40 sm:px-6 sm:py-3"
+                                        className="group w-full sm:w-auto px-5 py-3 sm:px-5 sm:py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-xl shadow-blue-600/30 hover:shadow-2xl hover:shadow-blue-600/40"
                                     >
-                                        <span className="min-w-0 truncate">
-                                          {user ? t("landing.nav.goToApp") : t("landing.hero.uploadFirstDrawing")}
-                                        </span>
+                                        {user ? t("landing.nav.goToApp") : t("landing.hero.uploadFirstDrawing")}
                                         <Upload
-                                            className="h-5 w-5 shrink-0 transition-transform group-hover:translate-y-0.5"/>
+                                            className="inline-block ml-2 w-5 h-5 group-hover:translate-y-0.5 transition-transform"/>
                                     </button>
 
                                     {!user && (
                                         <button
                                             onClick={handleLogin}
-                                            className="group w-full sm:w-auto min-w-0 inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 sm:px-6 sm:py-3"
+                                            className="w-full sm:w-auto px-5 py-3 sm:px-5 sm:py-2.5 text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors rounded-xl hover:bg-slate-100"
                                         >
-                                              <span className="min-w-0 truncate">
-                                                {t("landing.hero.loginToAccount")}
-                                              </span>
+                                            {t("landing.hero.loginToAccount")}
                                             <ChevronRight
-                                                className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1"/>
+                                                className="inline-block ml-1 w-5 h-5 group-hover:translate-x-1 transition-transform"/>
                                         </button>
                                     )}
                                 </div>
 
-
+                                {/* Stats */}
                                 <div className="flex flex-wrap gap-6 pt-4">
                                     <div className="flex items-center gap-2">
                                         <Clock className="w-5 h-5 text-blue-600"/>
                                         <div>
                                             <div
-                                                className="text-2xl font-bold text-slate-900">{t('landing.hero.stat1Value')}</div>
-                                            <div className="text-xs text-slate-600">{t('landing.hero.stat1Label')}</div>
+                                                className="text-2xl font-bold text-slate-900">{t("landing.hero.stat1Value")}</div>
+                                            <div className="text-xs text-slate-600">{t("landing.hero.stat1Label")}</div>
                                         </div>
                                     </div>
+
                                     <div className="flex items-center gap-2">
                                         <TrendingUp className="w-5 h-5 text-emerald-600"/>
                                         <div>
                                             <div
-                                                className="text-2xl font-bold text-slate-900">{t('landing.hero.stat2Value')}</div>
-                                            <div className="text-xs text-slate-600">{t('landing.hero.stat2Label')}</div>
+                                                className="text-2xl font-bold text-slate-900">{t("landing.hero.stat2Value")}</div>
+                                            <div className="text-xs text-slate-600">{t("landing.hero.stat2Label")}</div>
                                         </div>
                                     </div>
+
                                     <div className="flex items-center gap-2">
                                         <CheckCircle2 className="w-5 h-5 text-purple-600"/>
                                         <div>
                                             <div
-                                                className="text-2xl font-bold text-slate-900">{t('landing.hero.stat3Value')}</div>
-                                            <div className="text-xs text-slate-600">{t('landing.hero.stat3Label')}</div>
+                                                className="text-2xl font-bold text-slate-900">{t("landing.hero.stat3Value")}</div>
+                                            <div className="text-xs text-slate-600">{t("landing.hero.stat3Label")}</div>
                                         </div>
                                     </div>
                                 </div>
-
                             </div>
 
-                            {/* Right: Enhanced Documents Table Preview */}
-                            <div className="relative">
+                            {/* Right preview – SCHOVAT NA MOBILE */}
+                            <div className="relative hidden lg:block">
                                 <div
                                     className="absolute -inset-4 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-2xl blur-2xl"></div>
 
                                 <div
                                     className="relative rounded-2xl bg-white shadow-2xl border border-slate-200/50 overflow-hidden transform transition-transform duration-300 lg:hover:scale-[1.02]">
-                                    {/* Browser chrome */}
                                     <div
                                         className="hidden sm:flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
                                         <div className="flex gap-1.5">
@@ -554,9 +557,7 @@ const Landing = () => {
                                                 <div
                                                     key={doc.name}
                                                     className={`p-3 rounded-lg border transition-all duration-500 ${
-                                                        activeDemo === idx
-                                                            ? "bg-blue-50/50 border-blue-200 shadow-sm"
-                                                            : "bg-white border-slate-200"
+                                                        activeDemo === idx ? "bg-blue-50/50 border-blue-200 shadow-sm" : "bg-white border-slate-200"
                                                     }`}
                                                 >
                                                     <div className="flex items-center gap-2">
@@ -582,41 +583,44 @@ const Landing = () => {
 
                                                         {/* Class */}
                                                         <div className="flex justify-center w-16 flex-shrink-0">
-                              <span
-                                  className="px-1.5 py-0.5 bg-slate-100 border border-slate-200 text-slate-700 rounded text-[10px]">
-                                {doc.cls}
-                              </span>
+                      <span
+                          className="px-1.5 py-0.5 bg-slate-100 border border-slate-200 text-slate-700 rounded text-[10px]">
+                        {doc.cls}
+                      </span>
                                                         </div>
 
                                                         {/* Complexity */}
                                                         <div className="flex justify-center w-16 flex-shrink-0">
-                              <span className={`px-1.5 py-0.5 rounded border text-[10px] font-medium ${
-                                  doc.complexity === 'HIGH'
-                                      ? 'bg-rose-50 text-rose-800 border-rose-300'
-                                      : 'bg-amber-50 text-amber-800 border-amber-300'
-                              }`}>
-                                {doc.complexity}
-                              </span>
+                      <span
+                          className={`px-1.5 py-0.5 rounded border text-[10px] font-medium ${
+                              doc.complexity === "HIGH"
+                                  ? "bg-rose-50 text-rose-800 border-rose-300"
+                                  : "bg-amber-50 text-amber-800 border-amber-300"
+                          }`}
+                      >
+                        {doc.complexity}
+                      </span>
                                                         </div>
 
                                                         {/* Fit */}
                                                         <div className="flex justify-center w-16 flex-shrink-0">
-                              <span className={`px-1.5 py-0.5 rounded border text-[10px] font-medium ${
-                                  doc.fit === 'GOOD'
-                                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                                      : doc.fit === 'PARTIAL'
-                                          ? 'bg-blue-50 text-blue-800 border-blue-300'
-                                          : 'bg-gray-50 text-gray-600 border-gray-300'
-                              }`}>
-                                {doc.fit}
-                              </span>
+                      <span
+                          className={`px-1.5 py-0.5 rounded border text-[10px] font-medium ${
+                              doc.fit === "GOOD"
+                                  ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                                  : doc.fit === "PARTIAL"
+                                      ? "bg-blue-50 text-blue-800 border-blue-300"
+                                      : "bg-gray-50 text-gray-600 border-gray-300"
+                          }`}
+                      >
+                        {doc.fit}
+                      </span>
                                                         </div>
 
                                                         {/* Status icon */}
                                                         <div className="flex justify-center w-8 flex-shrink-0">
-                                                            {doc.status === "success" && (
-                                                                <CheckCircle2 className="w-4 h-4 text-emerald-600"/>
-                                                            )}
+                                                            {doc.status === "success" &&
+                                                                <CheckCircle2 className="w-4 h-4 text-emerald-600"/>}
                                                             {doc.status === "processing" && (
                                                                 <div
                                                                     className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -626,13 +630,14 @@ const Landing = () => {
                                                 </div>
                                             ))}
                                         </div>
-
                                     </div>
+
                                 </div>
                             </div>
                         </div>
                     </div>
                 </section>
+
 
                 {/* How it works - with animations */}
                 <section id="how-it-works" className="py-20 bg-white">
