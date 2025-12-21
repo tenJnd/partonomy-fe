@@ -150,6 +150,13 @@ const Landing = () => {
         setMobileMenuOpen(false);
     };
 
+    const keepLastTokenTogether = (s: string) => {
+        const parts = s.trim().split(/\s+/);
+        if (parts.length < 2) return s;
+        const last = parts.pop()!;
+        return `${parts.join(" ")}\u00A0${last}`;
+    };
+
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 text-slate-900">
@@ -274,7 +281,7 @@ const Landing = () => {
 
                         <button
                             onClick={handleGetStarted}
-                            className="group px-3 py-2 text-sm sm:px-5 sm:py-2.5 font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/40"
+                            className="group px-3 py-2 text-sm sm:px-5 sm:py-2.5 min-w-[122px] font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/40"
                         >
                             {user ? t("landing.nav.goToApp") : t("landing.nav.tryFree")}
                             <ChevronRight
@@ -408,7 +415,7 @@ const Landing = () => {
 
 
             {/* Hero section */}
-            <main className="pt-24">
+            <main className="pt-20 sm:pt-24">
                 <section className="relative overflow-hidden">
                     <div className="absolute inset-0 overflow-hidden pointer-events-none">
                         <div
@@ -422,10 +429,9 @@ const Landing = () => {
                             {/* Left content */}
                             <div className="space-y-6 sm:space-y-8">
                                 <div
-                                    className="inline-flex flex-wrap items-center gap-2 px-4 py-2 rounded-2xl max-w-full sm:max-w-[520px] bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100/50 shadow-sm">
+                                    className="inline-flex max-w-full sm:max-w-[520px] flex-wrap items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100/50 shadow-sm px-4 py-2">
                                       <span className="relative flex h-2 w-2 shrink-0">
-                                        <span
-                                            className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                                         <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
                                       </span>
 
@@ -435,7 +441,10 @@ const Landing = () => {
                                 </div>
 
 
-                                <h1 className="font-bold tracking-tight leading-[1.05] text-[clamp(32px,6vw,64px)]">
+                                <h1
+                                    className="font-bold tracking-tight leading-[1.05]"
+                                    style={{fontSize: "clamp(24px, 6vw, 60px)"}}
+                                >
                                   <span
                                       className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
                                     {t("landing.hero.headline1")}
@@ -443,53 +452,41 @@ const Landing = () => {
 
                                     <span
                                         className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                                        {/* na mobilu a desktopu: drž poslední dvě "slova" pohromadě */}
-                                        {(() => {
-                                            const s = t("landing.hero.headline2");
-                                            const parts = s.split(" ");
-                                            if (parts.length < 2) return s;
-
-                                            const last = parts.pop()!;      // "3"
-                                            const prev = parts.pop()!;      // "na"
-                                            const head = parts.join(" ");   // "z 20 minut"
-
-                                            return (
-                                                <>
-                                                    {head}{" "}
-                                                    <span className="whitespace-nowrap">
-                                                {prev} {last}
-                                              </span>
-                                                </>
-                                            );
-                                        })()}
-                                </span>
+                                    {keepLastTokenTogether(t("landing.hero.headline2"))}
+                                  </span>
                                 </h1>
 
 
-                                <p className="text-sm sm:text-lg text-slate-600 leading-relaxed max-w-[36ch] sm:max-w-xl">
+                                <p
+                                    className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-none sm:max-w-xl"
+                                    style={{textWrap: "pretty" as any}}
+                                >
                                     {t("landing.hero.description")}
                                 </p>
 
 
-                                <div
-                                    className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
                                     <button
                                         onClick={handleGetStarted}
-                                        className="group w-full sm:w-auto px-5 py-3 sm:px-5 sm:py-2.5 text-sm sm:text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-xl shadow-blue-600/30 hover:shadow-2xl hover:shadow-blue-600/40 hover:-translate-y-1"
+                                        className="group w-full sm:w-auto min-w-0 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-5 py-3 text-sm font-semibold text-white shadow-xl shadow-blue-600/30 transition-all hover:from-blue-700 hover:to-blue-800 hover:shadow-2xl hover:shadow-blue-600/40 sm:px-6 sm:py-3"
                                     >
-                                        {user ? t("landing.nav.goToApp") : t("landing.hero.uploadFirstDrawing")}
+                                        <span className="min-w-0 truncate">
+                                          {user ? t("landing.nav.goToApp") : t("landing.hero.uploadFirstDrawing")}
+                                        </span>
                                         <Upload
-                                            className="inline-block ml-2 w-5 h-5 group-hover:translate-y-0.5 transition-transform"/>
+                                            className="h-5 w-5 shrink-0 transition-transform group-hover:translate-y-0.5"/>
                                     </button>
 
                                     {!user && (
                                         <button
                                             onClick={handleLogin}
-                                            className="w-full sm:w-auto px-5 py-3 sm:px-5 sm:py-2.5 text-sm sm:text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors rounded-xl hover:bg-slate-100"
+                                            className="group w-full sm:w-auto min-w-0 inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 sm:px-6 sm:py-3"
                                         >
-                                            {t("landing.hero.loginToAccount")}
+                                              <span className="min-w-0 truncate">
+                                                {t("landing.hero.loginToAccount")}
+                                              </span>
                                             <ChevronRight
-                                                className="inline-block ml-1 w-5 h-5 group-hover:translate-x-1 transition-transform"/>
+                                                className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1"/>
                                         </button>
                                     )}
                                 </div>
