@@ -7,7 +7,8 @@ import {useAuth} from "../contexts/AuthContext";
 import {supabase} from "../lib/supabase";
 
 import DeleteDocumentModal from "../components/DeleteDocumentModal";
-import DocumentsTable, {SortField,} from "../components/documents/DocumentsTable";
+import DocumentsTable from "../components/documents/DocumentsTable";
+import type {SortField} from "../components/documents/documentsTable.types";
 
 import {PartWithDocument, useParts} from "../hooks/useParts";
 import {useDocumentUpload} from "../hooks/useDocumentUpload";
