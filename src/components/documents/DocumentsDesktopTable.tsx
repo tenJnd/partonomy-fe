@@ -76,13 +76,6 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
         !!onToggleSelectAll &&
         (hasBulkStatus || hasBulkPriority || hasBulkFavorite || hasBulkProjects);
 
-    const partsIdsOnPage = React.useMemo(() => parts.map((p) => p.id), [parts]);
-
-    const selectedIdsOnPage: string[] = React.useMemo(() => {
-        if (!selectionEnabled || !selectedPartIds) return [];
-        return partsIdsOnPage.filter((id) => selectedPartIds.has(id));
-    }, [selectionEnabled, selectedPartIds, partsIdsOnPage]);
-
     const SortableHeader: React.FC<{
         field: SortField;
         children: React.ReactNode;
@@ -158,92 +151,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
 
     return (
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-            {/* 🔥 Bulk bar */}
-            {selectionEnabled && selectedIdsOnPage.length > 0 && (
-                <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-slate-50">
-          <span className="text-xs text-gray-700">
-            <span className="font-semibold">{selectedIdsOnPage.length}</span>{" "}
-              {t("documents.bulk.selected")}
-          </span>
 
-                    <div className="flex items-center gap-2 flex-wrap justify-end">
-                        {/* Favorite */}
-                        {onBulkToggleFavorite && canUseFavorite && (
-                            <div className="inline-flex rounded-md border border-gray-200 overflow-hidden text-xs">
-                                <button
-                                    type="button"
-                                    onClick={() => onBulkToggleFavorite(selectedIdsOnPage, true)}
-                                    className="px-2.5 py-1 inline-flex items-center gap-1 bg-white hover:bg-amber-50 text-amber-700"
-                                >
-                                    <Star className="w-3.5 h-3.5" strokeWidth={1.5}/>
-                                    {t("documents.bulk.fav")}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => onBulkToggleFavorite(selectedIdsOnPage, false)}
-                                    className="px-2.5 py-1 inline-flex items-center gap-1 bg-white hover:bg-gray-50 text-gray-600 border-l border-gray-200"
-                                >
-                                    <StarOff className="w-3.5 h-3.5" strokeWidth={1.5}/>
-                                    {t("documents.bulk.clear")}
-                                </button>
-                            </div>
-                        )}
-
-                        {/* Status */}
-                        {onBulkSetStatus && canSetStatus && (
-                            <select
-                                defaultValue=""
-                                onChange={(e) => {
-                                    const value = e.target.value as WorkflowStatusEnum | "";
-                                    if (!value) return;
-                                    onBulkSetStatus(selectedIdsOnPage, value);
-                                    e.target.value = "";
-                                }}
-                                className="h-8 px-2 bg-white border border-gray-200 rounded-md text-xs shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none"
-                            >
-                                <option value="">{t("documents.bulk.setStatus")}</option>
-                                {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                                    <option key={value} value={value}>
-                                        {label}
-                                    </option>
-                                ))}
-                            </select>
-                        )}
-
-                        {/* Priority */}
-                        {onBulkSetPriority && canSetPriority && (
-                            <select
-                                defaultValue=""
-                                onChange={(e) => {
-                                    const value = e.target.value as PriorityEnum | "";
-                                    if (!value) return;
-                                    onBulkSetPriority(selectedIdsOnPage, value);
-                                    e.target.value = "";
-                                }}
-                                className="h-8 px-2 bg-white border border-gray-200 rounded-md text-xs shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none"
-                            >
-                                <option value="">{t("documents.bulk.setPriority")}</option>
-                                {Object.entries(PRIORITY_LABELS).map(([value, label]) => (
-                                    <option key={value} value={value}>
-                                        {label}
-                                    </option>
-                                ))}
-                            </select>
-                        )}
-
-                        {/* Add to project */}
-                        {onBulkAddToProject && canUseProjects && (
-                            <button
-                                type="button"
-                                onClick={() => onBulkAddToProject(selectedIdsOnPage)}
-                                className="h-8 px-3 inline-flex items-center rounded-md border border-gray-200 bg-white text-xs text-gray-700 hover:bg-gray-50 shadow-sm"
-                            >
-                                {t("documents.bulk.addToProject")}
-                            </button>
-                        )}
-                    </div>
-                </div>
-            )}
 
             <div className="overflow-x-auto">
                 <table className="w-full table-fixed">

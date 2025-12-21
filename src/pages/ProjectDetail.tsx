@@ -52,7 +52,7 @@ const ProjectDetail: React.FC = () => {
                 loading={loading}
                 mode="project-detail"
                 canUseProjects={!!billing?.tier?.can_use_projects}
-                canSetFavourite={!!billing?.tier?.can_set_favourite}
+                canUseFavorite={!!billing?.tier?.can_set_favourite}
                 canSetStatus={!!billing?.tier?.can_set_status}
                 canSetPriority={!!billing?.tier?.can_set_priority}
                 onRemoveFromProject={handleRemoveFromProject}
