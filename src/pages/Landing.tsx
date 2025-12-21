@@ -436,7 +436,7 @@ const Landing = () => {
                                 </div>
 
                                 {/* H1 – tvoje clamp + drž poslední 2 slova pohromadě */}
-                                <h1 className="font-bold tracking-tight leading-[1.05] text-[clamp(24px,6vw,60px)] break-words">
+                                <h1 className="font-bold tracking-tight leading-[1.05] text-[clamp(36px,8.2vw,60px)] break-words">
                                   <span
                                       className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
                                     {t("landing.hero.headline1")}
