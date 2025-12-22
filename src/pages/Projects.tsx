@@ -23,7 +23,7 @@ const Projects: React.FC = () => {
 
     const {t} = useTranslation();
     const lang = useLang();
-    const {billing} = useOrgBilling();
+    const {billing, loading: billingLoading} = useOrgBilling();
 
     const canUseProjects = !!billing?.tier?.can_use_projects;
 
@@ -229,6 +229,28 @@ const Projects: React.FC = () => {
         });
     };
 
+
+    if (billingLoading) {
+        return (
+            <div className="min-h-screen relative bg-gradient-to-br from-slate-50 via-white to-slate-50">
+                <div className="p-6 mx-auto" style={{maxWidth: "1600px"}}>
+                    <div className="flex items-center justify-between mb-6 gap-3">
+                        <h1 className="text-2xl font-semibold text-gray-900">
+                            {t("projects.title")}
+                        </h1>
+                    </div>
+
+                    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+                        <div className="flex items-center gap-3 text-sm text-gray-600">
+                            <span
+                                className="inline-block w-4 h-4 rounded-full border-2 border-gray-300 border-t-transparent animate-spin"/>
+                            {t("common.loading")}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     // 🔒 locked verze (billing)
     if (!canUseProjects) {

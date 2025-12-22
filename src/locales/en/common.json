@@ -149,7 +149,6 @@
     "addPartsToProject": "Add",
     "partsToProject": "parts to project",
     "addPartToProject": "Add part to project",
-    "noProjectsYet": "You don't have any projects yet.",
     "createFirstProject": "to create your first project.",
     "loadingParts": "Loading parts...",
     "noPartsYet": "No parts yet",
@@ -344,6 +343,8 @@
     "confirmDelete": "Delete project \"{{name}}\"?",
     "failedToDelete": "Failed to delete project",
     "failedToSave": "Failed to save project",
+    "noProjectsYet": "No projects yet",
+    "noProjectsYetDescription": "Create a project to group parts from uploaded documents and continue working with them.",
     "form": {
       "titleCreate": "New Project",
       "titleEdit": "Edit Project",

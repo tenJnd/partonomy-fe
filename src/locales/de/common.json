@@ -149,7 +149,6 @@
     "addPartsToProject": "Hinzufügen",
     "partsToProject": "Teile zum Projekt",
     "addPartToProject": "Teil zum Projekt hinzufügen",
-    "noProjectsYet": "Sie haben noch keine Projekte.",
     "createFirstProject": "um Ihr erstes Projekt zu erstellen.",
     "loadingParts": "Teile werden geladen...",
     "noPartsYet": "Noch keine Teile",
@@ -344,6 +343,8 @@
     "confirmDelete": "Projekt „{{name}}“ löschen?",
     "failedToDelete": "Projekt konnte nicht gelöscht werden",
     "failedToSave": "Projekt konnte nicht gespeichert werden",
+    "noProjectsYet": "Noch keine Projekte",
+    "noProjectsYetDescription": "Erstellen Sie ein Projekt, um Teile aus hochgeladenen Dokumenten zu sammeln und weiterzuverarbeiten.",
     "form": {
       "titleCreate": "Neues Projekt",
       "titleEdit": "Projekt bearbeiten",
