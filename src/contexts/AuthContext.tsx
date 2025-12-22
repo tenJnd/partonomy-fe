@@ -32,6 +32,15 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function getLangFromPath(): string {
+    try {
+        const seg = window.location.pathname.split('/').filter(Boolean)[0];
+        return seg || 'en';
+    } catch {
+        return 'en';
+    }
+}
+
 export function AuthProvider({children}: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [session, setSession] = useState<Session | null>(null);
@@ -173,8 +182,9 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
     };
 
     const signUp = async (email: string, password: string, fullName?: string) => {
+        const lang = getLangFromPath();
         const emailRedirectTo =
-            import.meta.env.VITE_AUTH_CALLBACK_URL || `${window.location.origin}/en/auth/callback`;
+            import.meta.env.VITE_AUTH_CALLBACK_URL || `${window.location.origin}/${lang}/auth/callback`;
 
         const {data, error} = await supabase.auth.signUp({
             email,
@@ -203,8 +213,9 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
     };
 
     const resendSignupEmail = async (email: string) => {
+        const lang = getLangFromPath();
         const emailRedirectTo =
-            import.meta.env.VITE_AUTH_CALLBACK_URL || `${window.location.origin}/en/auth/callback`;
+            import.meta.env.VITE_AUTH_CALLBACK_URL || `${window.location.origin}/${lang}/auth/callback`;
 
         const {error} = await supabase.auth.resend({
             type: 'signup',

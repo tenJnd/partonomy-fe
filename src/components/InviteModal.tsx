@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import {AlertCircle, Check, Copy, X} from 'lucide-react';
 import {supabase} from '../lib/supabase';
 import {useTranslation} from 'react-i18next';
+import {useLang} from "../hooks/useLang";
 
 interface InviteModalProps {
     orgId: string;
@@ -17,6 +18,8 @@ const InviteModal: React.FC<InviteModalProps> = ({
                                                      onInviteCreated
                                                  }) => {
     const {t} = useTranslation();
+    const lang = useLang(); // ✅
+
     const [email, setEmail] = useState('');
     const [role, setRole] = useState<'member' | 'admin'>('member');
     const [loading, setLoading] = useState(false);
@@ -30,21 +33,21 @@ const InviteModal: React.FC<InviteModalProps> = ({
         setError('');
 
         try {
-            const {data, error: fnError} = await supabase.rpc(
-                'create_organization_invite',
-                {
-                    p_org_id: orgId,
-                    p_role: role,
-                    p_invited_email: email || null,
-                    p_expires_days: 7,
-                }
-            );
+            const {data, error: fnError} = await supabase.rpc('create_organization_invite', {
+                p_org_id: orgId,
+                p_role: role,
+                p_invited_email: email || null,
+                p_expires_days: 7,
+            });
 
             if (fnError) throw fnError;
 
             if (data && data.length > 0) {
-                const baseUrl = window.location.origin;
-                const fullLink = `${baseUrl}/${data[0].invite_link}`;
+                const baseUrl = window.location.origin.replace(/\/$/, "");
+                const rawPath = String(data[0].invite_link || "").trim();
+                const cleanPath = rawPath.replace(/^\/+/, ""); // remove leading slashes
+                const fullLink = `${baseUrl}/${lang}/${cleanPath}`;
+
                 setInviteLink(fullLink);
                 setEmail('');
                 onInviteCreated?.();

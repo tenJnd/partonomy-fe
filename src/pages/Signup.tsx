@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useState} from 'react';
-import {Link} from 'react-router-dom';
+import {Link, useLocation} from 'react-router-dom';
 import {useAuth} from '../contexts/AuthContext';
 import {AlertCircle, Building2, CheckCircle, Lock, Mail, UserPlus} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
@@ -25,6 +25,13 @@ function pushPending(action: PendingAction) {
 const RESEND_COOLDOWN_MS = 30_000;
 
 const Signup: React.FC = () => {
+    const location = useLocation();
+
+    const inviteMode = useMemo(() => {
+        const sp = new URLSearchParams(location.search);
+        return sp.get('mode') === 'invite';
+    }, [location.search]);
+
     const [step, setStep] = useState<'account' | 'organization'>('account');
     const [email, setEmail] = useState('');
     const [fullName, setFullName] = useState('');
@@ -93,11 +100,13 @@ const Signup: React.FC = () => {
             return;
         }
 
-        if (pendingInviteToken) {
+        // ✅ Invite flow: never go to organization step
+        if (pendingInviteToken || inviteMode) {
             await handleSignupWithInvite();
-        } else {
-            setStep('organization');
+            return;
         }
+
+        setStep('organization');
     };
 
     const handleResendEmail = async () => {
@@ -137,6 +146,14 @@ const Signup: React.FC = () => {
         setLoading(true);
 
         try {
+            const token = pendingInviteToken?.trim() || '';
+
+            if (!token) {
+                setError('Missing invite token');
+                setLoading(false);
+                return;
+            }
+
             console.log('[Signup] Creating user account for invite...');
             const {data: authData, error: signUpError} = await signUp(email, password, fullName);
 
@@ -155,15 +172,9 @@ const Signup: React.FC = () => {
                 return;
             }
 
-            if (!pendingInviteToken) {
-                setError('Missing invite token');
-                setLoading(false);
-                return;
-            }
-
             pushPending({
                 kind: 'invite',
-                token: pendingInviteToken,
+                token,
                 userName: fullName.trim(),
             });
 
@@ -261,7 +272,7 @@ const Signup: React.FC = () => {
                             {step === 'account' ? t('auth.createYourAccount') : t('auth.createYourOrganization')}
                         </h1>
                         <p className="text-sm text-gray-600">
-                            {pendingInviteToken
+                            {pendingInviteToken || inviteMode
                                 ? t('auth.signUpToJoin')
                                 : step === 'account'
                                     ? t('auth.getStartedToday')
@@ -270,7 +281,7 @@ const Signup: React.FC = () => {
                     </div>
 
                     {/* Progress indicator - only show if no invite */}
-                    {!pendingInviteToken && (
+                    {!(pendingInviteToken || inviteMode) && (
                         <div className="flex items-center justify-center gap-2 mb-8">
                             <div
                                 className={`h-2 w-20 rounded-full transition-colors ${
@@ -304,7 +315,6 @@ const Signup: React.FC = () => {
                                     {t('auth.accountCreatedSuccess')}
                                 </p>
                                 <p className="text-sm text-emerald-700 mt-1">
-                                    {/* Invite i org flow – oba čekají na verifikaci */}
                                     {t('auth.checkEmailToVerify')}
                                 </p>
 
