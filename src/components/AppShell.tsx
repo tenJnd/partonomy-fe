@@ -45,18 +45,6 @@ const AppShell: React.FC = () => {
             <TopBar/>
 
             <div className="flex flex-1 overflow-hidden relative">
-                {/* Mobile burger – pouze když je sidebar zavřený */}
-                {!sidebarOpen && (
-                    <button
-                        type="button"
-                        onClick={() => setSidebarOpen(true)}
-                        aria-label="Open sidebar"
-                        className="fixed top-[4.5rem] left-4 z-20 md:hidden w-10 h-10 bg-white border border-gray-200 rounded-lg shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
-                    >
-                        <Menu className="w-5 h-5 text-gray-600"/>
-                    </button>
-                )}
-
                 <Sidebar
                     isOpen={sidebarOpen}
                     onClose={() => setSidebarOpen(false)}
@@ -64,7 +52,24 @@ const AppShell: React.FC = () => {
                     onToggleCollapse={toggleCollapsed}
                 />
 
+                {/* main wrapper */}
                 <main className="flex-1 overflow-y-auto">
+                    {/* Mobile top controls row (doesn't overlay content) */}
+                    <div className="md:hidden sticky top-0 z-20 bg-gray-50/90 backdrop-blur border-b border-gray-100">
+                        <div className="px-4 py-2">
+                            {!sidebarOpen && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSidebarOpen(true)}
+                                    aria-label="Open sidebar"
+                                    className="w-10 h-10 bg-white border border-gray-200 rounded-lg shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                                >
+                                    <Menu className="w-5 h-5 text-gray-600"/>
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
                     <Routes>
                         <Route index element={<Navigate to="documents" replace/>}/>
 

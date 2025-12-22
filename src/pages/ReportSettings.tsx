@@ -6,15 +6,15 @@ import {supabase} from '../lib/supabase';
 import SettingsShell from '../components/SettingsShell';
 
 const REPORT_LANGUAGES = [
-  { code: "en", label: "English" },
-  { code: "de", label: "German (Deutsch)" },
-  { code: "cs", label: "Czech (Čeština)" },
-  { code: "pl", label: "Polish (Polski)" },
-  { code: "sk", label: "Slovak (Slovenčina)" },
-  { code: "it", label: "Italian (Italiano)" },
-  { code: "fr", label: "French (Français)" },
-  { code: "es", label: "Spanish (Español)" },
-  { code: "nl", label: "Dutch (Nederlands)" }
+    {code: "en", label: "English"},
+    {code: "de", label: "German (Deutsch)"},
+    {code: "cs", label: "Czech (Čeština)"},
+    {code: "pl", label: "Polish (Polski)"},
+    {code: "sk", label: "Slovak (Slovenčina)"},
+    {code: "it", label: "Italian (Italiano)"},
+    {code: "fr", label: "French (Français)"},
+    {code: "es", label: "Spanish (Español)"},
+    {code: "nl", label: "Dutch (Nederlands)"}
 ];
 
 const ReportSettings: React.FC = () => {
@@ -110,6 +110,16 @@ const ReportSettings: React.FC = () => {
         return <div className="p-6 max-w-4xl mx-auto">{t('common.loading')}</div>;
     }
 
+    const isLangSaveDisabled =
+        saving ||
+        !profileLoaded ||
+        reportLang === initialReportLang;
+
+    const isProfileSaveDisabled =
+        saving ||
+        !profileLoaded ||
+        profileText === initialProfileText;
+
     return (
         <SettingsShell
             title={t('reportSettings.title')}
@@ -128,35 +138,35 @@ const ReportSettings: React.FC = () => {
                         </p>
                     </div>
 
-                    <div className="p-6 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <Building2 className="w-5 h-5 text-gray-400" strokeWidth={1.5}/>
+                    {/* Mobile-first: stack */}
+                    <div className="p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-start gap-3">
+                            <Building2 className="w-5 h-5 text-gray-400 mt-0.5" strokeWidth={1.5}/>
                             <div>
-                                <div className="text-sm font-medium text-gray-900">{t('reportSettings.reportLanguageLabel')}</div>
+                                <div className="text-sm font-medium text-gray-900">
+                                    {t('reportSettings.reportLanguageLabel')}
+                                </div>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        {/* Controls: stack on mobile, inline on desktop */}
+                        <div className="w-full sm:w-auto flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
                             <select
                                 value={reportLang}
                                 onChange={e => setReportLang(e.target.value)}
-                                className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all text-sm"
+                                className="h-[44px] sm:h-[38px] w-full sm:w-auto px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all text-sm"
                             >
                                 {REPORT_LANGUAGES.map(l => (
                                     <option key={l.code} value={l.code}>
-                                      {l.label}
+                                        {l.label}
                                     </option>
-                                  ))}
+                                ))}
                             </select>
 
                             <button
                                 onClick={handleSaveProfile}
-                                disabled={
-                                    saving ||
-                                    !profileLoaded ||
-                                    reportLang === initialReportLang
-                                }
-                                className="h-[38px] px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium flex items-center gap-2"
+                                disabled={isLangSaveDisabled}
+                                className="h-[44px] sm:h-[38px] w-full sm:w-auto px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2"
                             >
                                 <Save className="w-4 h-4"/>
                                 {t('common.save')}
@@ -177,7 +187,6 @@ const ReportSettings: React.FC = () => {
                     </div>
 
                     <div className="p-6 space-y-6">
-
                         {/* EXPLANATION BLOCK */}
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-gray-700">
                             <p className="font-medium text-gray-900 mb-2">{t('reportSettings.whyFillProfile')}</p>
@@ -196,7 +205,6 @@ const ReportSettings: React.FC = () => {
                             <p className="font-medium text-gray-900 mb-2">{t('reportSettings.examplesTitle')}</p>
 
                             <ul className="space-y-3">
-
                                 <li className="pl-3 border-l-2 border-blue-300">
                                     <p className="mb-1 font-medium">{t('reportSettings.example1Title')}</p>
                                     <p className="text-gray-600">
@@ -217,38 +225,30 @@ const ReportSettings: React.FC = () => {
                                         "{t('reportSettings.example3Text')}"
                                     </p>
                                 </li>
-
                             </ul>
                         </div>
-
 
                         {/* TEXTAREA */}
                         <textarea
                             value={profileText}
                             onChange={e => setProfileText(e.target.value)}
-                            className="w-full min-h-[140px] p-3 bg-white border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none text-sm"
+                            className="w-full min-h-[160px] p-3 bg-white border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none text-sm"
                             placeholder={t('reportSettings.profilePlaceholder')}
                         />
 
                         {/* SAVE BUTTON */}
-                        <div className="flex justify-end">
+                        <div className="flex justify-stretch sm:justify-end">
                             <button
                                 onClick={handleSaveProfile}
-                                disabled={
-                                    saving ||
-                                    !profileLoaded ||
-                                    profileText === initialProfileText
-                                }
-                                className="h-[38px] px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium flex items-center gap-2"
+                                disabled={isProfileSaveDisabled}
+                                className="h-[44px] sm:h-[38px] w-full sm:w-auto px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2"
                             >
                                 <Save className="w-4 h-4"/>
                                 {t('common.save')}
                             </button>
                         </div>
-
                     </div>
                 </div>
-
             </div>
         </SettingsShell>
     );

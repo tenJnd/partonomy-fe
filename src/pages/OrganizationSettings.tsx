@@ -22,12 +22,11 @@ const OrganizationSettings: React.FC = () => {
 
     const maxUsers = billing?.tier?.max_users ?? null;
 
-// můžou se přidávat další uživatelé?
+    // můžou se přidávat další uživatelé?
     const canInviteMore =
         canManageOrg &&
         !membersLoading &&
         (maxUsers == null || membersCount < maxUsers);
-
 
     const [orgName, setOrgName] = useState(currentOrg?.organization.name || '');
     const [saving, setSaving] = useState(false);
@@ -62,6 +61,11 @@ const OrganizationSettings: React.FC = () => {
         }
     };
 
+    const isSaveDisabled =
+        saving ||
+        !orgName.trim() ||
+        orgName === currentOrg.organization.name;
+
     return (
         <SettingsShell
             title={t('organizationSettings.title')}
@@ -79,29 +83,34 @@ const OrganizationSettings: React.FC = () => {
                             {t('organizationSettings.organizationDetails')}
                         </p>
                     </div>
-                    <div className="p-6 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <Building2 className="w-5 h-5 text-gray-400" strokeWidth={1.5}/>
+
+                    {/* Mobile-first layout */}
+                    <div className="p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-start gap-3">
+                            <Building2 className="w-5 h-5 text-gray-400 mt-0.5" strokeWidth={1.5}/>
                             <div>
-                                <div className="text-sm font-medium text-gray-900">{t('organizationSettings.organizationName')}</div>
-                                <div className="text-xs text-gray-500">{t('organizationSettings.updateOrganizationName')}</div>
+                                <div className="text-sm font-medium text-gray-900">
+                                    {t('organizationSettings.organizationName')}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                    {t('organizationSettings.updateOrganizationName')}
+                                </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
+
+                        {/* Input + button: stack on mobile, inline on desktop */}
+                        <div className="w-full sm:w-auto flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
                             <input
                                 type="text"
                                 value={orgName}
                                 onChange={e => setOrgName(e.target.value)}
-                                className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-sm min-w-[200px]"
+                                className="h-[44px] sm:h-[38px] w-full sm:w-[260px] px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none text-sm"
                             />
+
                             <button
                                 onClick={handleSaveOrgName}
-                                disabled={
-                                    saving ||
-                                    !orgName.trim() ||
-                                    orgName === currentOrg.organization.name
-                                }
-                                className="h-[38px] px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium flex items-center gap-2"
+                                disabled={isSaveDisabled}
+                                className="h-[44px] sm:h-[38px] w-full sm:w-auto px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2"
                             >
                                 <Save className="w-4 h-4"/>
                                 {saving ? t('common.saving') : t('common.save')}
@@ -118,6 +127,7 @@ const OrganizationSettings: React.FC = () => {
                             {t('organizationSettings.membersDescription')}
                         </p>
                     </div>
+
                     <div className="p-6 space-y-4">
                         <MembersList
                             orgId={currentOrg.org_id}
@@ -125,11 +135,12 @@ const OrganizationSettings: React.FC = () => {
                             currentUserId={user.id}
                         />
 
-                        <div className="pt-4 border-t border-gray-100 flex flex-col items-center gap-2">
+                        <div
+                            className="pt-4 border-t border-gray-100 flex flex-col items-stretch sm:items-center gap-2">
                             <button
                                 onClick={() => canInviteMore && setInviteModalOpen(true)}
                                 disabled={!canInviteMore}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                                className={`w-full sm:w-auto h-[44px] px-4 rounded-lg text-sm font-medium flex items-center justify-center ${
                                     canInviteMore
                                         ? "bg-blue-600 hover:bg-blue-700 text-white"
                                         : "bg-gray-200 text-gray-500 cursor-not-allowed"
@@ -144,11 +155,12 @@ const OrganizationSettings: React.FC = () => {
                                     <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" strokeWidth={1.5}/>
                                     <div>
                                         <p className="text-sm font-semibold text-amber-800">
-                                            {t('organizationSettings.reachedMemberLimit')}{" "}
+                                            {t('organizationSettings.reachedMemberLimit')}{' '}
                                             {billing?.tier ? formatTierLabel(billing.tier.code) : t('organizationSettings.plan')}.
                                         </p>
                                         <p className="text-xs text-amber-700 mt-1">
-                                            {t('organizationSettings.currentMembers')}: {membersCount} / {maxUsers}. {t('organizationSettings.upgradeToInvite')}
+                                            {t('organizationSettings.currentMembers')}: {membersCount} / {maxUsers}.{' '}
+                                            {t('organizationSettings.upgradeToInvite')}
                                         </p>
                                     </div>
                                 </div>

@@ -94,64 +94,68 @@ const BillingSettings: React.FC = () => {
         >
             {/* ✅ Checkout success/cancel banner */}
             {showCheckoutBanner === "success" && (
-                <div
-                    className="bg-green-50 border border-green-200 text-green-800 rounded-xl px-4 py-3 flex items-start gap-3 mb-4">
-                    <CheckCircle2 className="w-5 h-5 mt-0.5"/>
-                    <div className="text-sm">
-                        <div className="font-medium">
-                            {t("billingSettings.checkoutSuccessTitle", "Payment successful")}
-                        </div>
-                        <div className="text-green-700/90">
-                            {t(
-                                "billingSettings.checkoutSuccessDesc",
-                                "Thanks! Your subscription is being activated. This page may update in a few moments."
-                            )}
+                <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl px-4 py-3 mb-4">
+                    <div className="flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 mt-0.5 flex-shrink-0"/>
+                        <div className="text-sm flex-1">
+                            <div className="font-medium">
+                                {t("billingSettings.checkoutSuccessTitle", "Payment successful")}
+                            </div>
+                            <div className="text-green-700/90 mt-0.5">
+                                {t(
+                                    "billingSettings.checkoutSuccessDesc",
+                                    "Thanks! Your subscription is being activated. This page may update in a few moments."
+                                )}
+                            </div>
+
+                            {/* Close button: better on mobile */}
+                            <button
+                                onClick={() => setShowCheckoutBanner(null)}
+                                className="mt-3 h-[44px] w-full sm:h-auto sm:w-auto sm:mt-2 sm:inline-flex sm:px-0 text-green-800/80 hover:text-green-900 text-sm font-medium"
+                                type="button"
+                            >
+                                {t("common.close", "Close")}
+                            </button>
                         </div>
                     </div>
-                    <button
-                        onClick={() => setShowCheckoutBanner(null)}
-                        className="ml-auto text-green-800/70 hover:text-green-900 text-sm"
-                        type="button"
-                    >
-                        {t("common.close", "Close")}
-                    </button>
                 </div>
             )}
 
             {showCheckoutBanner === "cancel" && (
-                <div
-                    className="bg-yellow-50 border border-yellow-200 text-yellow-900 rounded-xl px-4 py-3 flex items-start gap-3 mb-4">
-                    <XCircle className="w-5 h-5 mt-0.5"/>
-                    <div className="text-sm">
-                        <div className="font-medium">
-                            {t("billingSettings.checkoutCanceledTitle", "Checkout canceled")}
-                        </div>
-                        <div className="text-yellow-800/90">
-                            {t(
-                                "billingSettings.checkoutCanceledDesc",
-                                "No worries — you weren’t charged. You can try again anytime."
-                            )}
+                <div className="bg-yellow-50 border border-yellow-200 text-yellow-900 rounded-xl px-4 py-3 mb-4">
+                    <div className="flex items-start gap-3">
+                        <XCircle className="w-5 h-5 mt-0.5 flex-shrink-0"/>
+                        <div className="text-sm flex-1">
+                            <div className="font-medium">
+                                {t("billingSettings.checkoutCanceledTitle", "Checkout canceled")}
+                            </div>
+                            <div className="text-yellow-800/90 mt-0.5">
+                                {t(
+                                    "billingSettings.checkoutCanceledDesc",
+                                    "No worries — you weren’t charged. You can try again anytime."
+                                )}
+                            </div>
+
+                            <button
+                                onClick={() => setShowCheckoutBanner(null)}
+                                className="mt-3 h-[44px] w-full sm:h-auto sm:w-auto sm:mt-2 sm:inline-flex sm:px-0 text-yellow-900/80 hover:text-yellow-900 text-sm font-medium"
+                                type="button"
+                            >
+                                {t("common.close", "Close")}
+                            </button>
                         </div>
                     </div>
-                    <button
-                        onClick={() => setShowCheckoutBanner(null)}
-                        className="ml-auto text-yellow-900/70 hover:text-yellow-900 text-sm"
-                        type="button"
-                    >
-                        {t("common.close", "Close")}
-                    </button>
                 </div>
             )}
 
-            {/* Checkout error */}
+            {/* Checkout / portal error */}
             {checkoutError && <ErrorAlert message={checkoutError}/>}
-            {/* PortalError error */}
             {portalError && <ErrorAlert message={portalError}/>}
 
             <div className="space-y-6">
                 {/* CURRENT PLAN */}
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                    <div className="px-6 py-4 border-b border-gray-100">
                         <div>
                             <h2 className="text-lg font-semibold text-gray-900">
                                 {t("billingSettings.currentPlan")}
@@ -182,7 +186,7 @@ const BillingSettings: React.FC = () => {
                                         type="button"
                                         onClick={openPortal}
                                         disabled={portalLoading}
-                                        className="inline-flex items-center gap-2 mt-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                                        className="mt-3 h-[44px] w-full sm:w-auto sm:h-auto inline-flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
                                     >
                                         {portalLoading ? (
                                             <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.5}/>
@@ -201,18 +205,28 @@ const BillingSettings: React.FC = () => {
 
                 {/* USAGE */}
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                        <div>
-                            <h2 className="text-lg font-semibold text-gray-900">
-                                {t("billingSettings.usageInCurrentPeriod")}
-                            </h2>
-                            <p className="text-sm text-gray-500 mt-1">
-                                {t("billingSettings.usageDescription")}
-                            </p>
-                        </div>
-                        <div className="hidden md:flex items-center gap-2 text-xs text-gray-500">
-                            <Activity className="w-4 h-4" strokeWidth={1.5}/>
-                            <span>{periodLabel}</span>
+                    <div className="px-6 py-4 border-b border-gray-100">
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <h2 className="text-lg font-semibold text-gray-900">
+                                    {t("billingSettings.usageInCurrentPeriod")}
+                                </h2>
+                                <p className="text-sm text-gray-500 mt-1">
+                                    {t("billingSettings.usageDescription")}
+                                </p>
+
+                                {/* period label visible on mobile too */}
+                                <div className="mt-2 flex items-center gap-2 text-xs text-gray-500 md:hidden">
+                                    <Activity className="w-4 h-4" strokeWidth={1.5}/>
+                                    <span>{periodLabel}</span>
+                                </div>
+                            </div>
+
+                            {/* desktop */}
+                            <div className="hidden md:flex items-center gap-2 text-xs text-gray-500 flex-shrink-0">
+                                <Activity className="w-4 h-4" strokeWidth={1.5}/>
+                                <span>{periodLabel}</span>
+                            </div>
                         </div>
                     </div>
 
@@ -228,13 +242,14 @@ const BillingSettings: React.FC = () => {
                         ) : (
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between text-sm text-gray-600">
-                  <span>
-                    {jobsUsed} / {maxJobs} jobs this period
-                  </span>
+                                    <span>
+                                        {jobsUsed} / {maxJobs} jobs this period
+                                    </span>
                                     {usagePercent !== null && (
                                         <span className="text-xs text-gray-500">{usagePercent}%</span>
                                     )}
                                 </div>
+
                                 <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
                                     <div
                                         className="h-full rounded-full bg-blue-600 transition-all"
@@ -246,9 +261,6 @@ const BillingSettings: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Checkout error */}
-                {checkoutError && <ErrorAlert message={checkoutError}/>}
-
                 {/* Pricing / upgrade section */}
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-100">
@@ -259,6 +271,7 @@ const BillingSettings: React.FC = () => {
                             {t("billingSettings.choosePlanDescription")}
                         </p>
                     </div>
+
                     <div className="p-6">
                         {billingLoading ? (
                             <div className="text-sm text-gray-500">
@@ -269,7 +282,7 @@ const BillingSettings: React.FC = () => {
                                 {/* ⬇️ Overlay při vytváření Stripe checkout session */}
                                 {checkoutLoading && (
                                     <div
-                                        className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm">
+                                        className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm px-4 text-center">
                                         <Loader2 className="w-6 h-6 animate-spin mb-2" strokeWidth={1.5}/>
                                         <p className="text-sm text-gray-600">
                                             {t("common.redirectingToCheckout")}
@@ -280,7 +293,7 @@ const BillingSettings: React.FC = () => {
                                 <PricingPlans
                                     mode="billing"
                                     billing={billing}
-                                    canManageOrg={canManageOrg && !checkoutLoading} // ⬅️ disable klikání během loadu
+                                    canManageOrg={canManageOrg && !checkoutLoading}
                                     onSelectStarter={({period, currency}) =>
                                         startCheckout({tier: "starter", period, currency})
                                     }

@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useMemo, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {Check, Languages, LogOut} from "lucide-react";
 import {useTranslation} from "react-i18next";
@@ -6,7 +6,7 @@ import {useAuth} from "../contexts/AuthContext";
 import {useOrgBilling} from "../hooks/useOrgBilling";
 import {getBillingBadgeText} from "../utils/billing";
 import {useLang} from "../hooks/useLang";
-import {SUPPORTED_LANGS, type AppLang} from "../i18n/lang";
+import {type AppLang, SUPPORTED_LANGS} from "../i18n/lang";
 
 const TopBar: React.FC = () => {
     const {t} = useTranslation();
@@ -59,18 +59,39 @@ const TopBar: React.FC = () => {
         return "U";
     };
 
+    const fullBadgeText = useMemo(() => getBillingBadgeText(billing), [billing]);
+
+    // Mobile-friendly short label:
+    // - if it's a trial, show just "Trial" on mobile
+    // - otherwise show the first word ("Free", "Starter", "Pro", etc.)
+    const shortBadgeText = useMemo(() => {
+        const txt = (fullBadgeText || "").trim();
+        const lower = txt.toLowerCase();
+
+        if (!txt) return "";
+
+        // very tolerant match, works even if translations differ a bit
+        if (lower.includes("trial") || lower.includes("zkou") || lower.includes("test")) {
+            return t("billing.badge.trialShort", "Trial");
+        }
+
+        // fallback: take first token-ish (keeps it short)
+        const first = txt.split(/[\s–-]+/)[0];
+        return first || txt;
+    }, [fullBadgeText, t]);
+
     return (
         <div
-            className="h-14 bg-white border-b border-gray-200 shadow-sm flex items-center justify-between px-6 relative z-50">
+            className="h-14 bg-white border-b border-gray-200 shadow-sm flex items-center justify-between px-3 sm:px-6 relative z-50">
             {/* Left */}
-            <div className="flex items-center gap-6">
-                {/* Logo stejné jako na landing page */}
+            <div className="flex items-center gap-3 sm:gap-6 min-w-0">
+                {/* Logo */}
                 <button
                     type="button"
                     onClick={() => navigate(`/${lang}/app/documents`)}
-                    className="flex items-center gap-3 group"
+                    className="flex items-center gap-3 group min-w-0"
                 >
-                    <div className="relative">
+                    <div className="relative flex-shrink-0">
                         <div
                             className="absolute inset-0 bg-blue-600 blur-md opacity-40 rounded-lg group-hover:opacity-60 transition-opacity"/>
                         <div
@@ -78,25 +99,32 @@ const TopBar: React.FC = () => {
                             P
                         </div>
                     </div>
+
+                    {/* On very small screens you can optionally hide the wordmark */}
                     <span
-                        className="text-lg font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-            Partonomy
-          </span>
+                        className="hidden sm:inline text-lg font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                        Partonomy
+                    </span>
                 </button>
 
                 {/* Tier / trial badge */}
-                <div className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
-                    {getBillingBadgeText(billing)}
+                <div
+                    className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium max-w-[42vw] sm:max-w-none truncate">
+                    {/* mobile */}
+                    <span className="sm:hidden">{shortBadgeText}</span>
+                    {/* desktop */}
+                    <span className="hidden sm:inline">{fullBadgeText}</span>
                 </div>
             </div>
 
             {/* Right */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
                 {/* Language Switcher */}
                 <div className="relative">
                     <button
                         onClick={() => setShowLangMenu(!showLangMenu)}
-                        className="h-8 px-3 rounded-md bg-gray-50 hover:bg-gray-100 flex items-center gap-2 text-sm font-medium text-gray-700 transition-colors"
+                        className="h-9 sm:h-8 px-3 rounded-md bg-gray-50 hover:bg-gray-100 flex items-center gap-2 text-sm font-medium text-gray-700 transition-colors"
+                        type="button"
                     >
                         <Languages className="w-4 h-4"/>
                         <span className="uppercase">{lang}</span>
@@ -119,6 +147,7 @@ const TopBar: React.FC = () => {
                                                 ? 'bg-blue-50 text-blue-700 font-medium'
                                                 : 'text-gray-700 hover:bg-gray-50'
                                         }`}
+                                        type="button"
                                     >
                                         {l === lang && <Check className="w-4 h-4"/>}
                                         <span className={l === lang ? '' : 'ml-6'}>
@@ -135,7 +164,8 @@ const TopBar: React.FC = () => {
                 <div className="relative">
                     <button
                         onClick={() => setShowUserMenu(!showUserMenu)}
-                        className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center text-white text-sm font-medium transition-colors"
+                        className="w-9 h-9 sm:w-8 sm:h-8 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center text-white text-sm font-medium transition-colors"
+                        type="button"
                     >
                         {getUserInitials()}
                     </button>
@@ -185,16 +215,17 @@ const TopBar: React.FC = () => {
                                                             ? 'bg-blue-50 text-blue-700 font-medium'
                                                             : 'text-gray-700 hover:bg-gray-50'
                                                     }`}
+                                                    type="button"
                                                 >
                                                     {org.org_id === currentOrg?.org_id && (
                                                         <Check className="w-4 h-4"/>
                                                     )}
                                                     <span className={org.org_id === currentOrg?.org_id ? '' : 'ml-6'}>
-                            {org.organization.name}
-                          </span>
+                                                        {org.organization.name}
+                                                    </span>
                                                     <span className="ml-auto text-xs text-gray-400 capitalize">
-                            {org.role}
-                          </span>
+                                                        {org.role}
+                                                    </span>
                                                 </button>
                                             ))}
                                         </div>
@@ -209,6 +240,7 @@ const TopBar: React.FC = () => {
                                     <button
                                         onClick={handleSignOut}
                                         className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                        type="button"
                                     >
                                         <LogOut className="w-4 h-4" strokeWidth={1.5}/>
                                         {t('topbar.signOut')}

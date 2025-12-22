@@ -44,7 +44,6 @@ const PRICING = {
     },
 } as const;
 
-
 const PricingPlans: React.FC<PricingPlansProps> = ({
                                                        mode,
                                                        billing,
@@ -135,80 +134,83 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                         <p className="text-sm md:text-lg text-slate-600">
                             {t('pricing.subtitle')}
                         </p>
-                        {/*<p className="text-xs md:text-sm text-slate-500 mt-2">*/}
-                        {/*    Platíte jen za{" "}*/}
-                        {/*    <span className="font-semibold">uživatele</span> a{" "}*/}
-                        {/*    <span className="font-semibold">*/}
-                        {/*        počet zpracovaných výkresů/stránek*/}
-                        {/*    </span>*/}
-                        {/*    . Žádné skryté moduly, žádné konzultační balíčky.*/}
-                        {/*</p>*/}
                     </div>
                 )}
 
-                {/* Společný řádek: billing period + currency */}
+                {/* Controls: mobile stacked, desktop inline */}
                 <div className="flex justify-center mb-12">
-                    <div className="inline-flex items-center bg-slate-100 rounded-full p-1 text-xs shadow-sm gap-1">
-                        <span className="px-3 py-1 text-slate-500 text-xs">{t('pricing.billedLabel')}</span>
-
-                        {/* Billing period toggle */}
-                        <div className="inline-flex items-center bg-slate-100 rounded-full p-1 text-xs shadow-sm">
-                            <button
-                                type="button"
-                                className={`px-3 py-1 rounded-full font-medium transition-colors ${
-                                    billingPeriod === "yearly"
-                                        ? "bg-white shadow-sm text-slate-900"
-                                        : "text-slate-500 hover:text-slate-800"
-                                }`}
-                                onClick={() => setBillingPeriod("yearly")}
-                            >
-                                {t('pricing.yearly')}{" "}
-                                <span className="ml-1 text-[10px] uppercase tracking-wide text-emerald-600">
-                                  {t('pricing.discount')}
+                    <div className="w-full max-w-xl sm:max-w-none sm:w-auto">
+                        <div
+                            className="flex flex-col sm:inline-flex sm:flex-row sm:items-center gap-2 sm:gap-1 bg-transparent sm:bg-slate-100 sm:rounded-full sm:p-1 text-xs sm:shadow-sm">
+                            {/* "Billed" label */}
+                            <div className="w-full sm:w-auto flex justify-center sm:justify-start">
+                                <span
+                                    className="inline-flex items-center justify-center px-3 py-2.5 sm:py-1 rounded-full bg-slate-100 sm:bg-transparent text-slate-500 text-xs w-full sm:w-auto">
+                                    {t('pricing.billedLabel')}
                                 </span>
-                            </button>
-                            <button
-                                type="button"
-                                className={`px-3 py-1 rounded-full font-medium transition-colors ${
-                                    billingPeriod === "monthly"
-                                        ? "bg-white shadow-sm text-slate-900"
-                                        : "text-slate-500 hover:text-slate-800"
-                                }`}
-                                onClick={() => setBillingPeriod("monthly")}
-                            >
-                                {t('pricing.monthly')}
-                            </button>
-                        </div>
+                            </div>
 
-                        {/* Currency toggle */}
-                        <div className="inline-flex bg-slate-100 rounded-full p-1 text-xs shadow-sm">
-                            <button
-                                type="button"
-                                onClick={() => setCurrency("USD")}
-                                className={`px-3 py-1 rounded-full font-medium transition-colors ${
-                                    currency === "USD"
-                                        ? "bg-white shadow text-slate-900"
-                                        : "text-slate-500 hover:text-slate-800"
-                                }`}
-                            >
-                                USD $
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setCurrency("EUR")}
-                                className={`px-3 py-1 rounded-full font-medium transition-colors ${
-                                    currency === "EUR"
-                                        ? "bg-white shadow text-slate-900"
-                                        : "text-slate-500 hover:text-slate-800"
-                                }`}
-                            >
-                                EUR €
-                            </button>
+                            {/* Billing period toggle */}
+                            <div
+                                className="w-full sm:w-auto inline-flex items-center bg-slate-100 rounded-full p-1 text-xs shadow-sm sm:shadow-none">
+                                <button
+                                    type="button"
+                                    className={`flex-1 sm:flex-none px-3 py-2.5 sm:py-1 rounded-full font-medium transition-colors ${
+                                        billingPeriod === "yearly"
+                                            ? "bg-white shadow-sm text-slate-900"
+                                            : "text-slate-500 hover:text-slate-800"
+                                    }`}
+                                    onClick={() => setBillingPeriod("yearly")}
+                                >
+                                    {t('pricing.yearly')}{" "}
+                                    <span className="ml-1 text-[10px] uppercase tracking-wide text-emerald-600">
+                                        {t('pricing.discount')}
+                                    </span>
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`flex-1 sm:flex-none px-3 py-2.5 sm:py-1 rounded-full font-medium transition-colors ${
+                                        billingPeriod === "monthly"
+                                            ? "bg-white shadow-sm text-slate-900"
+                                            : "text-slate-500 hover:text-slate-800"
+                                    }`}
+                                    onClick={() => setBillingPeriod("monthly")}
+                                >
+                                    {t('pricing.monthly')}
+                                </button>
+                            </div>
+
+                            {/* Currency toggle */}
+                            <div
+                                className="w-full sm:w-auto inline-flex bg-slate-100 rounded-full p-1 text-xs shadow-sm sm:shadow-none">
+                                <button
+                                    type="button"
+                                    onClick={() => setCurrency("USD")}
+                                    className={`flex-1 sm:flex-none px-3 py-2.5 sm:py-1 rounded-full font-medium transition-colors ${
+                                        currency === "USD"
+                                            ? "bg-white shadow text-slate-900"
+                                            : "text-slate-500 hover:text-slate-800"
+                                    }`}
+                                >
+                                    USD $
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setCurrency("EUR")}
+                                    className={`flex-1 sm:flex-none px-3 py-2.5 sm:py-1 rounded-full font-medium transition-colors ${
+                                        currency === "EUR"
+                                            ? "bg-white shadow text-slate-900"
+                                            : "text-slate-500 hover:text-slate-800"
+                                    }`}
+                                >
+                                    EUR €
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* teď 3 karty vedle sebe na větších displejích */}
+                {/* Cards grid */}
                 <div
                     className={
                         mode === "landing"
@@ -232,20 +234,21 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                                     {t('pricing.starter.name')}
                                 </h3>
                                 <div className="flex flex-col gap-1">
-                                    <div className="flex items-baseline gap-2">
+                                    <div className="flex items-baseline gap-2 flex-wrap">
                                         <span className="text-5xl font-bold text-slate-900">
-                                          {currencySymbol}
-                                            {starterPrice}
+                                            {currencySymbol}{starterPrice}
                                         </span>
                                         <span className="text-slate-600">
-                                          / {starterDrawings} {t('pricing.starter.drawings')}
+                                            / {starterDrawings} {t('pricing.starter.drawings')}
                                         </span>
                                     </div>
                                     <span className="text-xs text-slate-500">{periodLabel}</span>
                                 </div>
+
                                 <p className="mt-4 text-slate-600">
                                     {t('pricing.starter.description')}
                                 </p>
+
                                 {mode === "billing" && isTrial && daysLeft !== null && (
                                     <p className="mt-2 text-xs text-slate-500">
                                         {t('pricing.starter.trialNote', {
@@ -279,12 +282,13 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                             <div className="mt-auto pt-8">
                                 <button
                                     onClick={handleSelectStarter}
-                                    className={`w-full py-4 px-6 rounded-xl font-semibold transition-colors ${
+                                    className={`w-full h-[48px] py-4 px-6 rounded-xl font-semibold transition-colors ${
                                         starterDisabled
                                             ? "bg-slate-100 text-slate-400 cursor-not-allowed"
                                             : "text-slate-900 bg-slate-100 hover:bg-slate-200"
                                     }`}
                                     disabled={starterDisabled}
+                                    type="button"
                                 >
                                     {starterButtonLabel}
                                 </button>
@@ -311,22 +315,23 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                             <div className="mb-6">
                                 <h3 className="text-2xl font-bold text-white mb-2">{t('pricing.pro.name')}</h3>
                                 <div className="flex flex-col gap-1">
-                                    <div className="flex items-baseline gap-2">
-                                    <span className="text-5xl font-bold text-white">
-                                      {currencySymbol}
-                                        {proPrice}
-                                    </span>
+                                    <div className="flex items-baseline gap-2 flex-wrap">
+                                        <span className="text-5xl font-bold text-white">
+                                            {currencySymbol}{proPrice}
+                                        </span>
                                         <span className="text-blue-100">
-                                          / {proDrawings} {t('pricing.pro.drawings')}
+                                            / {proDrawings} {t('pricing.pro.drawings')}
                                         </span>
                                     </div>
                                     <span className="text-xs text-blue-100/80">
                                         {periodLabel}
                                     </span>
                                 </div>
+
                                 <p className="mt-4 text-blue-100">
                                     {t('pricing.pro.description')}
                                 </p>
+
                                 {mode === "billing" && isTrial && daysLeft !== null && (
                                     <p className="mt-2 text-xs text-blue-100/80">
                                         {t('pricing.pro.trialNote', {
@@ -361,12 +366,13 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                             <div className="mt-auto pt-8">
                                 <button
                                     onClick={handleSelectPro}
-                                    className={`w-full py-4 px-6 rounded-xl font-semibold shadow-lg transition-colors ${
+                                    className={`w-full h-[48px] py-4 px-6 rounded-xl font-semibold shadow-lg transition-colors ${
                                         proDisabled
                                             ? "bg-white/40 text-blue-200 cursor-not-allowed"
                                             : "text-blue-700 bg-white hover:bg-blue-50"
                                     }`}
                                     disabled={proDisabled}
+                                    type="button"
                                 >
                                     {proButtonLabel}
                                 </button>
@@ -382,7 +388,6 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                                 className="absolute -top-4 left-1/2 -translate-x-1/2 px-3 py-1 bg-slate-100 text-slate-900 text-xs font-semibold rounded-full">
                                 {t('pricing.individual.badge')}
                             </div>
-
 
                             <div>
                                 <div className="mb-6">
@@ -414,42 +419,34 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                             <div className="mt-auto pt-8">
                                 <button
                                     type="button"
-                                    className="w-full py-4 px-6 rounded-xl font-semibold bg-slate-100 text-slate-900 hover:bg-white transition-colors"
+                                    className="w-full h-[48px] py-4 px-6 rounded-xl font-semibold bg-slate-100 text-slate-900 hover:bg-white transition-colors"
                                 >
                                     {t('pricing.individual.consultButton')}
                                 </button>
                             </div>
                         </div>
                     )}
-
                 </div>
 
-
-                {/* Landing CTA – můžeš klidně nechat, nebo pak zjednodušit, když už máš Enterprise kartu */}
-                {/* Landing / Billing CTA logic */}
+                {/* Landing CTA / Billing note */}
                 <div className="text-center mt-12">
                     {mode === "landing" ? (
-                        <>
-                            <button
-                                onClick={onStartFree}
-                                className="inline-flex items-center justify-center px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-md transition-all active:scale-[0.98]"
-                            >
-                                {t('pricing.cta.landing')}
-                            </button>
-                        </>
+                        <button
+                            onClick={onStartFree}
+                            className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-md transition-all active:scale-[0.98]"
+                            type="button"
+                        >
+                            {t('pricing.cta.landing')}
+                        </button>
                     ) : (
-                        <>
-                            <p className="text-sm text-slate-600">
-                                {t('pricing.cta.billing')}
-                            </p>
-                        </>
+                        <p className="text-sm text-slate-600">
+                            {t('pricing.cta.billing')}
+                        </p>
                     )}
                 </div>
-
             </div>
         </section>
     );
 };
-
 
 export default PricingPlans;
