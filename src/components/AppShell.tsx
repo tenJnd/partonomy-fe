@@ -1,6 +1,7 @@
 import React from "react";
 import {Menu} from "lucide-react";
 import {Navigate, Route, Routes} from "react-router-dom";
+import {useAuth} from "../contexts/AuthContext";
 
 import TopBar from "./TopBar";
 import Sidebar from "./Sidebar";
@@ -13,16 +14,18 @@ import ProjectDetail from "../pages/ProjectDetail";
 import ReportSettings from "../pages/ReportSettings";
 import BillingSettings from "../pages/BillingSettings";
 import OrganizationSettings from "../pages/OrganizationSettings";
+import OnboardingOrg from "../pages/OnboardingOrg"; // ⬅ nový page
 
 const SIDEBAR_COLLAPSED_KEY = "ui_sidebar_collapsed";
 
 const AppShell: React.FC = () => {
-    const [sidebarOpen, setSidebarOpen] = React.useState(false);
+    const {needsOnboarding} = useAuth();
 
+    const [sidebarOpen, setSidebarOpen] = React.useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = React.useState<boolean>(() => {
         try {
             const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
-            return saved ? saved === "1" : true; // default collapsed
+            return saved ? saved === "1" : true;
         } catch {
             return true;
         }
@@ -34,7 +37,6 @@ const AppShell: React.FC = () => {
             try {
                 localStorage.setItem(SIDEBAR_COLLAPSED_KEY, next ? "1" : "0");
             } catch {
-                // ignore
             }
             return next;
         });
@@ -52,9 +54,7 @@ const AppShell: React.FC = () => {
                     onToggleCollapse={toggleCollapsed}
                 />
 
-                {/* main wrapper */}
                 <main className="flex-1 overflow-y-auto">
-                    {/* Mobile top controls row (doesn't overlay content) */}
                     <div className="md:hidden sticky top-0 z-20 bg-gray-50/90 backdrop-blur border-b border-gray-100">
                         <div className="px-4 py-2">
                             {!sidebarOpen && (
@@ -71,7 +71,13 @@ const AppShell: React.FC = () => {
                     </div>
 
                     <Routes>
-                        <Route index element={<Navigate to="documents" replace/>}/>
+                        {/* index: když nemá org, pošli ho do onboarding */}
+                        <Route
+                            index
+                            element={<Navigate to={needsOnboarding ? "onboarding" : "documents"} replace/>}
+                        />
+
+                        <Route path="onboarding" element={<OnboardingOrg/>}/>
 
                         <Route path="documents" element={<Documents/>}/>
                         <Route path="documents/:documentId" element={<DocumentDetail/>}/>
@@ -83,7 +89,11 @@ const AppShell: React.FC = () => {
                         <Route path="settings/billing" element={<BillingSettings/>}/>
                         <Route path="settings/organization" element={<OrganizationSettings/>}/>
 
-                        <Route path="*" element={<Navigate to="documents" replace/>}/>
+                        {/* fallback: když nemá org, drž ho v onboarding */}
+                        <Route
+                            path="*"
+                            element={<Navigate to={needsOnboarding ? "onboarding" : "documents"} replace/>}
+                        />
                     </Routes>
                 </main>
             </div>
