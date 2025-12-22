@@ -474,7 +474,21 @@
     "requestNewResetLink": "Request a new reset link",
     "changeEmail": "Change email",
     "resendEmail": "Resend email",
-    "tryAgainInSeconds": "Try again in {{s}}s"
+    "tryAgainInSeconds": "Try again in {{s}}s",
+    "noOrganizationTitle": "You don’t have access to any organization",
+    "noOrganizationDescription": "It looks like your account was removed from the organization. Create a new one or join via invite.",
+    "joinWithInvite": "Join with invite",
+    "joinWithInviteDescription": "Paste invite link or token from email.",
+    "inviteLinkOrToken": "Invite link or token",
+    "invitePlaceholder": "https://app.com/en/invite/XXXX or XXXX",
+    "acceptInvite": "Accept invite",
+    "creatingOrganization": "Creating organization...",
+    "acceptingInviteShort": "Accepting invite...",
+    "createNewOrganization": "Create a new organization",
+    "createNewOrganizationDescription": "You will be the owner of this organization.",
+    "missingInviteToken": "Missing invite token",
+    "organizationNameRequired": "Organization name is required",
+    "noUserSession": "No user session"
   },
   "modals": {
     "invite": {

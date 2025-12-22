@@ -475,7 +475,21 @@
     "requestNewResetLink": "Požádat o nový resetovací odkaz",
     "changeEmail": "Změnit e-mail",
     "resendEmail": "Znovu odeslat e-mail",
-    "tryAgainInSeconds": "Zkuste to znovu za {{s}} s"
+    "tryAgainInSeconds": "Zkuste to znovu za {{s}} s",
+    "noOrganizationTitle": "Nemáte přístup k žádné organizaci",
+    "noOrganizationDescription": "Vypadá to, že váš účet byl z organizace odebrán. Vytvořte novou organizaci nebo se připojte přes pozvánku.",
+    "joinWithInvite": "Připojit se přes pozvánku",
+    "joinWithInviteDescription": "Vložte odkaz na pozvánku nebo token z e-mailu.",
+    "inviteLinkOrToken": "Odkaz nebo token pozvánky",
+    "invitePlaceholder": "https://app.com/cs/invite/XXXX nebo XXXX",
+    "acceptInvite": "Přijmout pozvánku",
+    "creatingOrganization": "Vytvářím organizaci...",
+    "acceptingInviteShort": "Přijímám pozvánku...",
+    "createNewOrganization": "Vytvořit novou organizaci",
+    "createNewOrganizationDescription": "Budete vlastníkem této organizace.",
+    "missingInviteToken": "Chybí token pozvánky",
+    "organizationNameRequired": "Název organizace je povinný",
+    "noUserSession": "Chybí přihlášení (session)"
   },
   "modals": {
     "invite": {

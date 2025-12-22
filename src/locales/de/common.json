@@ -474,7 +474,21 @@
     "requestNewResetLink": "Neuen Reset-Link anfordern",
     "changeEmail": "E-Mail-Adresse ändern",
     "resendEmail": "E-Mail erneut senden",
-    "tryAgainInSeconds": "Erneut versuchen in {{s}} s"
+    "tryAgainInSeconds": "Erneut versuchen in {{s}} s",
+    "noOrganizationTitle": "Du hast keinen Zugriff auf eine Organisation",
+    "noOrganizationDescription": "Es sieht so aus, als wurde dein Konto aus der Organisation entfernt. Erstelle eine neue Organisation oder trete per Einladung bei.",
+    "joinWithInvite": "Per Einladung beitreten",
+    "joinWithInviteDescription": "Füge den Einladungslink oder den Token aus der E-Mail ein.",
+    "inviteLinkOrToken": "Einladungslink oder Token",
+    "invitePlaceholder": "https://app.com/de/invite/XXXX oder XXXX",
+    "acceptInvite": "Einladung annehmen",
+    "creatingOrganization": "Organisation wird erstellt...",
+    "acceptingInviteShort": "Einladung wird angenommen...",
+    "createNewOrganization": "Neue Organisation erstellen",
+    "createNewOrganizationDescription": "Du wirst der Eigentümer dieser Organisation sein.",
+    "missingInviteToken": "Einladungs-Token fehlt",
+    "organizationNameRequired": "Organisationsname ist erforderlich",
+    "noUserSession": "Keine Benutzersitzung"
   },
   "modals": {
     "invite": {
