@@ -123,6 +123,9 @@
   "documents": {
     "title": "Documents",
     "uploadDocuments": "Upload Documents",
+    "reportLanguageHintTitle": "Customize your reports",
+    "reportLanguageHintText": "Reports are generated in your selected language and tailored to your organization profile. Set both before uploading documents for the best results.",
+    "goToReportSettings": "Open report settings",
     "noDocuments": "No documents found",
     "deleteDocument": "Delete Document",
     "documentDeleted": "Document deleted successfully",

@@ -124,6 +124,9 @@
   "documents": {
     "title": "Dokumenty",
     "uploadDocuments": "Nahrát dokumenty",
+    "reportLanguageHintTitle": "Přizpůsobte si reporty",
+    "reportLanguageHintText": "Reporty se generují ve zvoleném jazyce a podle profilu vaší organizace. Pro nejlepší výsledek doporučujeme nastavit obojí ještě před nahráním dokumentů.",
+    "goToReportSettings": "Nastavit reporty",
     "noDocuments": "Žádné dokumenty nenalezeny",
     "deleteDocument": "Smazat dokument",
     "documentDeleted": "Dokument úspěšně smazán",

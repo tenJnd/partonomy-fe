@@ -73,10 +73,11 @@ export default function AuthCallback() {
                         if (a.kind === "create_org") {
                             const userName = a.userName?.trim() ? a.userName.trim() : fallbackName;
 
-                            const {error} = await supabase.rpc("create_organization_with_owner", {
+                            const {error} = await supabase.rpc("create_organization_with_owner_v2", {
                                 p_org_name: a.orgName,
                                 p_user_id: sessionUser.id,
                                 p_user_name: userName,
+                                p_report_lang: lang,
                             });
                             if (error) throw error;
                         }

@@ -123,6 +123,9 @@
   "documents": {
     "title": "Dokumente",
     "uploadDocuments": "Dokumente hochladen",
+    "reportLanguageHintTitle": "Berichte anpassen",
+    "reportLanguageHintText": "Berichte werden in der gewählten Sprache erstellt und an das Profil Ihrer Organisation angepasst. Für optimale Ergebnisse empfehlen wir, beides vor dem Hochladen von Dokumenten festzulegen.",
+    "goToReportSettings": "Berichteinstellungen öffnen",
     "noDocuments": "Keine Dokumente gefunden",
     "deleteDocument": "Dokument löschen",
     "documentDeleted": "Dokument erfolgreich gelöscht",
