@@ -186,6 +186,20 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
             },
         });
 
+        // ✅ Supabase: existing email can look like "success" but identities = []
+        const u = data?.user ?? data?.session?.user;
+        const identities = u?.identities;
+
+        if (!error && u && Array.isArray(identities) && identities.length === 0) {
+            const alreadyRegisteredError = {
+                name: 'AuthApiError',
+                status: 400,
+                message: 'User already registered',
+            } as unknown as AuthError;
+
+            return {data, error: alreadyRegisteredError};
+        }
+
         return {data, error};
     };
 
