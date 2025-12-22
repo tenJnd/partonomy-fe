@@ -158,6 +158,23 @@ const Signup: React.FC = () => {
             const {data: authData, error: signUpError} = await signUp(email, password, fullName);
 
             if (signUpError) {
+                const msg = (signUpError.message || '').toLowerCase();
+
+                // ✅ Existující účet: uložíme invite token a pošleme usera na login
+                if (msg.includes('already registered')) {
+                    pushPending({
+                        kind: 'invite',
+                        token, // ✅ použij lokální token
+                        userName: fullName.trim(),
+                    });
+
+                    sessionStorage.removeItem('pendingInviteToken');
+                    setPendingInviteToken(null);
+
+                    window.location.href = `/${lang}/login?email=${encodeURIComponent(email.trim())}`;
+                    return;
+                }
+
                 setError(signUpError.message || 'Failed to create account');
                 setLoading(false);
                 return;

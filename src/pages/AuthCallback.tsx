@@ -4,30 +4,6 @@ import {supabase} from "../lib/supabase";
 import {useAuth} from "../contexts/AuthContext";
 import {useLang} from "../hooks/useLang";
 
-type PendingAction =
-    | { kind: "invite"; token: string; userName: string }
-    | { kind: "create_org"; orgName: string; userName: string };
-
-const PENDING_KEY = "pending_actions_v1";
-
-function readPending(): PendingAction[] {
-    try {
-        const raw = localStorage.getItem(PENDING_KEY);
-        if (!raw) return [];
-        const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed : [];
-    } catch {
-        return [];
-    }
-}
-
-function clearPending() {
-    try {
-        localStorage.removeItem(PENDING_KEY);
-    } catch {
-    }
-}
-
 export default function AuthCallback() {
     const navigate = useNavigate();
     const lang = useLang();
@@ -49,41 +25,10 @@ export default function AuthCallback() {
 
         const finish = async (sessionUser: any) => {
             try {
-                // ✅ reset-password flow: nedělej org refresh ani pending akce
+                // ✅ reset-password flow: nechceme sahat na orgs (volitelné, ale nechávám jak jsi měl)
                 const isResetFlow = safeNext.endsWith(`/${lang}/reset-password`);
 
                 if (!isResetFlow) {
-                    const actions = readPending();
-
-                    const fallbackName =
-                        (sessionUser.user_metadata?.full_name as string | undefined) ||
-                        (sessionUser.email ? sessionUser.email.split("@")[0] : "");
-
-                    for (const a of actions) {
-                        if (a.kind === "invite") {
-                            const userName = a.userName?.trim() ? a.userName.trim() : fallbackName;
-
-                            const {error} = await supabase.rpc("accept_organization_invite", {
-                                p_token: a.token,
-                                p_user_name: userName,
-                            });
-                            if (error) throw error;
-                        }
-
-                        if (a.kind === "create_org") {
-                            const userName = a.userName?.trim() ? a.userName.trim() : fallbackName;
-
-                            const {error} = await supabase.rpc("create_organization_with_owner", {
-                                p_org_name: a.orgName,
-                                p_user_id: sessionUser.id,
-                                p_user_name: userName,
-                            });
-                            if (error) throw error;
-                        }
-                    }
-
-                    if (actions.length > 0) clearPending();
-
                     await refreshOrganizations(sessionUser.id);
                 }
 
@@ -113,6 +58,7 @@ export default function AuthCallback() {
                         try {
                             sub.subscription.unsubscribe();
                         } catch {
+                            // ignore
                         }
                         await finish(session.user);
                     }
@@ -122,14 +68,13 @@ export default function AuthCallback() {
                     try {
                         sub.subscription.unsubscribe();
                     } catch {
+                        // ignore
                     }
                     if (!done) {
-                        setError(
-                            "Auth callback did not produce a session. Check Redirect URLs and detectSessionInUrl=true."
-                        );
+                        setError("Auth callback did not produce a session. Check Redirect URLs and detectSessionInUrl=true.");
                         setPhase("error");
                     }
-                }, 8000); // trochu víc tolerance
+                }, 8000);
             } catch (e: any) {
                 setError(e?.message ?? "Auth callback failed");
                 setPhase("error");
@@ -142,9 +87,8 @@ export default function AuthCallback() {
             done = true;
             if (timeoutId) window.clearTimeout(timeoutId);
         };
-// eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [navigate, safeNext, lang, refreshOrganizations]);
-
 
     if (phase === "error") {
         return (

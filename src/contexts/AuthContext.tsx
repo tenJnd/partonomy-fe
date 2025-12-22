@@ -47,6 +47,32 @@ function getLangFromPath(): string {
     }
 }
 
+/** pending actions (invite / create org) */
+type PendingAction =
+    | { kind: "invite"; token: string; userName: string }
+    | { kind: "create_org"; orgName: string; userName: string };
+
+const PENDING_KEY = "pending_actions_v1";
+
+function readPending(): PendingAction[] {
+    try {
+        const raw = localStorage.getItem(PENDING_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+function clearPending() {
+    try {
+        localStorage.removeItem(PENDING_KEY);
+    } catch {
+        // ignore
+    }
+}
+
 export function AuthProvider({children}: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [session, setSession] = useState<Session | null>(null);
@@ -77,13 +103,11 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
             return [];
         }
 
-        const mapped = (data || []).map((item: any) => ({
+        return (data || []).map((item: any) => ({
             org_id: item.org_id,
             role: item.role as RoleEnum,
             organization: Array.isArray(item.organization) ? item.organization[0] : item.organization,
         })) as OrganizationMembership[];
-
-        return mapped;
     };
 
     // ⬇⬇ DŮLEŽITÉ: bere volitelně userId – když přijde, ignoruje user z contextu
@@ -96,6 +120,7 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
             try {
                 localStorage.removeItem("currentOrgId");
             } catch {
+                // ignore
             }
             return;
         }
@@ -120,15 +145,15 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
                 try {
                     localStorage.setItem("currentOrgId", defaultOrg.org_id);
                 } catch {
+                    // ignore
                 }
             } else {
-                // ✅ LOG-ONLY GUARD (debug)
                 console.warn("[AuthContext] user has no organizations", {userId: effectiveUserId});
-
                 setCurrentOrg(null);
                 try {
                     localStorage.removeItem("currentOrgId");
                 } catch {
+                    // ignore
                 }
             }
         } finally {
@@ -136,6 +161,40 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
         }
     };
 
+    /** ✅ Varianta A: pending akce zpracujeme jen po SIGNED_IN (onAuthStateChange) */
+    const processPendingActions = async (sessionUser: User) => {
+        const actions = readPending();
+        if (actions.length === 0) return;
+
+        const fallbackName =
+            (sessionUser.user_metadata?.full_name as string | undefined) ||
+            (sessionUser.email ? sessionUser.email.split("@")[0] : "");
+
+        for (const a of actions) {
+            if (a.kind === "invite") {
+                const userName = a.userName?.trim() ? a.userName.trim() : fallbackName;
+
+                const {error} = await supabase.rpc("accept_organization_invite", {
+                    p_token: a.token,
+                    p_user_name: userName,
+                });
+                if (error) throw error;
+            }
+
+            if (a.kind === "create_org") {
+                const userName = a.userName?.trim() ? a.userName.trim() : fallbackName;
+
+                const {error} = await supabase.rpc("create_organization_with_owner", {
+                    p_org_name: a.orgName,
+                    p_user_id: sessionUser.id,
+                    p_user_name: userName,
+                });
+                if (error) throw error;
+            }
+        }
+
+        clearPending();
+    };
 
     // Initialize auth state (NEčeká na org refresh, aby neblokoval public stránky)
     useEffect(() => {
@@ -158,7 +217,7 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
                 setSession(s ?? null);
                 setUser(s?.user ?? null);
 
-                // ✅ org refresh spustíme, ale NEblokujeme loading pro public UI
+                // ✅ init: pouze refresh orgs (pending se tu NEřeší)
                 if (s?.user) {
                     refreshOrganizations(s.user.id).catch((e) => {
                         console.error("[AuthContext] init refreshOrganizations failed:", e);
@@ -186,28 +245,37 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
         // Listen for auth changes
         const {
             data: {subscription},
-        } = supabase.auth.onAuthStateChange(async (_event, s) => {
+        } = supabase.auth.onAuthStateChange(async (event, s) => {
             if (!mounted) return;
 
             setSession(s);
             setUser(s?.user ?? null);
-
-            // ✅ auth loading držíme krátce (jen event), orgLoading řeší zvlášť
             setLoading(false);
 
-            if (s?.user) {
-                refreshOrganizations(s.user.id).catch((e) => {
-                    console.error("[AuthContext] onAuthStateChange refreshOrganizations failed:", e);
-                    setOrganizations([]);
-                    setCurrentOrg(null);
-                });
-            } else {
+            if (!s?.user) {
                 setOrganizations([]);
                 setCurrentOrg(null);
                 try {
                     localStorage.removeItem("currentOrgId");
                 } catch {
+                    // ignore
                 }
+                return;
+            }
+
+            // 1) refresh orgs quickly
+            refreshOrganizations(s.user.id).catch((e) => {
+                console.error("[AuthContext] onAuthStateChange refreshOrganizations failed:", e);
+                setOrganizations([]);
+                setCurrentOrg(null);
+            });
+
+            // 2) ✅ pouze při SIGNED_IN zpracuj pending, pak refresh znovu
+            if (event === "SIGNED_IN") {
+                processPendingActions(s.user)
+                    .then(() => refreshOrganizations(s.user!.id).catch(() => {
+                    }))
+                    .catch((e) => console.error("[AuthContext] processPendingActions failed:", e));
             }
         });
 
@@ -216,6 +284,7 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
             try {
                 subscription.unsubscribe();
             } catch {
+                // ignore
             }
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -233,7 +302,8 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
 
     const signUp = async (email: string, password: string, fullName?: string) => {
         const lang = getLangFromPath();
-        const emailRedirectTo = import.meta.env.VITE_AUTH_CALLBACK_URL || `${window.location.origin}/${lang}/auth/callback`;
+        const emailRedirectTo =
+            import.meta.env.VITE_AUTH_CALLBACK_URL || `${window.location.origin}/${lang}/auth/callback`;
 
         const {data, error} = await supabase.auth.signUp({
             email,
@@ -263,7 +333,8 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
 
     const resendSignupEmail = async (email: string) => {
         const lang = getLangFromPath();
-        const emailRedirectTo = import.meta.env.VITE_AUTH_CALLBACK_URL || `${window.location.origin}/${lang}/auth/callback`;
+        const emailRedirectTo =
+            import.meta.env.VITE_AUTH_CALLBACK_URL || `${window.location.origin}/${lang}/auth/callback`;
 
         const {error} = await supabase.auth.resend({
             type: "signup",
@@ -279,6 +350,7 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
         try {
             localStorage.removeItem("currentOrgId");
         } catch {
+            // ignore
         }
         setCurrentOrg(null);
         setOrganizations([]);
@@ -291,6 +363,7 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
             try {
                 localStorage.setItem("currentOrgId", orgId);
             } catch {
+                // ignore
             }
         }
     };
