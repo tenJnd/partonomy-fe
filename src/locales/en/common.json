@@ -432,7 +432,7 @@
     "signUpError": "Sign Up Error",
     "accountCreatedSuccess": "Account created successfully!",
     "redirectingToOrganization": "Redirecting to your organization...",
-    "checkEmailToVerify": "Check your email to verify your account. Redirecting...",
+    "checkEmailToVerify": "Check your email to verify your account.",
     "emailAddress": "Email address",
     "organizationName": "Organization name",
     "accountEmail": "Account email",
@@ -471,7 +471,10 @@
     "unableToAcceptInvite": "Unable to Accept Invite",
     "goToLogin": "Go to Login",
     "resetLinkInvalidOrExpired": "The reset link is invalid or has expired. Request a new one.",
-    "requestNewResetLink": "Request a new reset link"
+    "requestNewResetLink": "Request a new reset link",
+    "changeEmail": "Change email",
+    "resendEmail": "Resend email",
+    "tryAgainInSeconds": "Try again in {{s}}s"
   },
   "modals": {
     "invite": {

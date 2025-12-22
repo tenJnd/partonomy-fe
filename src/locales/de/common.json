@@ -432,7 +432,7 @@
     "signUpError": "Registrierungsfehler",
     "accountCreatedSuccess": "Konto erfolgreich erstellt!",
     "redirectingToOrganization": "Weiterleitung zu Ihrer Organisation...",
-    "checkEmailToVerify": "Überprüfen Sie Ihre E-Mails zur Verifizierung Ihres Kontos. Weiterleitung...",
+    "checkEmailToVerify": "Überprüfen Sie Ihre E-Mails zur Verifizierung Ihres Kontos.",
     "emailAddress": "E-Mail-Adresse",
     "organizationName": "Organisationsname",
     "accountEmail": "Konto-E-Mail",
@@ -471,7 +471,10 @@
     "unableToAcceptInvite": "Einladung kann nicht angenommen werden",
     "goToLogin": "Zur Anmeldung",
     "resetLinkInvalidOrExpired": "Der Reset-Link ist ungültig oder abgelaufen. Fordern Sie einen neuen an.",
-    "requestNewResetLink": "Neuen Reset-Link anfordern"
+    "requestNewResetLink": "Neuen Reset-Link anfordern",
+    "changeEmail": "E-Mail-Adresse ändern",
+    "resendEmail": "E-Mail erneut senden",
+    "tryAgainInSeconds": "Erneut versuchen in {{s}} s"
   },
   "modals": {
     "invite": {

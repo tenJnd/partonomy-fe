@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {useAuth} from '../contexts/AuthContext';
 import {AlertCircle, Building2, CheckCircle, Lock, Mail, UserPlus} from 'lucide-react';
@@ -22,6 +22,8 @@ function pushPending(action: PendingAction) {
     }
 }
 
+const RESEND_COOLDOWN_MS = 30_000;
+
 const Signup: React.FC = () => {
     const [step, setStep] = useState<'account' | 'organization'>('account');
     const [email, setEmail] = useState('');
@@ -34,7 +36,13 @@ const Signup: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [pendingInviteToken, setPendingInviteToken] = useState<string | null>(null);
 
-    const {signUp} = useAuth();
+    // Resend email UX
+    const [resendLoading, setResendLoading] = useState(false);
+    const [resendInfo, setResendInfo] = useState('');
+    const [resendCooldownUntil, setResendCooldownUntil] = useState<number>(0);
+    const [cooldownSecondsLeft, setCooldownSecondsLeft] = useState<number>(0);
+
+    const {signUp, resendSignupEmail} = useAuth();
     const {t} = useTranslation();
     const lang = useLang();
 
@@ -42,6 +50,29 @@ const Signup: React.FC = () => {
         const token = sessionStorage.getItem('pendingInviteToken');
         if (token) setPendingInviteToken(token);
     }, []);
+
+    useEffect(() => {
+        // live countdown for resend cooldown
+        if (!resendCooldownUntil) {
+            setCooldownSecondsLeft(0);
+            return;
+        }
+
+        const update = () => {
+            const diff = resendCooldownUntil - Date.now();
+            const s = Math.max(0, Math.ceil(diff / 1000));
+            setCooldownSecondsLeft(s);
+        };
+
+        update();
+
+        const id = window.setInterval(update, 500);
+        return () => window.clearInterval(id);
+    }, [resendCooldownUntil]);
+
+    const resendDisabled = useMemo(() => {
+        return resendLoading || !email.trim() || Date.now() < resendCooldownUntil;
+    }, [resendLoading, email, resendCooldownUntil]);
 
     const handleAccountSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -69,9 +100,40 @@ const Signup: React.FC = () => {
         }
     };
 
+    const handleResendEmail = async () => {
+        setError('');
+        setResendInfo('');
+
+        const targetEmail = email.trim();
+        if (!targetEmail) return;
+
+        if (Date.now() < resendCooldownUntil) return;
+
+        setResendLoading(true);
+        try {
+            const {error: resendError} = await resendSignupEmail(targetEmail);
+
+            if (resendError) {
+                setError(resendError.message || 'Failed to resend email');
+                return;
+            }
+
+            setResendCooldownUntil(Date.now() + RESEND_COOLDOWN_MS);
+            setResendInfo(
+                t('auth.verificationEmailResent') ||
+                'Verification email resent. Please check your inbox (and spam).'
+            );
+        } catch (err: any) {
+            setError('An unexpected error occurred: ' + (err?.message ?? ''));
+        } finally {
+            setResendLoading(false);
+        }
+    };
+
     const handleSignupWithInvite = async () => {
         setError('');
         setSuccess(false);
+        setResendInfo('');
         setLoading(true);
 
         try {
@@ -122,6 +184,7 @@ const Signup: React.FC = () => {
         e.preventDefault();
         setError('');
         setSuccess(false);
+        setResendInfo('');
 
         if (!organizationName.trim()) {
             setError('Organization name is required');
@@ -169,6 +232,16 @@ const Signup: React.FC = () => {
             setError('An unexpected error occurred: ' + (err?.message ?? ''));
             setLoading(false);
         }
+    };
+
+    const resetToAccountStep = () => {
+        setSuccess(false);
+        setError('');
+        setResendInfo('');
+        setLoading(false);
+        setResendLoading(false);
+        setResendCooldownUntil(0);
+        setStep('account');
     };
 
     return (
@@ -235,14 +308,48 @@ const Signup: React.FC = () => {
                                     {t('auth.checkEmailToVerify')}
                                 </p>
 
-                                {/* malý UX bonus: link na login */}
-                                <div className="mt-3">
-                                    <Link
-                                        to={`/${lang}/login`}
-                                        className="inline-flex text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                                {resendInfo && (
+                                    <p className="text-sm text-emerald-700 mt-2">{resendInfo}</p>
+                                )}
+
+                                <div className="mt-3 flex flex-wrap items-center gap-4">
+                                    {/* link na login */}
+                                    {/*<Link*/}
+                                    {/*    to={`/${lang}/login`}*/}
+                                    {/*    className="inline-flex text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"*/}
+                                    {/*>*/}
+                                    {/*    {t('auth.goToLogin') || 'Go to login'}*/}
+                                    {/*</Link>*/}
+
+                                    <button
+                                        type="button"
+                                        onClick={resetToAccountStep}
+                                        className="inline-flex text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
                                     >
-                                        {t('auth.goToLogin') || 'Go to login'}
-                                    </Link>
+                                        {t('auth.changeEmail') || 'Change email'}
+                                    </button>
+
+
+                                    {/* resend email */}
+                                    <button
+                                        type="button"
+                                        onClick={handleResendEmail}
+                                        disabled={resendDisabled}
+                                        className="inline-flex text-sm font-medium text-blue-600 hover:text-blue-700 disabled:text-blue-300 transition-colors disabled:cursor-not-allowed"
+                                    >
+                                        {resendLoading
+                                            ? (t('auth.sending') || 'Sending...')
+                                            : (t('auth.resendEmail') || 'Resend email')}
+                                    </button>
+
+                                    {cooldownSecondsLeft > 0 && (
+                                        <span className="text-xs text-gray-500">
+                                            {(t('auth.tryAgainInSeconds') || 'Try again in {{s}}s').replace(
+                                                '{{s}}',
+                                                String(cooldownSecondsLeft)
+                                            )}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -252,8 +359,9 @@ const Signup: React.FC = () => {
                     {step === 'account' && !success && (
                         <form onSubmit={handleAccountSubmit} className="space-y-5">
                             <div>
-                                <label
-                                    className="block text-sm font-medium text-gray-700 mb-2">{t('auth.fullName')}</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    {t('auth.fullName')}
+                                </label>
                                 <input
                                     type="text"
                                     value={fullName}
@@ -266,11 +374,14 @@ const Signup: React.FC = () => {
                             </div>
 
                             <div>
-                                <label
-                                    className="block text-sm font-medium text-gray-700 mb-2">{t('auth.emailAddress')}</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    {t('auth.emailAddress')}
+                                </label>
                                 <div className="relative">
-                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                                          strokeWidth={1.5}/>
+                                    <Mail
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+                                        strokeWidth={1.5}
+                                    />
                                     <input
                                         type="email"
                                         value={email}
@@ -285,11 +396,14 @@ const Signup: React.FC = () => {
                             </div>
 
                             <div>
-                                <label
-                                    className="block text-sm font-medium text-gray-700 mb-2">{t('auth.password')}</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    {t('auth.password')}
+                                </label>
                                 <div className="relative">
-                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                                          strokeWidth={1.5}/>
+                                    <Lock
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+                                        strokeWidth={1.5}
+                                    />
                                     <input
                                         type="password"
                                         value={password}
@@ -304,11 +418,14 @@ const Signup: React.FC = () => {
                             </div>
 
                             <div>
-                                <label
-                                    className="block text-sm font-medium text-gray-700 mb-2">{t('auth.confirmPassword')}</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    {t('auth.confirmPassword')}
+                                </label>
                                 <div className="relative">
-                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                                          strokeWidth={1.5}/>
+                                    <Lock
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+                                        strokeWidth={1.5}
+                                    />
                                     <input
                                         type="password"
                                         value={confirmPassword}
@@ -341,12 +458,14 @@ const Signup: React.FC = () => {
                             </div>
 
                             <div>
-                                <label
-                                    className="block text-sm font-medium text-gray-700 mb-2">{t('auth.organizationName')}</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    {t('auth.organizationName')}
+                                </label>
                                 <div className="relative">
                                     <Building2
                                         className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                                        strokeWidth={1.5}/>
+                                        strokeWidth={1.5}
+                                    />
                                     <input
                                         type="text"
                                         value={organizationName}
@@ -384,8 +503,10 @@ const Signup: React.FC = () => {
                         <div className="mt-6 text-center">
                             <p className="text-sm text-gray-600">
                                 {t('auth.alreadyHaveAccount')}{' '}
-                                <Link to={`/${lang}/login`}
-                                      className="font-medium text-blue-600 hover:text-blue-700 transition-colors">
+                                <Link
+                                    to={`/${lang}/login`}
+                                    className="font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                                >
                                     {t('auth.login')}
                                 </Link>
                             </p>

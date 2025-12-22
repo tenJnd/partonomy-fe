@@ -433,7 +433,7 @@
     "signUpError": "Chyba registrace",
     "accountCreatedSuccess": "Účet úspěšně vytvořen!",
     "redirectingToOrganization": "Přesměrovávám na vaši organizaci...",
-    "checkEmailToVerify": "Zkontrolujte svůj e-mail pro ověření účtu. Přesměrovávám...",
+    "checkEmailToVerify": "Zkontrolujte svůj e-mail pro ověření účtu.",
     "emailAddress": "E-mailová adresa",
     "organizationName": "Název organizace",
     "accountEmail": "E-mail účtu",
@@ -472,7 +472,10 @@
     "unableToAcceptInvite": "Nelze přijmout pozvánku",
     "goToLogin": "Přejít na přihlášení",
     "resetLinkInvalidOrExpired": "Resetovací odkaz je neplatný nebo vypršel. Požádejte o nový.",
-    "requestNewResetLink": "Požádat o nový resetovací odkaz"
+    "requestNewResetLink": "Požádat o nový resetovací odkaz",
+    "changeEmail": "Změnit e-mail",
+    "resendEmail": "Znovu odeslat e-mail",
+    "tryAgainInSeconds": "Zkuste to znovu za {{s}} s"
   },
   "modals": {
     "invite": {

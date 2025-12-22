@@ -24,9 +24,9 @@ interface AuthContextType {
         password: string,
         fullName?: string
     ) => Promise<{ data: any; error: AuthError | null }>;
+    resendSignupEmail: (email: string) => Promise<{ error: AuthError | null }>;
     signOut: () => Promise<void>;
     switchOrganization: (orgId: string) => void;
-    // ⬇⬇ DŮLEŽITÉ: userId může přijít zvenku (např. ze Signup)
     refreshOrganizations: (userId?: string) => Promise<void>;
 }
 
@@ -125,7 +125,6 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
                 setUser(session?.user ?? null);
 
                 if (session?.user) {
-                    // ⬇⬇ máme k dispozici session.user.id, rovnou ho použijeme
                     await refreshOrganizations(session.user.id);
                 }
             } catch (err) {
@@ -203,6 +202,20 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
         return {data, error};
     };
 
+    const resendSignupEmail = async (email: string) => {
+        const emailRedirectTo =
+            import.meta.env.VITE_AUTH_CALLBACK_URL || `${window.location.origin}/en/auth/callback`;
+
+        const {error} = await supabase.auth.resend({
+            type: 'signup',
+            email,
+            options: {
+                emailRedirectTo,
+            },
+        });
+
+        return {error};
+    };
 
     const signOut = async () => {
         await supabase.auth.signOut();
@@ -227,6 +240,7 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
         organizations,
         signIn,
         signUp,
+        resendSignupEmail,
         signOut,
         switchOrganization,
         refreshOrganizations,
