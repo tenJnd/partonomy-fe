@@ -1,9 +1,11 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {Building2, Save} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {useAuth} from '../contexts/AuthContext';
 import {supabase} from '../lib/supabase';
 import SettingsShell from '../components/SettingsShell';
+import {useOrgProfile} from '../hooks/useOrgProfile';
+import {normalizeReportLang} from '../utils/orgProfile';
 
 const REPORT_LANGUAGES = [
     {code: "en", label: "English"},
@@ -22,43 +24,40 @@ const ReportSettings: React.FC = () => {
     const {currentOrg} = useAuth();
     const canManageOrg = currentOrg?.role === 'owner' || currentOrg?.role === 'admin';
 
+    const {profile, loading: profileLoading, error: profileLoadError} = useOrgProfile(currentOrg?.org_id);
+
     const [reportLang, setReportLang] = useState('en');
     const [profileText, setProfileText] = useState('');
+
     const [initialReportLang, setInitialReportLang] = useState('en');
     const [initialProfileText, setInitialProfileText] = useState('');
-    const [profileLoaded, setProfileLoaded] = useState(false);
 
     const [saving, setSaving] = useState(false);
     const [saveError, setSaveError] = useState('');
     const [saveSuccess, setSaveSuccess] = useState(false);
 
+    // "Loaded" = máme org a dokončil se fetch profilu (nebo jsme ho přeskočili kvůli roli)
+    const profileLoaded = useMemo(() => {
+        if (!currentOrg) return false;
+        if (!canManageOrg) return true;
+        return !profileLoading;
+    }, [currentOrg, canManageOrg, profileLoading]);
+
+    // Když se načte profil (nebo neexistuje), nastav initial + state
     useEffect(() => {
-        if (!currentOrg || !canManageOrg) {
-            setProfileLoaded(true);
-            return;
-        }
+        if (!currentOrg) return;
+        if (!canManageOrg) return;
+        if (profileLoading) return;
 
-        const loadProfile = async () => {
-            const {data, error} = await supabase
-                .from('organization_profiles')
-                .select('*')
-                .eq('org_id', currentOrg.org_id)
-                .single();
+        const lang = normalizeReportLang(profile?.report_lang ?? 'en');
+        const text = profile?.profile_text ?? '';
 
-            if (!error && data) {
-                const lang = data.report_lang || 'en';
-                const profile = data.profile_text || '';
+        setReportLang(lang);
+        setInitialReportLang(lang);
 
-                setReportLang(lang);
-                setInitialReportLang(lang);
-                setProfileText(profile);
-                setInitialProfileText(profile);
-            }
-            setProfileLoaded(true);
-        };
-
-        loadProfile();
-    }, [currentOrg, canManageOrg]);
+        setProfileText(text);
+        setInitialProfileText(text);
+    }, [currentOrg, canManageOrg, profileLoading, profile]);
 
     const handleSaveProfile = async () => {
         if (!currentOrg || !profileLoaded || !canManageOrg) return;
@@ -67,39 +66,24 @@ const ReportSettings: React.FC = () => {
         setSaveError('');
         setSaveSuccess(false);
 
-        const {data: existing} = await supabase
-            .from('organization_profiles')
-            .select('*')
-            .eq('org_id', currentOrg.org_id)
-            .single();
+        const payload = {
+            org_id: currentOrg.org_id,
+            report_lang: normalizeReportLang(reportLang),
+            profile_text: profileText,
+            last_updated: new Date().toISOString(),
+        };
 
-        let error;
-        if (existing) {
-            const {error: updateError} = await supabase
-                .from('organization_profiles')
-                .update({
-                    report_lang: reportLang,
-                    profile_text: profileText,
-                })
-                .eq('org_id', currentOrg.org_id);
-            error = updateError;
-        } else {
-            const {error: insertError} = await supabase
-                .from('organization_profiles')
-                .insert({
-                    org_id: currentOrg.org_id,
-                    report_lang: reportLang,
-                    profile_text: profileText,
-                });
-            error = insertError;
-        }
+        const {error} = await supabase
+            .from('organization_profiles')
+            .upsert(payload, {onConflict: 'org_id'});
 
         setSaving(false);
 
         if (error) {
             setSaveError(error.message);
         } else {
-            setInitialReportLang(reportLang);
+            const nextLang = normalizeReportLang(reportLang);
+            setInitialReportLang(nextLang);
             setInitialProfileText(profileText);
             setSaveSuccess(true);
             setTimeout(() => setSaveSuccess(false), 3000);
@@ -110,10 +94,19 @@ const ReportSettings: React.FC = () => {
         return <div className="p-6 max-w-4xl mx-auto">{t('common.loading')}</div>;
     }
 
+    // Pokud load profilu failnul (a user je admin/owner), ukaž error nahoře přes SettingsShell
+    useEffect(() => {
+        if (canManageOrg && profileLoadError) {
+            setSaveError(profileLoadError);
+        }
+        // nechceme to přepisovat při každém renderu
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [canManageOrg, profileLoadError]);
+
     const isLangSaveDisabled =
         saving ||
         !profileLoaded ||
-        reportLang === initialReportLang;
+        normalizeReportLang(reportLang) === normalizeReportLang(initialReportLang);
 
     const isProfileSaveDisabled =
         saving ||
@@ -155,6 +148,7 @@ const ReportSettings: React.FC = () => {
                                 value={reportLang}
                                 onChange={e => setReportLang(e.target.value)}
                                 className="h-[44px] sm:h-[38px] w-full sm:w-auto px-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all text-sm"
+                                disabled={!canManageOrg || !profileLoaded}
                             >
                                 {REPORT_LANGUAGES.map(l => (
                                     <option key={l.code} value={l.code}>
@@ -165,8 +159,9 @@ const ReportSettings: React.FC = () => {
 
                             <button
                                 onClick={handleSaveProfile}
-                                disabled={isLangSaveDisabled}
+                                disabled={!canManageOrg || isLangSaveDisabled}
                                 className="h-[44px] sm:h-[38px] w-full sm:w-auto px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2"
+                                type="button"
                             >
                                 <Save className="w-4 h-4"/>
                                 {t('common.save')}
@@ -232,16 +227,18 @@ const ReportSettings: React.FC = () => {
                         <textarea
                             value={profileText}
                             onChange={e => setProfileText(e.target.value)}
-                            className="w-full min-h-[160px] p-3 bg-white border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none text-sm"
+                            className="w-full min-h-[160px] p-3 bg-white border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none text-sm disabled:bg-gray-50 disabled:text-gray-500"
                             placeholder={t('reportSettings.profilePlaceholder')}
+                            disabled={!canManageOrg || !profileLoaded}
                         />
 
                         {/* SAVE BUTTON */}
                         <div className="flex justify-stretch sm:justify-end">
                             <button
                                 onClick={handleSaveProfile}
-                                disabled={isProfileSaveDisabled}
+                                disabled={!canManageOrg || isProfileSaveDisabled}
                                 className="h-[44px] sm:h-[38px] w-full sm:w-auto px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2"
+                                type="button"
                             >
                                 <Save className="w-4 h-4"/>
                                 {t('common.save')}

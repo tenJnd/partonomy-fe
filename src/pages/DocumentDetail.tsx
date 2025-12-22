@@ -1117,7 +1117,7 @@ const DocumentDetail: React.FC = () => {
                                                     </div>
                                                     <div
                                                         className="text-xs text-gray-900">{assessment.shop_alignment.fit_summary}</div>
-                                                    {assessment?.shop_alignment?.fit_level === 'UNKNOWN' && (
+                                                        {assessment?.shop_alignment?.fit_level === 'UNKNOWN' && (
                                                         <div
                                                             className="mt-3 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-2 py-1.5">
                                                             {t('documents.detail.report.fillOrgProfileNote')}

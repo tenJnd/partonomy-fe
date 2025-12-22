@@ -12,7 +12,9 @@ import {
     StarOff,
     Trash2,
 } from "lucide-react";
-
+import {useOrgProfile} from "../../hooks/useOrgProfile";
+import {isOrgProfileComplete} from "../../utils/orgProfile";
+import {useAuth} from "../../contexts/AuthContext";
 import type {DocumentsTableProps, SortField} from "./documentsTable.types";
 import {
     getComplexityConfig,
@@ -30,6 +32,9 @@ import {useLang} from "../../hooks/useLang.ts";
 const DocumentsDesktopTable: React.FC<DocumentsTableProps> = (props) => {
     const {t} = useTranslation();
     const lang = useLang()
+    const {currentOrg} = useAuth();
+    const {profile, loading: profileLoading} = useOrgProfile(currentOrg?.org_id);
+    const showProfileNudge = !profileLoading && !isOrgProfileComplete(profile);
 
     const {
         parts,
@@ -153,53 +158,55 @@ const DocumentsDesktopTable: React.FC<DocumentsTableProps> = (props) => {
     }
 
     if (parts.length === 0 && !uploading) {
-    return (
-        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border-2 border-dashed border-gray-300 px-6">
-            <FileText className="w-16 h-16 text-gray-300 mb-4" strokeWidth={1.5}/>
+        return (
+            <div
+                className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border-2 border-dashed border-gray-300 px-6">
+                <FileText className="w-16 h-16 text-gray-300 mb-4" strokeWidth={1.5}/>
 
-            <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">
-                {t("documents.noPartsYet")}
-            </h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">
+                    {t("documents.noPartsYet")}
+                </h3>
 
-            <p className="text-sm text-gray-600 mb-6 text-center max-w-md">
-                {t("documents.noPartsYetDescription")}
-            </p>
+                <p className="text-sm text-gray-600 mb-6 text-center max-w-md">
+                    {t("documents.noPartsYetDescription")}
+                </p>
 
-            {/* 🔵 REPORT LANGUAGE INFO */}
-            <div className="mb-6 w-full max-w-md bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
-                <div className="flex-shrink-0">
-                    <FileText className="w-5 h-5 text-blue-600 mt-0.5"/>
-                </div>
-                <div className="text-sm text-blue-900">
-                    <p className="font-medium mb-1">
-                        {t("documents.reportLanguageHintTitle", "Set report language first")}
-                    </p>
-                    <p className="text-blue-800/90 mb-2">
-                        {t(
-                            "documents.reportLanguageHintText",
-                            "Reports are generated in the selected language. We recommend setting it before uploading documents."
-                        )}
-                    </p>
-                    <a
-                        href={`/${lang}/app/settings/report`}
-                        className="inline-flex items-center gap-1 text-blue-700 font-medium hover:underline"
-                    >
-                        {t("documents.goToReportSettings", "Go to report settings")}
-                        <span aria-hidden>→</span>
-                    </a>
-                </div>
+                {/* 🔵 REPORT LANGUAGE INFO */}
+                {showProfileNudge && (
+                    <div className="mb-6 w-full max-w-md bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+                        <div className="flex-shrink-0">
+                            <FileText className="w-5 h-5 text-blue-600 mt-0.5"/>
+                        </div>
+                        <div className="text-sm text-blue-900">
+                            <p className="font-medium mb-1">
+                                {t("documents.reportLanguageHintTitle", "Set report language first")}
+                            </p>
+                            <p className="text-blue-800/90 mb-2">
+                                {t(
+                                    "documents.reportLanguageHintText",
+                                    "Reports are generated in the selected language. We recommend setting it before uploading documents."
+                                )}
+                            </p>
+                            <a
+                                href={`/${lang}/app/settings/report`}
+                                className="inline-flex items-center gap-1 text-blue-700 font-medium hover:underline"
+                            >
+                                {t("documents.goToReportSettings", "Go to report settings")}
+                                <span aria-hidden>→</span>
+                            </a>
+                        </div>
+                    </div>)}
+
+                <button
+                    onClick={onUploadClick}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-all"
+                >
+                    <FileText className="w-4 h-4" strokeWidth={2}/>
+                    {t("documents.uploadDocuments")}
+                </button>
             </div>
-
-            <button
-                onClick={onUploadClick}
-                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-all"
-            >
-                <FileText className="w-4 h-4" strokeWidth={2}/>
-                {t("documents.uploadDocuments")}
-            </button>
-        </div>
-    );
-}
+        );
+    }
 
 
     return (

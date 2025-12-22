@@ -265,7 +265,7 @@
         "highlights": "Hlavní body",
         "shopAlignment": "Vhodnost pro výrobu",
         "fit": "Shoda",
-        "fillOrgProfileNote": "Poznámka: Vyplňte profil organizace v Nastavení, abyste získali personalizované doporučení pro vaši výrobu."
+        "fillOrgProfileNote": "Poznámka: Tento report nebyl plně personalizován. Profil organizace nebyl při generování vyplněn, nebo byl report vytvořen ještě před jeho nastavením. Pro lepší výsledky doporučujeme profil doplnit."
       },
       "sections": {
         "costDrivers": "Nákladové faktory",

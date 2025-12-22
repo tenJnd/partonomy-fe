@@ -264,7 +264,7 @@
         "highlights": "Highlights",
         "shopAlignment": "Shop Alignment",
         "fit": "Fit",
-        "fillOrgProfileNote": "Note: Fill your organization profile in Settings to get a personalized fit recommendation for your shop."
+        "fillOrgProfileNote": "Note: This report was not fully personalized. The organization profile was not completed at the time of generation, or the report was created before it was set up. For better results, we recommend completing the profile."
       },
       "sections": {
         "costDrivers": "Cost Drivers",

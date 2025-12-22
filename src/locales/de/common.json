@@ -264,7 +264,7 @@
         "highlights": "Highlights",
         "shopAlignment": "Shop-Ausrichtung",
         "fit": "Passung",
-        "fillOrgProfileNote": "Hinweis: Fülle dein Organisationsprofil in den Einstellungen aus, um eine personalisierte Passungsempfehlung zu erhalten."
+        "fillOrgProfileNote": "Hinweis: Dieser Bericht ist nicht vollständig personalisiert. Das Organisationsprofil war zum Zeitpunkt der Erstellung nicht ausgefüllt oder der Bericht wurde vor dessen Einrichtung erstellt. Für bessere Ergebnisse empfehlen wir, das Profil zu vervollständigen."
       },
       "sections": {
         "costDrivers": "Kostenfaktoren",
