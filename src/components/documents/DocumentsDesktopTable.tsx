@@ -1,4 +1,5 @@
 import React from "react";
+import {Link} from "react-router-dom";
 import {
     ChevronDown,
     ChevronUp,
@@ -187,13 +188,13 @@ const DocumentsDesktopTable: React.FC<DocumentsTableProps> = (props) => {
                                     "Reports are generated in the selected language. We recommend setting it before uploading documents."
                                 )}
                             </p>
-                            <a
-                                href={`/${lang}/app/settings/report`}
+                            <Link
+                                to={`/${lang}/app/settings/report`}
                                 className="inline-flex items-center gap-1 text-blue-700 font-medium hover:underline"
                             >
-                                {t("documents.goToReportSettings", "Go to report settings")}
+                                {t("documents.goToReportSettings")}
                                 <span aria-hidden>→</span>
-                            </a>
+                            </Link>
                         </div>
                     </div>)}
 
