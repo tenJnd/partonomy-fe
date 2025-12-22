@@ -345,6 +345,7 @@
     "failedToSave": "Failed to save project",
     "noProjectsYet": "No projects yet",
     "noProjectsYetDescription": "Create a project to group parts from uploaded documents and continue working with them.",
+    "loadingProjects": "Loading projects...",
     "form": {
       "titleCreate": "New Project",
       "titleEdit": "Edit Project",

@@ -346,6 +346,7 @@
     "failedToSave": "Nepodařilo se uložit projekt",
     "noProjectsYet": "Zatím tu nejsou žádné projekty",
     "noProjectsYetDescription": "Vytvořte projekt, do kterého můžete přidávat díly (parts) z nahraných dokumentů a dále s nimi pracovat.",
+    "loadingProjects": "Načítám projekty...",
     "form": {
       "titleCreate": "Nový projekt",
       "titleEdit": "Upravit projekt",

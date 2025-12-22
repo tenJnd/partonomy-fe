@@ -345,6 +345,7 @@
     "failedToSave": "Projekt konnte nicht gespeichert werden",
     "noProjectsYet": "Noch keine Projekte",
     "noProjectsYetDescription": "Erstellen Sie ein Projekt, um Teile aus hochgeladenen Dokumenten zu sammeln und weiterzuverarbeiten.",
+    "loadingProjects": "Projekte werden geladen...",
     "form": {
       "titleCreate": "Neues Projekt",
       "titleEdit": "Projekt bearbeiten",
