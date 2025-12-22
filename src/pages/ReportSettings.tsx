@@ -43,6 +43,13 @@ const ReportSettings: React.FC = () => {
         return !profileLoading;
     }, [currentOrg, canManageOrg, profileLoading]);
 
+    // ✅ Sloučený error bez dalších hooků (hlavně žádné hooky po return)
+    const combinedError = useMemo(() => {
+        // pokud user nemůže manage, neukazuj load error (stejně nic needituje)
+        const loadErr = canManageOrg ? (profileLoadError ?? "") : "";
+        return (saveError || loadErr).trim();
+    }, [canManageOrg, profileLoadError, saveError]);
+
     // Když se načte profil (nebo neexistuje), nastav initial + state
     useEffect(() => {
         if (!currentOrg) return;
@@ -94,15 +101,6 @@ const ReportSettings: React.FC = () => {
         return <div className="p-6 max-w-4xl mx-auto">{t('common.loading')}</div>;
     }
 
-    // Pokud load profilu failnul (a user je admin/owner), ukaž error nahoře přes SettingsShell
-    useEffect(() => {
-        if (canManageOrg && profileLoadError) {
-            setSaveError(profileLoadError);
-        }
-        // nechceme to přepisovat při každém renderu
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [canManageOrg, profileLoadError]);
-
     const isLangSaveDisabled =
         saving ||
         !profileLoaded ||
@@ -118,7 +116,7 @@ const ReportSettings: React.FC = () => {
             title={t('reportSettings.title')}
             description={t('reportSettings.description')}
             canManageOrg={canManageOrg}
-            saveError={saveError}
+            saveError={combinedError}
             saveSuccess={saveSuccess}
         >
             <div className="space-y-6">
