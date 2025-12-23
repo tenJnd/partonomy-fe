@@ -73,6 +73,7 @@ const PartsManager: React.FC<PartsManagerProps> = (props) => {
     const [complexityFilter, setComplexityFilter] = useState(() => getParam("cx", "all"));
     const [workflowFilter, setWorkflowFilter] = useState(() => getParam("wf", "all"));
     const [priorityFilter, setPriorityFilter] = useState(() => getParam("prio", "all"));
+    const [fitFilter, setFitFilter] = useState(() => getParam("fit", "all"));
     const [companyFilter, setCompanyFilter] = useState(() => getParam("co", "all"));
     const [showOnlyFavorites, setShowOnlyFavorites] = useState(() => getParam("fav", "0") === "1");
     const [sortField, setSortField] = useState<SortField>(() => getParam("sort", "last_updated") as SortField);
@@ -90,6 +91,7 @@ const PartsManager: React.FC<PartsManagerProps> = (props) => {
             if (complexityFilter !== "all" && p.overall_complexity?.toUpperCase() !== complexityFilter.toUpperCase()) return false;
             if (workflowFilter !== "all" && p.workflow_status !== workflowFilter) return false;
             if (priorityFilter !== "all" && p.priority !== priorityFilter) return false;
+            if (fitFilter !== "all" && p.fit_level !== fitFilter) return false;
             if (companyFilter !== "all" && p.company_name !== companyFilter) return false;
             if (showOnlyFavorites && !favoritePartIds.has(p.id)) return false;
             if (timeFilter !== "all") {
@@ -119,7 +121,7 @@ const PartsManager: React.FC<PartsManagerProps> = (props) => {
             }
             return (vA > vB ? 1 : -1) * dir;
         });
-    }, [parts, complexityFilter, workflowFilter, priorityFilter, companyFilter, showOnlyFavorites, timeFilter, favoritePartIds, sortField, sortDirection]);
+    }, [parts, complexityFilter, workflowFilter, priorityFilter, fitFilter, companyFilter, showOnlyFavorites, timeFilter, favoritePartIds, sortField, sortDirection]);
 
     const uniqueCompanies = useMemo(() => Array.from(new Set(parts.map(p => p.company_name).filter(Boolean))).sort(), [parts]);
 
@@ -128,9 +130,10 @@ const PartsManager: React.FC<PartsManagerProps> = (props) => {
         setComplexityFilter("all");
         setWorkflowFilter("all");
         setPriorityFilter("all");
+        setFitFilter("all");
         setCompanyFilter("all");
         setShowOnlyFavorites(false);
-        setParam({time: null, cx: null, wf: null, prio: null, co: null, fav: null});
+        setParam({time: null, cx: null, wf: null, prio: null, fit: null, co: null, fav: null});
     };
 
     const handleRowClick = (documentId: string, partId: string) => {
@@ -168,6 +171,17 @@ const PartsManager: React.FC<PartsManagerProps> = (props) => {
                     <option value="MEDIUM">Medium</option>
                     <option value="HIGH">High</option>
                     <option value="EXTREME">Extreme</option>
+                </select>
+                <select value={fitFilter} onChange={e => {
+                    setFitFilter(e.target.value);
+                    setParam({fit: e.target.value});
+                }} className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg text-xs outline-none">
+                    <option value="all">{t("documents.allFit")}</option>
+                    <option value="low">Low</option>
+                    <option value="cooperation">Coop</option>
+                    <option value="partial">Partial</option>
+                    <option value="good">Good</option>
+                    <option value="unknown">Unknown</option>
                 </select>
                 <select value={workflowFilter} onChange={e => {
                     setWorkflowFilter(e.target.value);

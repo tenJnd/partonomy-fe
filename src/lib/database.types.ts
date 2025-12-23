@@ -174,6 +174,7 @@ export interface Database {
                     last_updated: string;
                     workflow_status: WorkflowStatusEnum | null;
                     priority: PriorityEnum | null;
+                    fit_level: FitLevelEnum | null;
                 };
                 Insert: {
                     id?: string;
