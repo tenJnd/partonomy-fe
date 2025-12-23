@@ -162,6 +162,14 @@ const PartsManager: React.FC<PartsManagerProps> = (props) => {
                     <option value="30d">{t("documents.last30Days")}</option>
                     <option value="90d">{t("documents.last90Days")}</option>
                 </select>
+                <select value={companyFilter} onChange={e => {
+                    setCompanyFilter(e.target.value);
+                    setParam({co: e.target.value});
+                }}
+                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg text-xs outline-none max-w-[150px]">
+                    <option value="all">{t("documents.allCompanies")}</option>
+                    {uniqueCompanies.map(c => <option key={c as string} value={c as string}>{c as string}</option>)}
+                </select>
                 <select value={complexityFilter} onChange={e => {
                     setComplexityFilter(e.target.value);
                     setParam({cx: e.target.value});
@@ -202,14 +210,6 @@ const PartsManager: React.FC<PartsManagerProps> = (props) => {
                     <option value="normal">Normal</option>
                     <option value="high">High</option>
                     <option value="hot">Hot</option>
-                </select>
-                <select value={companyFilter} onChange={e => {
-                    setCompanyFilter(e.target.value);
-                    setParam({co: e.target.value});
-                }}
-                        className="h-[38px] px-3 bg-white border border-gray-200 rounded-lg text-xs outline-none max-w-[150px]">
-                    <option value="all">{t("documents.allCompanies")}</option>
-                    {uniqueCompanies.map(c => <option key={c as string} value={c as string}>{c as string}</option>)}
                 </select>
                 {canUseFavorite && (
                     <button onClick={() => {
