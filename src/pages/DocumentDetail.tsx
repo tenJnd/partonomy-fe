@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Link, useLocation, useParams, useSearchParams} from 'react-router-dom';
 import {
     AlertCircle,
@@ -33,6 +33,428 @@ import {usePartDetailActions} from '../hooks/actions/usePartDetailActions';
 
 type Document = Database['public']['Tables']['documents']['Row'];
 type Part = Database['public']['Tables']['parts']['Row'];
+
+type TagsPanelProps = {
+    t: any;
+    lang: string;
+    canUseTags: boolean;
+    selectedPart: Part | undefined;
+    tags: { id: string; label: string }[];
+    tagsLoading: boolean;
+    tagsError: string | null;
+    newTag: string;
+    setNewTag: React.Dispatch<React.SetStateAction<string>>;
+    addTag: (label: string) => Promise<void>;
+    removeTag: (tagId: string) => Promise<void>;
+};
+
+const TagsPanel = React.memo(function TagsPanel(props: TagsPanelProps) {
+    const {
+        t,
+        lang,
+        canUseTags,
+        selectedPart,
+        tags,
+        tagsLoading,
+        tagsError,
+        newTag,
+        setNewTag,
+        addTag,
+        removeTag,
+    } = props;
+
+    if (!selectedPart) return null;
+
+    return (
+        <div className="pt-4">
+            <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                    <Tag className="w-4 h-4 text-gray-500" strokeWidth={1.5}/>
+                    <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+            {t('documents.detail.tags.title')}
+          </span>
+                </div>
+
+                {!canUseTags && (
+                    <span
+                        className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase bg-amber-50 text-amber-700 border border-amber-200">
+            {t('documents.detail.upgrade')}
+          </span>
+                )}
+            </div>
+
+            {!canUseTags ? (
+                <div
+                    className="text-xs text-gray-600 bg-gray-50 border border-dashed border-gray-200 rounded-lg px-3 py-2">
+                    {t('documents.detail.tags.lockedPrefix')}{' '}
+                    <Link to={`/${lang}/app/settings/billing`} className="text-blue-600 hover:underline font-medium">
+                        {t('documents.detail.billing')}
+                    </Link>{' '}
+                    {t('documents.detail.tags.lockedSuffix')}
+                </div>
+            ) : (
+                <div className="border border-gray-200 rounded-lg px-3 py-2 bg-slate-50">
+                    {tagsError && <div className="mb-2 text-[11px] text-red-600">{tagsError}</div>}
+
+                    <div className="flex flex-wrap gap-1 mb-2 min-h-[1.5rem]">
+                        {tagsLoading ? (
+                            <span className="text-xs text-gray-500">{t('documents.detail.tags.loading')}</span>
+                        ) : tags.length === 0 ? (
+                            <span className="text-xs text-gray-400">{t('documents.detail.tags.empty')}</span>
+                        ) : (
+                            tags.map(tItem => (
+                                <span
+                                    key={tItem.id}
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white border border-gray-200 text-xs text-gray-800"
+                                >
+                  {tItem.label}
+                                    <button
+                                        type="button"
+                                        onClick={() => removeTag(tItem.id)}
+                                        className="ml-0.5 p-0.5 hover:bg-gray-100 rounded-full"
+                                    >
+                    <X className="w-3 h-3 text-gray-500" strokeWidth={1.5}/>
+                  </button>
+                </span>
+                            ))
+                        )}
+                    </div>
+
+                    <form
+                        onSubmit={async e => {
+                            e.preventDefault();
+                            const trimmed = newTag.trim();
+                            if (!trimmed) return;
+                            await addTag(trimmed);
+                            setNewTag('');
+                        }}
+                        className="flex items-center gap-2"
+                    >
+                        <input
+                            type="text"
+                            value={newTag}
+                            onChange={e => setNewTag(e.target.value)}
+                            placeholder={t('documents.detail.tags.placeholder')}
+                            className="flex-1 text-xs border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                        />
+                        <button
+                            type="submit"
+                            disabled={!newTag.trim()}
+                            className="px-2.5 py-1 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-500 transition-colors"
+                        >
+                            {t('documents.detail.tags.add')}
+                        </button>
+                    </form>
+                </div>
+            )}
+        </div>
+    );
+});
+
+type FullscreenModalProps = {
+    t: any;
+    isFullscreen: boolean;
+    selectedPart: Part | undefined;
+    partRenderUrl: string | null;
+    zoom: number;
+    isDragging: boolean;
+    position: { x: number; y: number };
+    imageRef: React.RefObject<HTMLImageElement>;
+    fullscreenContainerRef: React.RefObject<HTMLDivElement>;
+    onExit: () => void;
+    onZoomOut: () => void;
+    onZoomIn: () => void;
+    onReset: () => void;
+    onMouseDown: (e: React.MouseEvent) => void;
+    onMouseMove: (e: React.MouseEvent) => void;
+    onMouseUp: () => void;
+    onMouseLeave: () => void;
+    onWheel: (e: React.WheelEvent) => void;
+};
+
+const FullscreenModal = React.memo(function FullscreenModal(props: FullscreenModalProps) {
+    const {
+        t,
+        isFullscreen,
+        selectedPart,
+        partRenderUrl,
+        zoom,
+        isDragging,
+        position,
+        imageRef,
+        fullscreenContainerRef,
+        onExit,
+        onZoomOut,
+        onZoomIn,
+        onReset,
+        onMouseDown,
+        onMouseMove,
+        onMouseUp,
+        onMouseLeave,
+        onWheel,
+    } = props;
+
+    if (!isFullscreen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 bg-black/95 flex flex-col">
+            <div className="flex items-center justify-between p-3 sm:p-4 bg-black/50 gap-3">
+                <div className="min-w-0">
+                    <h2 className="text-base sm:text-lg font-semibold text-white truncate">
+                        {selectedPart?.display_name || selectedPart?.part_number || t('documents.detail.partRenderTitle')}
+                    </h2>
+                </div>
+
+                <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                        onClick={onExit}
+                        className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                        title={t('documents.detail.actions.exitFullscreen')}
+                    >
+                        <Minimize2 className="w-5 h-5" strokeWidth={1.5}/>
+                    </button>
+
+                    <div className="hidden sm:flex items-center gap-2">
+                        <button
+                            onClick={onZoomOut}
+                            disabled={zoom <= 25}
+                            className="p-2 bg-white/10 hover:bg-white/20 disabled:bg-white/5 disabled:text-white/30 text-white rounded-lg transition-colors"
+                            title={t('documents.detail.actions.zoomOut')}
+                        >
+                            <ZoomOut className="w-5 h-5" strokeWidth={1.5}/>
+                        </button>
+
+                        <span className="text-sm text-white min-w-[4rem] text-center">{zoom}%</span>
+
+                        <button
+                            onClick={onZoomIn}
+                            disabled={zoom >= 500}
+                            className="p-2 bg-white/10 hover:bg-white/20 disabled:bg-white/5 disabled:text-white/30 text-white rounded-lg transition-colors"
+                            title={t('documents.detail.actions.zoomIn')}
+                        >
+                            <ZoomIn className="w-5 h-5" strokeWidth={1.5}/>
+                        </button>
+
+                        <button
+                            onClick={onReset}
+                            className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                            title={t('documents.detail.actions.resetZoom')}
+                        >
+                            <RotateCw className="w-5 h-5" strokeWidth={1.5}/>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                ref={fullscreenContainerRef}
+                className="flex-1 overflow-auto"
+                onMouseDown={onMouseDown}
+                onMouseMove={onMouseMove}
+                onMouseUp={onMouseUp}
+                onMouseLeave={onMouseLeave}
+                onWheel={onWheel}
+                style={{cursor: zoom > 100 ? (isDragging ? 'grabbing' : 'grab') : 'default'}}
+            >
+                {partRenderUrl ? (
+                    <div className="w-full h-full flex items-center justify-center p-4 sm:p-8">
+                        <img
+                            ref={imageRef}
+                            src={partRenderUrl}
+                            alt={t('documents.detail.alts.partRender')}
+                            style={{
+                                maxWidth: '100%',
+                                maxHeight: '100%',
+                                transform: `translate(${position.x}px, ${position.y}px) scale(${zoom / 100})`,
+                                transformOrigin: 'center center',
+                                pointerEvents: 'none',
+                            }}
+                            className="transition-transform duration-100"
+                            draggable={false}
+                        />
+                    </div>
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center text-white">
+                        <p>{t('documents.detail.noRenderAvailable')}</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+});
+
+type RenderHeaderProps = {
+    t: any;
+    selectedPart: Part | undefined;
+    partRenderUrl: string | null;
+    zoom: number;
+    onZoomOut: () => void;
+    onZoomIn: () => void;
+    onReset: () => void;
+    onFullscreen: () => void;
+};
+
+const RenderHeader = React.memo(function RenderHeader(props: RenderHeaderProps) {
+    const {t, selectedPart, partRenderUrl, zoom, onZoomOut, onZoomIn, onReset, onFullscreen} = props;
+
+    if (!selectedPart?.report_json && !partRenderUrl) return null;
+
+    const reportJson = (selectedPart?.report_json as any) || {};
+    const overview = reportJson.overview;
+    const drawingInfo = reportJson.drawing_info;
+
+    return (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+            <div className="min-w-0">
+                {(overview?.part_type || drawingInfo?.part_type_desc) && (
+                    <div className="text-gray-900 font-semibold leading-snug truncate">
+                        {overview?.part_type || drawingInfo?.part_type_desc}
+                    </div>
+                )}
+                {overview?.taxonomy?.application_hint && (
+                    <div className="text-gray-500 text-xs mt-0.5">{overview.taxonomy.application_hint}</div>
+                )}
+            </div>
+
+            {partRenderUrl && (
+                <div
+                    className="flex items-center justify-between sm:justify-end gap-2 bg-slate-50 rounded-lg p-1.5 w-full sm:w-auto">
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={onZoomOut}
+                            disabled={zoom <= 25}
+                            className="p-2 bg-white hover:bg-gray-100 disabled:bg-slate-50 disabled:text-gray-300 rounded-md transition-colors shadow-sm"
+                            title={t('documents.detail.actions.zoomOut')}
+                        >
+                            <ZoomOut className="w-4 h-4" strokeWidth={2}/>
+                        </button>
+
+                        <span className="text-sm font-medium text-gray-700 min-w-[4rem] text-center">{zoom}%</span>
+
+                        <button
+                            onClick={onZoomIn}
+                            disabled={zoom >= 300}
+                            className="p-2 bg-white hover:bg-gray-100 disabled:bg-slate-50 disabled:text-gray-300 rounded-md transition-colors shadow-sm"
+                            title={t('documents.detail.actions.zoomIn')}
+                        >
+                            <ZoomIn className="w-4 h-4" strokeWidth={2}/>
+                        </button>
+
+                        <button
+                            onClick={onReset}
+                            className="p-2 bg-white hover:bg-gray-100 rounded-md transition-colors shadow-sm"
+                            title={t('documents.detail.actions.resetZoom')}
+                        >
+                            <RotateCw className="w-4 h-4" strokeWidth={2}/>
+                        </button>
+                    </div>
+
+                    <div className="w-px h-6 bg-gray-300 mx-1 hidden sm:block"/>
+
+                    <button
+                        onClick={onFullscreen}
+                        className="p-2 bg-white hover:bg-gray-100 rounded-md transition-colors shadow-sm flex-shrink-0"
+                        title={t('documents.detail.actions.fullscreen')}
+                    >
+                        <Maximize2 className="w-4 h-4" strokeWidth={2}/>
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+});
+
+type RenderCanvasProps = {
+    t: any;
+    normalContainerRef: React.RefObject<HTMLDivElement>;
+    imageRef: React.RefObject<HTMLImageElement>;
+    imageLoading: boolean;
+    partRenderUrl: string | null;
+    selectedPartId: string | null;
+    imageAspectRatio: number | null;
+    zoom: number;
+    isDragging: boolean;
+    position: { x: number; y: number };
+    onMouseDown: (e: React.MouseEvent) => void;
+    onMouseMove: (e: React.MouseEvent) => void;
+    onMouseUp: () => void;
+    onMouseLeave: () => void;
+    onWheel: (e: React.WheelEvent) => void;
+};
+
+const RenderCanvas = React.memo(function RenderCanvas(props: RenderCanvasProps) {
+    const {
+        t,
+        normalContainerRef,
+        imageRef,
+        imageLoading,
+        partRenderUrl,
+        selectedPartId,
+        imageAspectRatio,
+        zoom,
+        isDragging,
+        position,
+        onMouseDown,
+        onMouseMove,
+        onMouseUp,
+        onMouseLeave,
+        onWheel,
+    } = props;
+
+    const fallbackAR = 4 / 3;
+    const ar = imageAspectRatio && imageAspectRatio > 0 ? imageAspectRatio : fallbackAR;
+
+    return (
+        <div
+            ref={normalContainerRef}
+            className="border border-gray-200 rounded-lg overflow-auto bg-gray-50 relative select-none w-full"
+            style={{
+                aspectRatio: String(ar),
+                maxHeight: '75vh',
+                cursor: zoom > 100 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+            }}
+            onMouseDown={onMouseDown}
+            onMouseMove={onMouseMove}
+            onMouseUp={onMouseUp}
+            onMouseLeave={onMouseLeave}
+            onWheel={onWheel}
+        >
+            {imageLoading ? (
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <Loader className="w-8 h-8 text-gray-400 animate-spin" strokeWidth={1.5}/>
+                </div>
+            ) : partRenderUrl ? (
+                <div className="w-full h-full flex items-center justify-center p-3 sm:p-4">
+                    <img
+                        ref={imageRef}
+                        src={partRenderUrl}
+                        alt={t('documents.detail.alts.partRender')}
+                        style={{
+                            maxWidth: '100%',
+                            maxHeight: '100%',
+                            transform: `translate(${position.x}px, ${position.y}px) scale(${zoom / 100})`,
+                            transformOrigin: 'center center',
+                            pointerEvents: 'none',
+                        }}
+                        className="transition-transform duration-100"
+                        draggable={false}
+                    />
+                </div>
+            ) : selectedPartId ? (
+                <div className="absolute inset-0 flex items-center justify-center text-center text-gray-500">
+                    <div className="px-6">
+                        <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-2" strokeWidth={1.5}/>
+                        <p className="text-sm">{t('documents.detail.noRenderForPart')}</p>
+                    </div>
+                </div>
+            ) : (
+                <div className="absolute inset-0 flex items-center justify-center text-center text-gray-500">
+                    <p className="text-sm">{t('documents.detail.selectPartToView')}</p>
+                </div>
+            )}
+        </div>
+    );
+});
 
 const DocumentDetail: React.FC = () => {
     const {t} = useTranslation();
@@ -73,24 +495,20 @@ const DocumentDetail: React.FC = () => {
     const [newComment, setNewComment] = useState('');
     const [newTag, setNewTag] = useState('');
 
-    // Tabs (left/report) + mobile main switch
     const [activeReportTab, setActiveReportTab] = useState<'report' | 'bom' | 'revisions' | 'comments'>('report');
     const [mobileMainTab, setMobileMainTab] = useState<'preview' | 'details'>('preview');
 
     const imageRef = useRef<HTMLImageElement>(null);
-
-    // IMPORTANT: separate refs for normal view vs fullscreen
     const normalContainerRef = useRef<HTMLDivElement>(null);
     const fullscreenContainerRef = useRef<HTMLDivElement>(null);
 
     const location = useLocation();
     const backTo = (location.state as any)?.from ?? `/${lang}/app/documents`;
 
-    const toggleSection = (section: string) => {
+    const toggleSection = useCallback((section: string) => {
         setExpandedSections(prev => ({...prev, [section]: !prev[section]}));
-    };
+    }, []);
 
-    // Fetch document + parts
     useEffect(() => {
         if (!documentId || !currentOrg) return;
 
@@ -146,7 +564,6 @@ const DocumentDetail: React.FC = () => {
         fetchData();
     }, [documentId, currentOrg, partIdFromUrl, t]);
 
-    // Fetch render URL for selected part
     useEffect(() => {
         if (!selectedPartId) return;
 
@@ -161,10 +578,9 @@ const DocumentDetail: React.FC = () => {
                 return;
             }
 
-            const {
-                data,
-                error
-            } = await supabase.storage.from(part.render_bucket).createSignedUrl(part.render_storage_key, 3600);
+            const {data, error} = await supabase.storage
+                .from(part.render_bucket)
+                .createSignedUrl(part.render_storage_key, 3600);
 
             if (error) {
                 console.error('Error fetching render:', error);
@@ -174,9 +590,7 @@ const DocumentDetail: React.FC = () => {
                 const img = new Image();
                 img.onload = () => {
                     setImageAspectRatio(img.width / img.height);
-                    // reset pan when image loads
                     setPosition({x: 0, y: 0});
-                    // reset scroll both containers (if mounted)
                     if (normalContainerRef.current) {
                         normalContainerRef.current.scrollTop = 0;
                         normalContainerRef.current.scrollLeft = 0;
@@ -195,6 +609,12 @@ const DocumentDetail: React.FC = () => {
         fetchPartRender();
     }, [selectedPartId, parts]);
 
+    const selectedPart = useMemo(() => parts.find(p => p.id === selectedPartId), [parts, selectedPartId]);
+    const selectedPartReport = selectedPart?.report_json as any | undefined;
+
+    const workflowStatus = ((selectedPart?.workflow_status as WorkflowStatusEnum | null) ?? null);
+    const priority = ((selectedPart?.priority as PriorityEnum | null) ?? null);
+
     const detailActions = usePartDetailActions({
         selectedPartId: selectedPartId ?? null,
         setParts,
@@ -204,176 +624,72 @@ const DocumentDetail: React.FC = () => {
         canSetPriority,
     });
 
-    const selectedPart = parts.find(p => p.id === selectedPartId);
-    const selectedPartReport = selectedPart?.report_json as any | undefined;
-
-    // derived (optimistic update friendly)
-    const workflowStatus = (selectedPart?.workflow_status as WorkflowStatusEnum | null) ?? null;
-    const priority = (selectedPart?.priority as PriorityEnum | null) ?? null;
-
     const {comments, loading: commentsLoading, error: commentsError, addComment} = usePartComments(
         selectedPartId,
         currentOrg?.org_id,
     );
 
-    const {
-        tags,
-        loading: tagsLoading,
-        error: tagsError,
-        addTag,
-        removeTag
-    } = usePartTags(selectedPartId ?? null, currentOrg?.org_id);
+    const {tags, loading: tagsLoading, error: tagsError, addTag, removeTag} = usePartTags(
+        selectedPartId ?? null,
+        currentOrg?.org_id,
+    );
 
-    // Zoom / pan handlers
-    const handleZoomIn = () => setZoom(prev => Math.min(prev + 25, 500));
-    const handleZoomOut = () => setZoom(prev => Math.max(prev - 25, 25));
-    const handleResetZoom = () => {
+    const handleZoomIn = useCallback(() => setZoom(prev => Math.min(prev + 25, 500)), []);
+    const handleZoomOut = useCallback(() => setZoom(prev => Math.max(prev - 25, 25)), []);
+    const handleResetZoom = useCallback(() => {
         setZoom(100);
         setPosition({x: 0, y: 0});
-    };
+    }, []);
 
-    const toggleFullscreen = () => {
+    const toggleFullscreen = useCallback(() => {
         setIsFullscreen(prev => !prev);
         setZoom(100);
         setPosition({x: 0, y: 0});
-    };
+    }, []);
 
-    const handleMouseDown = (e: React.MouseEvent) => {
+    const handleMouseDown = useCallback((e: React.MouseEvent) => {
         if (zoom > 100) {
             e.preventDefault();
             setIsDragging(true);
             setDragStart({x: e.clientX - position.x, y: e.clientY - position.y});
         }
-    };
+    }, [zoom, position.x, position.y]);
 
-    const handleMouseMove = (e: React.MouseEvent) => {
+    const handleMouseMove = useCallback((e: React.MouseEvent) => {
         if (isDragging && zoom > 100) {
             setPosition({x: e.clientX - dragStart.x, y: e.clientY - dragStart.y});
         }
-    };
+    }, [isDragging, zoom, dragStart.x, dragStart.y]);
 
-    const handleMouseUp = () => setIsDragging(false);
-    const handleMouseLeave = () => setIsDragging(false);
+    const handleMouseUp = useCallback(() => setIsDragging(false), []);
+    const handleMouseLeave = useCallback(() => setIsDragging(false), []);
 
-    const handleWheel = (e: React.WheelEvent) => {
+    const handleWheel = useCallback((e: React.WheelEvent) => {
         if (!partRenderUrl) return;
         e.preventDefault();
         if (e.deltaY < 0) setZoom(prev => Math.min(prev + 10, 400));
         else setZoom(prev => Math.max(prev - 10, 25));
-    };
+    }, [partRenderUrl]);
 
     useEffect(() => {
         if (zoom <= 100) setPosition({x: 0, y: 0});
     }, [zoom]);
 
-    // Part navigation (arrows)
-    const handlePrevPartClick = () => {
-        if (!selectedPart) return;
-        const idx = parts.findIndex(p => p.id === selectedPart.id);
-        if (idx > 0) setSelectedPartId(parts[idx - 1].id);
-    };
-
-    const handleNextPartClick = () => {
-        if (!selectedPart) return;
-        const idx = parts.findIndex(p => p.id === selectedPart.id);
-        if (idx >= 0 && idx < parts.length - 1) setSelectedPartId(parts[idx + 1].id);
-    };
-
-    const currentPartIndex = selectedPart ? parts.findIndex(p => p.id === selectedPart.id) : -1;
+    const currentPartIndex = useMemo(() => (selectedPart ? parts.findIndex(p => p.id === selectedPart.id) : -1), [parts, selectedPart]);
     const hasPrevPart = currentPartIndex > 0;
     const hasNextPart = currentPartIndex >= 0 && currentPartIndex < parts.length - 1;
 
-    const renderFullscreenModal = () => {
-        if (!isFullscreen) return null;
+    const handlePrevPartClick = useCallback(() => {
+        if (!selectedPart) return;
+        const idx = parts.findIndex(p => p.id === selectedPart.id);
+        if (idx > 0) setSelectedPartId(parts[idx - 1].id);
+    }, [parts, selectedPart]);
 
-        return (
-            <div className="fixed inset-0 z-50 bg-black/95 flex flex-col">
-                <div className="flex items-center justify-between p-3 sm:p-4 bg-black/50 gap-3">
-                    <div className="min-w-0">
-                        <h2 className="text-base sm:text-lg font-semibold text-white truncate">
-                            {selectedPart?.display_name || selectedPart?.part_number || t('documents.detail.partRenderTitle')}
-                        </h2>
-                    </div>
-
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                        {/* Always show exit */}
-                        <button
-                            onClick={toggleFullscreen}
-                            className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
-                            title={t('documents.detail.actions.exitFullscreen')}
-                        >
-                            <Minimize2 className="w-5 h-5" strokeWidth={1.5}/>
-                        </button>
-
-                        {/* Extra controls on >= sm */}
-                        <div className="hidden sm:flex items-center gap-2">
-                            <button
-                                onClick={handleZoomOut}
-                                disabled={zoom <= 25}
-                                className="p-2 bg-white/10 hover:bg-white/20 disabled:bg-white/5 disabled:text-white/30 text-white rounded-lg transition-colors"
-                                title={t('documents.detail.actions.zoomOut')}
-                            >
-                                <ZoomOut className="w-5 h-5" strokeWidth={1.5}/>
-                            </button>
-
-                            <span className="text-sm text-white min-w-[4rem] text-center">{zoom}%</span>
-
-                            <button
-                                onClick={handleZoomIn}
-                                disabled={zoom >= 500}
-                                className="p-2 bg-white/10 hover:bg-white/20 disabled:bg-white/5 disabled:text-white/30 text-white rounded-lg transition-colors"
-                                title={t('documents.detail.actions.zoomIn')}
-                            >
-                                <ZoomIn className="w-5 h-5" strokeWidth={1.5}/>
-                            </button>
-
-                            <button
-                                onClick={handleResetZoom}
-                                className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
-                                title={t('documents.detail.actions.resetZoom')}
-                            >
-                                <RotateCw className="w-5 h-5" strokeWidth={1.5}/>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div
-                    ref={fullscreenContainerRef}
-                    className="flex-1 overflow-auto"
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseLeave}
-                    onWheel={handleWheel}
-                    style={{cursor: zoom > 100 ? (isDragging ? 'grabbing' : 'grab') : 'default'}}
-                >
-                    {partRenderUrl ? (
-                        <div className="w-full h-full flex items-center justify-center p-4 sm:p-8">
-                            <img
-                                ref={imageRef}
-                                src={partRenderUrl}
-                                alt={t('documents.detail.alts.partRender')}
-                                style={{
-                                    maxWidth: '100%',
-                                    maxHeight: '100%',
-                                    transform: `translate(${position.x}px, ${position.y}px) scale(${zoom / 100})`,
-                                    transformOrigin: 'center center',
-                                    pointerEvents: 'none',
-                                }}
-                                className="transition-transform duration-100"
-                                draggable={false}
-                            />
-                        </div>
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center text-white">
-                            <p>{t('documents.detail.noRenderAvailable')}</p>
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
-    };
+    const handleNextPartClick = useCallback(() => {
+        if (!selectedPart) return;
+        const idx = parts.findIndex(p => p.id === selectedPart.id);
+        if (idx >= 0 && idx < parts.length - 1) setSelectedPartId(parts[idx + 1].id);
+    }, [parts, selectedPart]);
 
     if (loading) {
         return (
@@ -391,8 +707,12 @@ const DocumentDetail: React.FC = () => {
                 <div className="flex items-center justify-center min-h-[60vh]">
                     <div className="text-center">
                         <AlertCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" strokeWidth={1.5}/>
-                        <h2 className="text-xl font-semibold text-gray-900 mb-2">{t('documents.detail.documentNotFound.title')}</h2>
-                        <p className="text-sm text-gray-500 mb-4">{error || t('documents.detail.documentNotFound.description')}</p>
+                        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                            {t('documents.detail.documentNotFound.title')}
+                        </h2>
+                        <p className="text-sm text-gray-500 mb-4">
+                            {error || t('documents.detail.documentNotFound.description')}
+                        </p>
                         <Link
                             to={backTo}
                             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
@@ -406,220 +726,29 @@ const DocumentDetail: React.FC = () => {
         );
     }
 
-    const RenderHeader = () => {
-        if (!selectedPart?.report_json && !partRenderUrl) return null;
-
-        const reportJson = (selectedPart?.report_json as any) || {};
-        const overview = reportJson.overview;
-        const drawingInfo = reportJson.drawing_info;
-
-        return (
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-                <div className="min-w-0">
-                    {(overview?.part_type || drawingInfo?.part_type_desc) && (
-                        <div className="text-gray-900 font-semibold leading-snug truncate">
-                            {overview?.part_type || drawingInfo?.part_type_desc}
-                        </div>
-                    )}
-                    {overview?.taxonomy?.application_hint &&
-                        <div className="text-gray-500 text-xs mt-0.5">{overview.taxonomy.application_hint}</div>}
-                </div>
-
-                {/* Controls: responsive + never overflow */}
-                {partRenderUrl && (
-                    <div
-                        className="flex items-center justify-between sm:justify-end gap-2 bg-slate-50 rounded-lg p-1.5 w-full sm:w-auto">
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={handleZoomOut}
-                                disabled={zoom <= 25}
-                                className="p-2 bg-white hover:bg-gray-100 disabled:bg-slate-50 disabled:text-gray-300 rounded-md transition-colors shadow-sm"
-                                title={t('documents.detail.actions.zoomOut')}
-                            >
-                                <ZoomOut className="w-4 h-4" strokeWidth={2}/>
-                            </button>
-
-                            <span className="text-sm font-medium text-gray-700 min-w-[4rem] text-center">{zoom}%</span>
-
-                            <button
-                                onClick={handleZoomIn}
-                                disabled={zoom >= 300}
-                                className="p-2 bg-white hover:bg-gray-100 disabled:bg-slate-50 disabled:text-gray-300 rounded-md transition-colors shadow-sm"
-                                title={t('documents.detail.actions.zoomIn')}
-                            >
-                                <ZoomIn className="w-4 h-4" strokeWidth={2}/>
-                            </button>
-
-                            <button
-                                onClick={handleResetZoom}
-                                className="p-2 bg-white hover:bg-gray-100 rounded-md transition-colors shadow-sm"
-                                title={t('documents.detail.actions.resetZoom')}
-                            >
-                                <RotateCw className="w-4 h-4" strokeWidth={2}/>
-                            </button>
-                        </div>
-
-                        <div className="w-px h-6 bg-gray-300 mx-1 hidden sm:block"/>
-
-                        <button
-                            onClick={toggleFullscreen}
-                            className="p-2 bg-white hover:bg-gray-100 rounded-md transition-colors shadow-sm flex-shrink-0"
-                            title={t('documents.detail.actions.fullscreen')}
-                        >
-                            <Maximize2 className="w-4 h-4" strokeWidth={2}/>
-                        </button>
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    const RenderCanvas = () => {
-        // Use CSS aspect-ratio instead of manual width/height calc (fixes mobile layout breaks)
-        const fallbackAR = 4 / 3;
-        const ar = imageAspectRatio && imageAspectRatio > 0 ? imageAspectRatio : fallbackAR;
-
-        return (
-            <div
-                ref={normalContainerRef}
-                className="border border-gray-200 rounded-lg overflow-auto bg-gray-50 relative select-none w-full"
-                style={{
-                    aspectRatio: String(ar),
-                    maxHeight: '75vh',
-                    cursor: zoom > 100 ? (isDragging ? 'grabbing' : 'grab') : 'default',
-                }}
+    return (
+        <div
+            className="p-4 sm:p-6 max-w-[1800px] mx-auto bg-gradient-to-br from-slate-50 via-white to-slate-50 min-h-screen">
+            <FullscreenModal
+                t={t}
+                isFullscreen={isFullscreen}
+                selectedPart={selectedPart}
+                partRenderUrl={partRenderUrl}
+                zoom={zoom}
+                isDragging={isDragging}
+                position={position}
+                imageRef={imageRef}
+                fullscreenContainerRef={fullscreenContainerRef}
+                onExit={toggleFullscreen}
+                onZoomOut={handleZoomOut}
+                onZoomIn={handleZoomIn}
+                onReset={handleResetZoom}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseLeave}
                 onWheel={handleWheel}
-            >
-                {imageLoading ? (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <Loader className="w-8 h-8 text-gray-400 animate-spin" strokeWidth={1.5}/>
-                    </div>
-                ) : partRenderUrl ? (
-                    <div className="w-full h-full flex items-center justify-center p-3 sm:p-4">
-                        <img
-                            ref={imageRef}
-                            src={partRenderUrl}
-                            alt={t('documents.detail.alts.partRender')}
-                            style={{
-                                maxWidth: '100%',
-                                maxHeight: '100%',
-                                transform: `translate(${position.x}px, ${position.y}px) scale(${zoom / 100})`,
-                                transformOrigin: 'center center',
-                                pointerEvents: 'none',
-                            }}
-                            className="transition-transform duration-100"
-                            draggable={false}
-                        />
-                    </div>
-                ) : selectedPartId ? (
-                    <div className="absolute inset-0 flex items-center justify-center text-center text-gray-500">
-                        <div className="px-6">
-                            <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-2" strokeWidth={1.5}/>
-                            <p className="text-sm">{t('documents.detail.noRenderForPart')}</p>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-center text-gray-500">
-                        <p className="text-sm">{t('documents.detail.selectPartToView')}</p>
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    const RenderTags = () => {
-        if (!selectedPart) return null;
-
-        return (
-            <div className="pt-4">
-                <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                        <Tag className="w-4 h-4 text-gray-500" strokeWidth={1.5}/>
-                        <span
-                            className="text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('documents.detail.tags.title')}</span>
-                    </div>
-
-                    {!canUseTags && (
-                        <span
-                            className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase bg-amber-50 text-amber-700 border border-amber-200">
-              {t('documents.detail.upgrade')}
-            </span>
-                    )}
-                </div>
-
-                {!canUseTags ? (
-                    <div
-                        className="text-xs text-gray-600 bg-gray-50 border border-dashed border-gray-200 rounded-lg px-3 py-2">
-                        {t('documents.detail.tags.lockedPrefix')}{' '}
-                        <Link to={`/${lang}/app/settings/billing`} className="text-blue-600 hover:underline font-medium">
-                            {t('documents.detail.billing')}
-                        </Link>{' '}
-                        {t('documents.detail.tags.lockedSuffix')}
-                    </div>
-                ) : (
-                    <div className="border border-gray-200 rounded-lg px-3 py-2 bg-slate-50">
-                        {tagsError && <div className="mb-2 text-[11px] text-red-600">{tagsError}</div>}
-
-                        <div className="flex flex-wrap gap-1 mb-2 min-h-[1.5rem]">
-                            {tagsLoading ? (
-                                <span className="text-xs text-gray-500">{t('documents.detail.tags.loading')}</span>
-                            ) : tags.length === 0 ? (
-                                <span className="text-xs text-gray-400">{t('documents.detail.tags.empty')}</span>
-                            ) : (
-                                tags.map(tItem => (
-                                    <span
-                                        key={tItem.id}
-                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white border border-gray-200 text-xs text-gray-800"
-                                    >
-                    {tItem.label}
-                                        <button type="button" onClick={() => removeTag(tItem.id)}
-                                                className="ml-0.5 p-0.5 hover:bg-gray-100 rounded-full">
-                      <X className="w-3 h-3 text-gray-500" strokeWidth={1.5}/>
-                    </button>
-                  </span>
-                                ))
-                            )}
-                        </div>
-
-                        <form
-                            onSubmit={async e => {
-                                e.preventDefault();
-                                const trimmed = newTag.trim();
-                                if (!trimmed) return;
-                                await addTag(trimmed);
-                                setNewTag('');
-                            }}
-                            className="flex items-center gap-2"
-                        >
-                            <input
-                                type="text"
-                                value={newTag}
-                                onChange={e => setNewTag(e.target.value)}
-                                placeholder={t('documents.detail.tags.placeholder')}
-                                className="flex-1 text-xs border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                            />
-                            <button
-                                type="submit"
-                                disabled={!newTag.trim()}
-                                className="px-2.5 py-1 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-500 transition-colors"
-                            >
-                                {t('documents.detail.tags.add')}
-                            </button>
-                        </form>
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    return (
-        <div
-            className="p-4 sm:p-6 max-w-[1800px] mx-auto bg-gradient-to-br from-slate-50 via-white to-slate-50 min-h-screen">
-            {renderFullscreenModal()}
+            />
 
             {/* Header */}
             <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
@@ -674,7 +803,10 @@ const DocumentDetail: React.FC = () => {
                                         <button
                                             type="button"
                                             onClick={() => {
-                                                exportJsonToExcel(selectedPartReport, selectedPart?.part_number || selectedPart?.display_name || 'part_report');
+                                                exportJsonToExcel(
+                                                    selectedPartReport,
+                                                    selectedPart?.part_number || selectedPart?.display_name || 'part_report',
+                                                );
                                                 setIsExportMenuOpen(false);
                                             }}
                                             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
@@ -685,7 +817,10 @@ const DocumentDetail: React.FC = () => {
                                         <button
                                             type="button"
                                             onClick={() => {
-                                                exportJsonToText(selectedPartReport, selectedPart?.part_number || selectedPart?.display_name || 'part_report');
+                                                exportJsonToText(
+                                                    selectedPartReport,
+                                                    selectedPart?.part_number || selectedPart?.display_name || 'part_report',
+                                                );
                                                 setIsExportMenuOpen(false);
                                             }}
                                             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
@@ -696,7 +831,10 @@ const DocumentDetail: React.FC = () => {
                                         <button
                                             type="button"
                                             onClick={() => {
-                                                exportJson(selectedPartReport, selectedPart?.part_number || selectedPart?.display_name || 'part_report');
+                                                exportJson(
+                                                    selectedPartReport,
+                                                    selectedPart?.part_number || selectedPart?.display_name || 'part_report',
+                                                );
                                                 setIsExportMenuOpen(false);
                                             }}
                                             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
@@ -746,7 +884,7 @@ const DocumentDetail: React.FC = () => {
                 </div>
             )}
 
-            {/* Mobile: main tabs (Preview / Details) to prevent “two sections fighting for space” */}
+            {/* Mobile: main tabs */}
             <div className="xl:hidden mb-4">
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-2">
                     <div className="grid grid-cols-2 gap-2">
@@ -754,7 +892,9 @@ const DocumentDetail: React.FC = () => {
                             type="button"
                             onClick={() => setMobileMainTab('preview')}
                             className={`h-10 rounded-lg text-sm font-medium transition-colors ${
-                                mobileMainTab === 'preview' ? 'bg-blue-600 text-white' : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                                mobileMainTab === 'preview'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
                             }`}
                         >
                             {t('documents.detail.tabs.preview') ?? 'Preview'}
@@ -763,7 +903,9 @@ const DocumentDetail: React.FC = () => {
                             type="button"
                             onClick={() => setMobileMainTab('details')}
                             className={`h-10 rounded-lg text-sm font-medium transition-colors ${
-                                mobileMainTab === 'details' ? 'bg-blue-600 text-white' : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                                mobileMainTab === 'details'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
                             }`}
                         >
                             {t('documents.detail.tabs.details') ?? 'Details'}
@@ -878,7 +1020,9 @@ const DocumentDetail: React.FC = () => {
                                                     </table>
                                                 </div>
                                                 <div
-                                                    className="px-3 py-2 text-[11px] text-gray-500 border-t border-gray-100">{t('documents.detail.bom.parsedFromDrawing')}</div>
+                                                    className="px-3 py-2 text-[11px] text-gray-500 border-t border-gray-100">
+                                                    {t('documents.detail.bom.parsedFromDrawing')}
+                                                </div>
                                             </div>
                                         ) : (
                                             <div
@@ -918,7 +1062,9 @@ const DocumentDetail: React.FC = () => {
                                                     </table>
                                                 </div>
                                                 <div
-                                                    className="px-3 py-2 text-[11px] text-gray-500 border-t border-gray-100">{t('documents.detail.revisions.parsedFromDrawing')}</div>
+                                                    className="px-3 py-2 text-[11px] text-gray-500 border-t border-gray-100">
+                                                    {t('documents.detail.revisions.parsedFromDrawing')}
+                                                </div>
                                             </div>
                                         ) : (
                                             <div
@@ -957,10 +1103,13 @@ const DocumentDetail: React.FC = () => {
 
                                 return (
                                     <div className="flex flex-col gap-4 min-h-0">
-                                        {commentsError && <div
-                                            className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">{commentsError}</div>}
+                                        {commentsError && (
+                                            <div
+                                                className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+                                                {commentsError}
+                                            </div>
+                                        )}
 
-                                        {/* Fix overflow on mobile: min-h-0 + responsive max height */}
                                         <div
                                             className="border border-gray-200 rounded-lg bg-white overflow-auto min-h-0 max-h-[40vh] sm:max-h-[320px]">
                                             {commentsLoading ? (
@@ -971,7 +1120,9 @@ const DocumentDetail: React.FC = () => {
                                                 </div>
                                             ) : comments.length === 0 ? (
                                                 <div
-                                                    className="flex items-center justify-center py-8 text-gray-400 text-sm">{t('documents.detail.comments.empty')}</div>
+                                                    className="flex items-center justify-center py-8 text-gray-400 text-sm">
+                                                    {t('documents.detail.comments.empty')}
+                                                </div>
                                             ) : (
                                                 <ul className="divide-y divide-gray-100">
                                                     {comments.map(c => (
@@ -981,10 +1132,14 @@ const DocumentDetail: React.FC = () => {
                                                                 <div className="min-w-0">
                                                                     <div
                                                                         className="flex items-center gap-2 mb-1 flex-wrap">
-                                                                        <span
-                                                                            className="font-medium text-gray-900">{c.author_name || t('documents.detail.comments.userFallback')}</span>
-                                                                        {c.created_at && <span
-                                                                            className="text-[11px] text-gray-500">{new Date(c.created_at).toLocaleString()}</span>}
+                                    <span className="font-medium text-gray-900">
+                                      {c.author_name || t('documents.detail.comments.userFallback')}
+                                    </span>
+                                                                        {c.created_at && (
+                                                                            <span className="text-[11px] text-gray-500">
+                                        {new Date(c.created_at).toLocaleString()}
+                                      </span>
+                                                                        )}
                                                                     </div>
                                                                     <p className="text-gray-800 whitespace-pre-line break-words">{c.body}</p>
                                                                 </div>
@@ -1004,8 +1159,9 @@ const DocumentDetail: React.FC = () => {
                                             }}
                                             className="space-y-2"
                                         >
-                                            <label
-                                                className="text-xs font-medium text-gray-700">{t('documents.detail.comments.addLabel')}</label>
+                                            <label className="text-xs font-medium text-gray-700">
+                                                {t('documents.detail.comments.addLabel')}
+                                            </label>
                                             <textarea
                                                 value={newComment}
                                                 onChange={e => setNewComment(e.target.value)}
@@ -1117,7 +1273,7 @@ const DocumentDetail: React.FC = () => {
                                                     </div>
                                                     <div
                                                         className="text-xs text-gray-900">{assessment.shop_alignment.fit_summary}</div>
-                                                        {assessment?.shop_alignment?.fit_level === 'UNKNOWN' && (
+                                                    {assessment?.shop_alignment?.fit_level === 'UNKNOWN' && (
                                                         <div
                                                             className="mt-3 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-2 py-1.5">
                                                             {t('documents.detail.report.fillOrgProfileNote')}
@@ -1394,15 +1550,39 @@ const DocumentDetail: React.FC = () => {
                                         )}
                                     </div>
 
-                                    {/* Tags live in Details to avoid “right column overflows” on mobile */}
-                                    <RenderTags/>
+                                    {/* Tags */}
+                                    <TagsPanel
+                                        t={t}
+                                        lang={lang}
+                                        canUseTags={canUseTags}
+                                        selectedPart={selectedPart}
+                                        tags={tags as any}
+                                        tagsLoading={tagsLoading}
+                                        tagsError={tagsError}
+                                        newTag={newTag}
+                                        setNewTag={setNewTag}
+                                        addTag={addTag}
+                                        removeTag={removeTag}
+                                    />
                                 </div>
                             );
                         })()
                     ) : (
                         <div className="text-center py-12 text-gray-500">
                             <p>{t('documents.detail.noAnalysisData')}</p>
-                            <RenderTags/>
+                            <TagsPanel
+                                t={t}
+                                lang={lang}
+                                canUseTags={canUseTags}
+                                selectedPart={selectedPart}
+                                tags={tags as any}
+                                tagsLoading={tagsLoading}
+                                tagsError={tagsError}
+                                newTag={newTag}
+                                setNewTag={setNewTag}
+                                addTag={addTag}
+                                removeTag={removeTag}
+                            />
                         </div>
                     )}
                 </div>
@@ -1411,10 +1591,35 @@ const DocumentDetail: React.FC = () => {
                 <div
                     className={`bg-white border border-gray-200 rounded-xl shadow-sm p-4 sm:p-6 xl:col-span-3 min-h-0 ${mobileMainTab === 'details' ? 'hidden xl:block' : ''}`}>
                     <div className="mb-4">
-                        <RenderHeader/>
+                        <RenderHeader
+                            t={t}
+                            selectedPart={selectedPart}
+                            partRenderUrl={partRenderUrl}
+                            zoom={zoom}
+                            onZoomOut={handleZoomOut}
+                            onZoomIn={handleZoomIn}
+                            onReset={handleResetZoom}
+                            onFullscreen={toggleFullscreen}
+                        />
                     </div>
 
-                    <RenderCanvas/>
+                    <RenderCanvas
+                        t={t}
+                        normalContainerRef={normalContainerRef}
+                        imageRef={imageRef}
+                        imageLoading={imageLoading}
+                        partRenderUrl={partRenderUrl}
+                        selectedPartId={selectedPartId}
+                        imageAspectRatio={imageAspectRatio}
+                        zoom={zoom}
+                        isDragging={isDragging}
+                        position={position}
+                        onMouseDown={handleMouseDown}
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={handleMouseLeave}
+                        onWheel={handleWheel}
+                    />
 
                     {/* Keep the “extra info blocks” under the render (unchanged logic, only minor responsive tweaks) */}
                     {selectedPart?.report_json &&
