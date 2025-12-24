@@ -4,6 +4,10 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: light;
+}
+
 html {
   font-size: 16px; /* 16px * 0.9375 ≈ 94% velikosti */
 }
@@ -18,9 +22,11 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #fff;
 }
 
 #root {
   width: 100%;
   min-height: 100svh; /* iOS safari friendly */
+  background-color: #fff;
 }
