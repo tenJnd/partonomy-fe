@@ -157,8 +157,12 @@ serve(async (req) => {
             metadata,
             subscription_data: {metadata},
 
+            billing_address_collection: "required",
             automatic_tax: {enabled: true},
             tax_id_collection: {enabled: true},
+
+            client_reference_id: org_id,
+            allow_promotion_codes: true,
         });
 
         if (!session.url) {
