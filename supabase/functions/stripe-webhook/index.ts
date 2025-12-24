@@ -51,6 +51,11 @@ async function resolveTierId(args: {
     return {tierCode, tierId};
 }
 
+/**
+ * DB fallback mapping:
+ * - Use stripe_subscription_id first
+ * - Fallback to stripe_customer_id
+ */
 async function mapOrgIdFromDb(args: {
     stripeSubscriptionId?: string | null;
     stripeCustomerId?: string | null;
@@ -78,6 +83,60 @@ async function mapOrgIdFromDb(args: {
     return null;
 }
 
+/**
+ * INVOICE helpers:
+ * Stripe sometimes omits invoice.subscription, but provides:
+ * - invoice.parent.subscription_details.subscription
+ * - invoice.lines.data[0].parent.subscription_item_details.subscription
+ * Also org_id is often present in nested metadata:
+ * - invoice.parent.subscription_details.metadata.org_id
+ * - invoice.lines.data[0].metadata.org_id
+ */
+function getInvoiceOrgId(invoice: Stripe.Invoice): string | null {
+    const inv: any = invoice as any;
+
+    const org1 = inv?.parent?.subscription_details?.metadata?.org_id;
+    if (typeof org1 === "string" && org1.length) return org1;
+
+    const org2 = inv?.lines?.data?.[0]?.metadata?.org_id;
+    if (typeof org2 === "string" && org2.length) return org2;
+
+    return null;
+}
+
+function getInvoiceSubscriptionId(invoice: Stripe.Invoice): string | null {
+    const inv: any = invoice as any;
+
+    if (typeof inv?.subscription === "string" && inv.subscription.length) return inv.subscription;
+
+    const s1 = inv?.parent?.subscription_details?.subscription;
+    if (typeof s1 === "string" && s1.length) return s1;
+
+    const s2 = inv?.lines?.data?.[0]?.parent?.subscription_item_details?.subscription;
+    if (typeof s2 === "string" && s2.length) return s2;
+
+    return null;
+}
+
+function getInvoiceLinePeriod(invoice: Stripe.Invoice): { start: number | null; end: number | null } {
+    const inv: any = invoice as any;
+    const p = inv?.lines?.data?.[0]?.period;
+    const start = typeof p?.start === "number" ? p.start : null;
+    const end = typeof p?.end === "number" ? p.end : null;
+    return {start, end};
+}
+
+function getInvoiceTierFromLines(invoice: Stripe.Invoice): TierCode | undefined {
+    const inv: any = invoice as any;
+    const t = inv?.lines?.data?.[0]?.metadata?.tier;
+    if (t === "trial" || t === "starter" || t === "pro" || t === "enterprise") return t;
+    return undefined;
+}
+
+/**
+ * Extract IDs from event payload for stripe_webhook_events indexing.
+ * For invoice events, also look into nested parent/lines for subscription id.
+ */
 function getIdsFromEvent(event: Stripe.Event): {
     stripeCustomerId: string | null;
     stripeSubscriptionId: string | null;
@@ -87,16 +146,26 @@ function getIdsFromEvent(event: Stripe.Event): {
 
     const stripeCustomerId = (obj?.customer as string | undefined) ?? null;
 
-    const stripeSubscriptionId =
+    let stripeSubscriptionId =
         (obj?.subscription as string | undefined) ??
         (event.type.startsWith("customer.subscription.") ? (obj?.id as string | undefined) ?? null : null);
 
-    const stripeInvoiceId =
-        event.type.startsWith("invoice.") ? (obj?.id as string | undefined) ?? null : null;
+    if (!stripeSubscriptionId && event.type.startsWith("invoice.")) {
+        stripeSubscriptionId =
+            obj?.parent?.subscription_details?.subscription ??
+            obj?.lines?.data?.[0]?.parent?.subscription_item_details?.subscription ??
+            null;
+    }
+
+    const stripeInvoiceId = event.type.startsWith("invoice.") ? (obj?.id as string | undefined) ?? null : null;
 
     return {stripeCustomerId, stripeSubscriptionId, stripeInvoiceId};
 }
 
+/**
+ * Insert row for idempotence + fast debugging.
+ * If duplicate -> return "duplicate".
+ */
 async function insertWebhookEventRow(args: {
     event: Stripe.Event;
     orgId: string | null;
@@ -116,7 +185,6 @@ async function insertWebhookEventRow(args: {
     const row: Record<string, unknown> = {
         event_id: event.id,
         event_type: event.type,
-        received_at: undefined, // server_default
         livemode: event.livemode ?? false,
         stripe_created: stripeCreatedIso,
         request_id: requestId,
@@ -136,8 +204,26 @@ async function insertWebhookEventRow(args: {
         return "duplicate";
     }
 
+    // Never block billing processing due to logging failures
     console.error("stripe_webhook_events insert error (proceeding):", error);
     return "new";
+}
+
+async function ensureSubscriptionHasOrgMetadata(args: {
+    subscriptionId: string;
+    orgId: string;
+    metadata?: Record<string, string> | null;
+}) {
+    const {subscriptionId, orgId, metadata} = args;
+
+    const sub = await stripe.subscriptions.retrieve(subscriptionId);
+    const current = (sub.metadata ?? {}) as Record<string, string>;
+
+    if (current.org_id === orgId) return;
+
+    await stripe.subscriptions.update(subscriptionId, {
+        metadata: {...current, ...(metadata ?? {}), org_id: orgId},
+    });
 }
 
 async function upsertOrganizationBilling(args: {
@@ -146,7 +232,7 @@ async function upsertOrganizationBilling(args: {
     overrideTierCode?: TierCode;
     sourceEventType: string;
     writePeriod: boolean;
-    forceStatus?: string; // optional override
+    forceStatus?: string;
 }) {
     const {orgId, subscription, overrideTierCode, sourceEventType, writePeriod, forceStatus} = args;
 
@@ -196,20 +282,57 @@ async function upsertOrganizationBilling(args: {
     });
 }
 
-async function ensureSubscriptionHasOrgMetadata(args: {
-    subscriptionId: string;
+/**
+ * Invoice fallback upsert when subscription retrieve is unavailable.
+ * Uses invoice line period + customer/subscription ids from invoice payload.
+ */
+async function upsertBillingFromInvoiceFallback(args: {
     orgId: string;
-    metadata?: Record<string, string> | null;
+    invoice: Stripe.Invoice;
+    subscriptionId: string | null;
+    forceStatus: string; // e.g. "active"
+    sourceEventType: string;
 }) {
-    const {subscriptionId, orgId, metadata} = args;
+    const {orgId, invoice, subscriptionId, forceStatus, sourceEventType} = args;
 
-    const sub = await stripe.subscriptions.retrieve(subscriptionId);
-    const current = (sub.metadata ?? {}) as Record<string, string>;
+    const {start, end} = getInvoiceLinePeriod(invoice);
+    const overrideTier = getInvoiceTierFromLines(invoice);
 
-    if (current.org_id === orgId) return;
+    const {tierId, tierCode} = await resolveTierId({overrideTierCode: overrideTier, subscription: null});
 
-    await stripe.subscriptions.update(subscriptionId, {
-        metadata: {...current, ...(metadata ?? {}), org_id: orgId},
+    const payload: Record<string, unknown> = {
+        org_id: orgId,
+        tier_id: tierId,
+        status: forceStatus,
+        stripe_customer_id: (invoice.customer as string | null) ?? null,
+        stripe_subscription_id: subscriptionId,
+    };
+
+    if (start) payload["current_period_start"] = unixToIso(start);
+    if (end) payload["current_period_end"] = unixToIso(end);
+
+    const {error} = await supabaseAdmin
+        .from("organization_billing")
+        .upsert(payload, {onConflict: "org_id"});
+
+    if (error) {
+        console.error("Error upserting organization_billing from invoice fallback:", {
+            orgId,
+            subscriptionId,
+            tierCode,
+            sourceEventType,
+            error,
+        });
+        throw error;
+    }
+
+    console.log("billing invoice-fallback upsert ok", {
+        orgId,
+        subscriptionId,
+        tierCode,
+        wrote_period_start: !!start,
+        wrote_period_end: !!end,
+        sourceEventType,
     });
 }
 
@@ -236,7 +359,7 @@ serve(async (req) => {
 
     const ids = getIdsFromEvent(event);
 
-    // Best-effort orgId mapping *before* idempotency insert (so it's searchable)
+    // Best-effort orgId mapping BEFORE idempotency insert (so you can search by org_id)
     let orgId: string | null = null;
     try {
         const obj: any = event.data?.object;
@@ -246,12 +369,13 @@ serve(async (req) => {
         } else if (event.type.startsWith("customer.subscription.")) {
             orgId = (obj?.metadata?.org_id as string | undefined) ?? null;
         } else if (event.type.startsWith("invoice.")) {
-            // invoice -> subscription retrieve -> metadata.org_id, fallback DB
-            if (ids.stripeSubscriptionId) {
-                const sub = await stripe.subscriptions.retrieve(ids.stripeSubscriptionId);
-                orgId = (sub.metadata?.org_id as string | undefined) ?? null;
-            }
+            const invoice = event.data.object as Stripe.Invoice;
+
+            // Prefer nested invoice metadata first
+            orgId = getInvoiceOrgId(invoice);
+
             if (!orgId) {
+                // fallback: map via DB
                 orgId = await mapOrgIdFromDb({
                     stripeSubscriptionId: ids.stripeSubscriptionId,
                     stripeCustomerId: ids.stripeCustomerId,
@@ -286,15 +410,22 @@ serve(async (req) => {
         switch (event.type) {
             case "checkout.session.completed": {
                 const session = event.data.object as Stripe.Checkout.Session;
+
                 const sessionOrgId = session.metadata?.org_id ?? null;
                 const overrideTier = (session.metadata?.tier as TierCode | undefined) ?? undefined;
+
+                console.log("checkout.session.completed", {
+                    orgId: sessionOrgId,
+                    subscription: session.subscription ?? null,
+                    customer: session.customer ?? null,
+                });
 
                 if (!sessionOrgId || !session.subscription) break;
 
                 const subscriptionId = session.subscription as string;
 
-                // Since you already set subscription_data.metadata in create-checkout-session,
-                // this should already exist. Keep as safety.
+                // Since you set subscription_data.metadata in create-checkout-session,
+                // this should exist. Keep as safety.
                 await ensureSubscriptionHasOrgMetadata({
                     subscriptionId,
                     orgId: sessionOrgId,
@@ -317,29 +448,60 @@ serve(async (req) => {
 
             case "invoice.paid": {
                 const invoice = event.data.object as Stripe.Invoice;
-                const subscriptionId = invoice.subscription as string | null;
-                if (!subscriptionId) break;
 
-                const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+                // Robust extraction
+                const subscriptionId = getInvoiceSubscriptionId(invoice);
+                const orgIdFromInvoice = getInvoiceOrgId(invoice);
 
-                let resolvedOrgId = (subscription.metadata?.org_id as string | undefined) ?? null;
+                console.log("invoice.paid", {
+                    invoiceId: invoice.id,
+                    subscriptionId,
+                    orgIdFromInvoice,
+                    customer: invoice.customer ?? null,
+                });
+
+                let resolvedOrgId = orgIdFromInvoice;
+
                 if (!resolvedOrgId) {
                     resolvedOrgId = await mapOrgIdFromDb({
                         stripeSubscriptionId: subscriptionId,
                         stripeCustomerId: (invoice.customer as string | null) ?? null,
                     });
                 }
+
                 if (!resolvedOrgId) {
-                    console.warn("invoice.paid: cannot map org_id", {subscriptionId, invoiceId: invoice.id});
+                    console.warn("invoice.paid: cannot map org_id", {invoiceId: invoice.id, subscriptionId});
                     break;
                 }
 
-                // ✅ Authoritative update (period + status)
-                await upsertOrganizationBilling({
+                if (subscriptionId) {
+                    try {
+                        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+
+                        await upsertOrganizationBilling({
+                            orgId: resolvedOrgId,
+                            subscription,
+                            sourceEventType: event.type,
+                            writePeriod: true, // ✅ only authoritative write
+                        });
+
+                        break;
+                    } catch (e) {
+                        console.warn("invoice.paid: cannot retrieve subscription, falling back to invoice line period", {
+                            subscriptionId,
+                            invoiceId: invoice.id,
+                        });
+                        // fall through to invoice fallback
+                    }
+                }
+
+                // Fallback: use invoice line period (start/end) + ids from invoice
+                await upsertBillingFromInvoiceFallback({
                     orgId: resolvedOrgId,
-                    subscription,
+                    invoice,
+                    subscriptionId,
+                    forceStatus: "active",
                     sourceEventType: event.type,
-                    writePeriod: true,
                 });
 
                 break;
@@ -347,30 +509,69 @@ serve(async (req) => {
 
             case "invoice.payment_failed": {
                 const invoice = event.data.object as Stripe.Invoice;
-                const subscriptionId = invoice.subscription as string | null;
-                if (!subscriptionId) break;
 
-                const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+                const subscriptionId = getInvoiceSubscriptionId(invoice);
+                const orgIdFromInvoice = getInvoiceOrgId(invoice);
 
-                let resolvedOrgId = (subscription.metadata?.org_id as string | undefined) ?? null;
+                console.log("invoice.payment_failed", {
+                    invoiceId: invoice.id,
+                    subscriptionId,
+                    orgIdFromInvoice,
+                    customer: invoice.customer ?? null,
+                });
+
+                let resolvedOrgId = orgIdFromInvoice;
+
                 if (!resolvedOrgId) {
                     resolvedOrgId = await mapOrgIdFromDb({
                         stripeSubscriptionId: subscriptionId,
                         stripeCustomerId: (invoice.customer as string | null) ?? null,
                     });
                 }
+
                 if (!resolvedOrgId) {
-                    console.warn("invoice.payment_failed: cannot map org_id", {subscriptionId, invoiceId: invoice.id});
+                    console.warn("invoice.payment_failed: cannot map org_id", {invoiceId: invoice.id, subscriptionId});
                     break;
                 }
 
-                // ✅ No period writes on fail
-                await upsertOrganizationBilling({
-                    orgId: resolvedOrgId,
-                    subscription,
-                    sourceEventType: event.type,
-                    writePeriod: false,
-                });
+                if (subscriptionId) {
+                    try {
+                        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+
+                        await upsertOrganizationBilling({
+                            orgId: resolvedOrgId,
+                            subscription,
+                            sourceEventType: event.type,
+                            writePeriod: false, // ✅ never touch period on failure
+                        });
+
+                        break;
+                    } catch (e) {
+                        console.warn("invoice.payment_failed: cannot retrieve subscription, doing minimal update", {
+                            subscriptionId,
+                            invoiceId: invoice.id,
+                        });
+                    }
+                }
+
+                // Minimal fallback: do NOT write period on failures
+                // Ensure tier_id exists; status set to past_due-ish
+                const overrideTier = getInvoiceTierFromLines(invoice);
+                const {tierId} = await resolveTierId({overrideTierCode: overrideTier, subscription: null});
+
+                const payload: Record<string, unknown> = {
+                    org_id: resolvedOrgId,
+                    tier_id: tierId,
+                    status: "past_due",
+                    stripe_customer_id: (invoice.customer as string | null) ?? null,
+                    stripe_subscription_id: subscriptionId,
+                };
+
+                const {error} = await supabaseAdmin
+                    .from("organization_billing")
+                    .upsert(payload, {onConflict: "org_id"});
+
+                if (error) throw error;
 
                 break;
             }
@@ -386,9 +587,16 @@ serve(async (req) => {
                         stripeCustomerId: (subLite.customer as string | null) ?? null,
                     });
                 }
+
+                console.log("customer.subscription.deleted", {
+                    orgId: resolvedOrgId,
+                    subscriptionId,
+                    status: subLite.status,
+                });
+
                 if (!resolvedOrgId) break;
 
-                // You can mark canceled. Stripe sub status should already be "canceled".
+                // Retrieve canonical subscription (optional but consistent)
                 const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
                 await upsertOrganizationBilling({
@@ -402,7 +610,7 @@ serve(async (req) => {
                 break;
             }
 
-            // Optional: keep, but it doesn't write period
+            // Optional baseline sync (no period)
             case "customer.subscription.created":
             case "customer.subscription.updated": {
                 const subLite = event.data.object as Stripe.Subscription;
@@ -414,6 +622,13 @@ serve(async (req) => {
                         stripeCustomerId: (subLite.customer as string | null) ?? null,
                     });
                 }
+
+                console.log(event.type, {
+                    orgId: resolvedOrgId,
+                    subscriptionId: subLite.id,
+                    status: subLite.status,
+                });
+
                 if (!resolvedOrgId) break;
 
                 const subscription = await stripe.subscriptions.retrieve(subLite.id);
