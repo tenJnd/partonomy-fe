@@ -89,7 +89,8 @@
     "checkoutSuccessTitle": "Platba proběhla úspěšně",
     "checkoutSuccessDesc": "Děkujeme! Vaše předplatné se právě aktivuje. Tato stránka se může během chvilky aktualizovat.",
     "checkoutCanceledTitle": "Platba byla zrušena",
-    "checkoutCanceledDesc": "Nic se nestalo — platba nebyla provedena. Kdykoliv to můžete zkusit znovu."
+    "checkoutCanceledDesc": "Nic se nestalo — platba nebyla provedena. Kdykoliv to můžete zkusit znovu.",
+    "planInactiveBody": "Funkce nebude k dispozici, dokud znovu neaktivujete své předplatné."
   },
   "billing": {
     "planInactive": "Plán je neaktivní",

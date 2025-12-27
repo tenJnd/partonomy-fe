@@ -89,7 +89,8 @@
     "checkoutSuccessTitle": "Payment successful",
     "checkoutSuccessDesc": "Thanks! Your subscription is being activated. This page may update in a few moments.",
     "checkoutCanceledTitle": "Checkout canceled",
-    "checkoutCanceledDesc": "No worries — you weren’t charged. You can try again anytime."
+    "checkoutCanceledDesc": "No worries — you weren’t charged. You can try again anytime.",
+    "planInactiveBody": "Usage is unavailable until you reactivate your subscription."
   },
   "billing": {
     "planInactive": "Plan inactive",

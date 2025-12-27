@@ -89,7 +89,8 @@
     "checkoutSuccessTitle": "Zahlung erfolgreich",
     "checkoutSuccessDesc": "Vielen Dank! Dein Abonnement wird gerade aktiviert. Diese Seite kann sich in wenigen Augenblicken aktualisieren.",
     "checkoutCanceledTitle": "Bezahlung abgebrochen",
-    "checkoutCanceledDesc": "Kein Problem — es wurde nichts berechnet. Du kannst es jederzeit erneut versuchen."
+    "checkoutCanceledDesc": "Kein Problem — es wurde nichts berechnet. Du kannst es jederzeit erneut versuchen.",
+    "planInactiveBody": "Die Nutzung ist erst wieder möglich, wenn Sie Ihr Abonnement reaktivieren."
   },
   "billing": {
     "planInactive": "Plan inaktiv",

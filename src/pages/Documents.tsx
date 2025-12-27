@@ -6,7 +6,7 @@ import {useParts} from "../hooks/useParts";
 import {useDocumentUpload} from "../hooks/useDocumentUpload";
 import {useOrgBilling} from "../hooks/useOrgBilling";
 import {useOrgUsage} from "../hooks/useOrgUsage";
-import {getUsageLimitInfo, isInactiveStatus} from "../utils/billing";
+import {getUsageUiInfo, isInactiveStatus} from "../utils/billing";
 import {formatTierLabel} from "../utils/tiers";
 import PartsManager from "../components/documents/PartsManager";
 
@@ -20,7 +20,8 @@ const Documents: React.FC = () => {
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const {jobsUsed, maxJobs, isOverLimit} = getUsageLimitInfo(billing ?? null, usage ?? null);
+    const {jobsUsed, maxJobs, isOverLimit, periodLabel} =
+        getUsageUiInfo(billing ?? null, usage ?? null);
     const uploadsBlocked = !currentOrg || isInactiveStatus(billing?.status) || isOverLimit;
 
     return (
@@ -62,9 +63,9 @@ const Documents: React.FC = () => {
 
                 {(uploadError || isOverLimit) && (
                     <div
-                        className={`mb-4 p-4 rounded-lg border flex items-start gap-3 ${uploadError ? "bg-rose-50 border-rose-200 text-rose-700" : "bg-amber-50 border-amber-200 text-amber-800"}`}>
+                        className={`mb-4 p-4 rounded-lg border flex items-start gap-3 text-xs ${uploadError ? "bg-rose-50 border-rose-200 text-rose-700" : "bg-amber-50 border-amber-200 text-amber-800"}`}>
                         <AlertCircle className="w-5 h-5 flex-shrink-0"/>
-                        <div>{uploadError || `${t("documents.reachedLimit")} ${billing?.tier ? formatTierLabel(billing.tier.code) : ""} plan. (${jobsUsed}/${maxJobs})`}</div>
+                        <div>{uploadError || `${t("documents.reachedLimit")} ${billing?.tier ? formatTierLabel(billing.tier.code) : ""} ${t("billing.plan")}. ${t("billingSettings.usageInCurrentPeriod")} (${periodLabel}): ${jobsUsed}/${maxJobs}`}</div>
                     </div>
                 )}
 

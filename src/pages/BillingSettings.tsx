@@ -6,7 +6,12 @@ import {useAuth} from "../contexts/AuthContext";
 import SettingsShell from "../components/SettingsShell";
 import {useOrgBilling} from "../hooks/useOrgBilling";
 import {useOrgUsage} from "../hooks/useOrgUsage";
-import {getBillingPlanDescription, getBillingPlanTitle} from "../utils/billing";
+import {
+    getBillingPlanDescription,
+    getBillingPlanTitle,
+    getUsageUiInfo,
+    isBillingInactive,
+} from "../utils/billing";
 import PricingPlans from "../components/PricingPlans";
 import {useStripeCheckout} from "../hooks/useStripeCheckout";
 import {useStripeBillingPortal} from "../hooks/useStripeBillingPortal";
@@ -70,21 +75,10 @@ const BillingSettings: React.FC = () => {
 
     const planTitle = getBillingPlanTitle(billing);
     const planDescription = getBillingPlanDescription(billing);
+    const isPlanInactive = isBillingInactive(billing);
+    const {jobsUsed, maxJobs, usagePercent, periodLabel} =
+        getUsageUiInfo(billing ?? null, usage ?? null);
 
-    const jobsUsed = usage?.jobs_used ?? 0;
-    const maxJobs = billing?.tier?.max_jobs_per_period ?? null;
-
-    const usagePercent =
-        maxJobs && maxJobs > 0
-            ? Math.min(100, Math.round((jobsUsed / maxJobs) * 100))
-            : null;
-
-    const periodLabel =
-        usage && usage.period_start && usage.period_end
-            ? `${new Date(usage.period_start).toLocaleDateString()} – ${new Date(
-                usage.period_end
-            ).toLocaleDateString()}`
-            : "Current period";
 
     return (
         <SettingsShell
@@ -204,62 +198,85 @@ const BillingSettings: React.FC = () => {
                 </div>
 
                 {/* USAGE */}
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-100">
-                        <div className="flex items-start justify-between gap-3">
-                            <div>
-                                <h2 className="text-lg font-semibold text-gray-900">
-                                    {t("billingSettings.usageInCurrentPeriod")}
-                                </h2>
-                                <p className="text-sm text-gray-500 mt-1">
-                                    {t("billingSettings.usageDescription")}
-                                </p>
+                <div className="relative">
+                    <div
+                        className={[
+                            "bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden transition",
+                            isPlanInactive ? "opacity-50 grayscale pointer-events-none select-none" : "",
+                        ].join(" ")}
+                    >
+                        <div className="px-6 py-4 border-b border-gray-100">
+                            <div className="flex items-start justify-between gap-3">
+                                <div>
+                                    <h2 className="text-lg font-semibold text-gray-900">
+                                        {t("billingSettings.usageInCurrentPeriod")}
+                                    </h2>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                        {t("billingSettings.usageDescription")}
+                                    </p>
 
-                                {/* period label visible on mobile too */}
-                                <div className="mt-2 flex items-center gap-2 text-xs text-gray-500 md:hidden">
+                                    {/* period label visible on mobile too */}
+                                    <div className="mt-2 flex items-center gap-2 text-xs text-gray-500 md:hidden">
+                                        <Activity className="w-4 h-4" strokeWidth={1.5}/>
+                                        <span>{periodLabel}</span>
+                                    </div>
+                                </div>
+
+                                {/* desktop */}
+                                <div className="hidden md:flex items-center gap-2 text-xs text-gray-500 flex-shrink-0">
                                     <Activity className="w-4 h-4" strokeWidth={1.5}/>
                                     <span>{periodLabel}</span>
                                 </div>
                             </div>
+                        </div>
 
-                            {/* desktop */}
-                            <div className="hidden md:flex items-center gap-2 text-xs text-gray-500 flex-shrink-0">
-                                <Activity className="w-4 h-4" strokeWidth={1.5}/>
-                                <span>{periodLabel}</span>
-                            </div>
+                        <div className="p-6">
+                            {usageLoading || billingLoading ? (
+                                <div className="text-sm text-gray-500">
+                                    {t("billingSettings.loadingUsage")}
+                                </div>
+                            ) : maxJobs == null ? (
+                                <p className="text-sm text-gray-500">
+                                    {t("billingSettings.usageLimitsNotConfigured")}
+                                </p>
+                            ) : (
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between text-sm text-gray-600">
+            <span>
+              {jobsUsed} / {maxJobs} jobs this period
+            </span>
+                                        {usagePercent !== null && (
+                                            <span className="text-xs text-gray-500">{usagePercent}%</span>
+                                        )}
+                                    </div>
+
+                                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full rounded-full bg-blue-600 transition-all"
+                                            style={{width: `${usagePercent ?? 0}%`}}
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    <div className="p-6">
-                        {usageLoading || billingLoading ? (
-                            <div className="text-sm text-gray-500">
-                                {t("billingSettings.loadingUsage")}
-                            </div>
-                        ) : maxJobs == null ? (
-                            <p className="text-sm text-gray-500">
-                                {t("billingSettings.usageLimitsNotConfigured")}
-                            </p>
-                        ) : (
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between text-sm text-gray-600">
-                                    <span>
-                                        {jobsUsed} / {maxJobs} jobs this period
-                                    </span>
-                                    {usagePercent !== null && (
-                                        <span className="text-xs text-gray-500">{usagePercent}%</span>
-                                    )}
+                    {/* Overlay message (keeps card readable but clearly disabled) */}
+                    {isPlanInactive && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <div
+                                className="mx-6 rounded-lg border border-gray-200 bg-white/90 px-4 py-3 text-center shadow-sm">
+                                <div className="text-sm font-medium text-gray-900">
+                                    {t("billing.planInactive", "Plan is inactive")}
                                 </div>
-
-                                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full rounded-full bg-blue-600 transition-all"
-                                        style={{width: `${usagePercent ?? 0}%`}}
-                                    />
+                                <div className="mt-1 text-xs text-gray-600">
+                                    {t("billingSettings.planInactiveBody", "Usage is unavailable until you reactivate your subscription.")}
                                 </div>
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </div>
+
 
                 {/* Pricing / upgrade section */}
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
