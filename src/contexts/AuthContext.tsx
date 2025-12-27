@@ -1,4 +1,4 @@
-import React, {createContext, useContext, useEffect, useMemo, useState} from "react";
+import React, {createContext, useContext, useEffect, useMemo, useRef, useState,} from "react";
 import {AuthError, Session, User} from "@supabase/supabase-js";
 import {supabase} from "../lib/supabase";
 import {RoleEnum} from "../lib/database.types";
@@ -54,6 +54,13 @@ type PendingAction =
 
 const PENDING_KEY = "pending_actions_v1";
 
+/**
+ * Multi-tab safe lock for pending processing (same user).
+ * Prevents race: tab A + tab B read same pending, both create org.
+ */
+const PENDING_LOCK_KEY = "pending_actions_lock_v1";
+const PENDING_LOCK_TTL_MS = 60_000;
+
 function readPending(): PendingAction[] {
     try {
         const raw = localStorage.getItem(PENDING_KEY);
@@ -65,9 +72,53 @@ function readPending(): PendingAction[] {
     }
 }
 
+function writePending(actions: PendingAction[]) {
+    try {
+        localStorage.setItem(PENDING_KEY, JSON.stringify(actions));
+    } catch {
+        // ignore
+    }
+}
+
 function clearPending() {
     try {
         localStorage.removeItem(PENDING_KEY);
+    } catch {
+        // ignore
+    }
+}
+
+function tryAcquirePendingLock(userId: string): boolean {
+    try {
+        const raw = localStorage.getItem(PENDING_LOCK_KEY);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            const ts = Number(parsed?.ts || 0);
+            const lockedUserId = String(parsed?.userId || "");
+
+            // If the lock is for the same user and still valid => don't process
+            if (lockedUserId === userId && Date.now() - ts < PENDING_LOCK_TTL_MS) {
+                return false;
+            }
+        }
+
+        localStorage.setItem(PENDING_LOCK_KEY, JSON.stringify({ts: Date.now(), userId}));
+        return true;
+    } catch {
+        // If localStorage fails, we can't coordinate across tabs,
+        // but we still allow processing (best-effort).
+        return true;
+    }
+}
+
+function releasePendingLock(userId: string) {
+    try {
+        const raw = localStorage.getItem(PENDING_LOCK_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (String(parsed?.userId || "") === userId) {
+            localStorage.removeItem(PENDING_LOCK_KEY);
+        }
     } catch {
         // ignore
     }
@@ -85,6 +136,9 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
 
     const [organizations, setOrganizations] = useState<OrganizationMembership[]>([]);
     const [currentOrg, setCurrentOrg] = useState<OrganizationMembership | null>(null);
+
+    // Guards against re-entrancy in the same tab / render
+    const pendingProcessingRef = useRef(false);
 
     const fetchOrganizations = async (userId: string) => {
         const {data, error} = await supabase
@@ -139,7 +193,9 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
                     }
                 })();
 
-                const defaultOrg = lastOrgId ? orgs.find((o) => o.org_id === lastOrgId) || orgs[0] : orgs[0];
+                const defaultOrg = lastOrgId
+                    ? orgs.find((o) => o.org_id === lastOrgId) || orgs[0]
+                    : orgs[0];
 
                 setCurrentOrg(defaultOrg);
                 try {
@@ -161,39 +217,74 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
         }
     };
 
-    /** ✅ Varianta A: pending akce zpracujeme jen po SIGNED_IN (onAuthStateChange) */
+    /**
+     * ✅ Pending zpracování: multi-tab safe.
+     * - vyžádá si lock (localStorage) per user
+     * - pending se "atomic" vyzvedne: přečíst + hned clear (takže 2. tab už nic neuvidí)
+     * - když processing failne, pending se vrátí zpět
+     */
     const processPendingActions = async (sessionUser: User) => {
-        const actions = readPending();
-        if (actions.length === 0) return;
+        if (pendingProcessingRef.current) return;
+        pendingProcessingRef.current = true;
 
-        const fallbackName =
-            (sessionUser.user_metadata?.full_name as string | undefined) ||
-            (sessionUser.email ? sessionUser.email.split("@")[0] : "");
+        const userId = sessionUser.id;
 
-        for (const a of actions) {
-            if (a.kind === "invite") {
-                const userName = a.userName?.trim() ? a.userName.trim() : fallbackName;
-
-                const {error} = await supabase.rpc("accept_organization_invite", {
-                    p_token: a.token,
-                    p_user_name: userName,
-                });
-                if (error) throw error;
-            }
-
-            if (a.kind === "create_org") {
-                const userName = a.userName?.trim() ? a.userName.trim() : fallbackName;
-
-                const {error} = await supabase.rpc("create_organization_with_owner", {
-                    p_org_name: a.orgName,
-                    p_user_id: sessionUser.id,
-                    p_user_name: userName,
-                });
-                if (error) throw error;
-            }
+        const gotLock = tryAcquirePendingLock(userId);
+        if (!gotLock) {
+            pendingProcessingRef.current = false;
+            return;
         }
 
-        clearPending();
+        let actions: PendingAction[] = [];
+
+        try {
+            actions = readPending();
+            if (actions.length === 0) return;
+
+            // ✅ klíčová změna: clear hned, aby 2. tab už nic nezpracoval
+            clearPending();
+
+            const fallbackName =
+                (sessionUser.user_metadata?.full_name as string | undefined) ||
+                (sessionUser.email ? sessionUser.email.split("@")[0] : "");
+
+            for (const a of actions) {
+                if (a.kind === "invite") {
+                    const userName = a.userName?.trim() ? a.userName.trim() : fallbackName;
+
+                    const {error} = await supabase.rpc("accept_organization_invite", {
+                        p_token: a.token,
+                        p_user_name: userName,
+                    });
+                    if (error) throw error;
+                }
+
+                if (a.kind === "create_org") {
+                    const userName = a.userName?.trim() ? a.userName.trim() : fallbackName;
+
+                    /**
+                     * ✅ SECURITY FIX: nová DB funkce už NEbere p_user_id,
+                     * uvnitř používá auth.uid().
+                     */
+                    const {error} = await supabase.rpc("create_organization_with_owner", {
+                        p_org_name: a.orgName,
+                        p_user_name: userName,
+                    });
+                    if (error) throw error;
+                }
+            }
+        } catch (e) {
+            // Když to failne, pending vrátíme zpátky (ať se neztratí).
+            if (actions.length > 0) {
+                // prepend: ať se to zkusí znovu hned
+                const current = readPending();
+                writePending([...actions, ...current]);
+            }
+            throw e;
+        } finally {
+            releasePendingLock(userId);
+            pendingProcessingRef.current = false;
+        }
     };
 
     // Initialize auth state (NEčeká na org refresh, aby neblokoval public stránky)
@@ -217,7 +308,7 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
                 setSession(s ?? null);
                 setUser(s?.user ?? null);
 
-                // ✅ init: pouze refresh orgs (pending se tu NEřeší)
+                // ✅ init: refresh orgs (pending se řeší přes onAuthStateChange INITIAL_SESSION / SIGNED_IN)
                 if (s?.user) {
                     refreshOrganizations(s.user.id).catch((e) => {
                         console.error("[AuthContext] init refreshOrganizations failed:", e);
@@ -270,10 +361,11 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
                 setCurrentOrg(null);
             });
 
-            // 2) ✅ pouze při SIGNED_IN zpracuj pending, pak refresh znovu
-            if (event === "SIGNED_IN") {
+            // 2) pending actions – process on SIGNED_IN + INITIAL_SESSION
+            // INITIAL_SESSION je důležité pro callback tab, kde už session existuje.
+            if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
                 processPendingActions(s.user)
-                    .then(() => refreshOrganizations(s.user!.id).catch(() => {
+                    .then(() => refreshOrganizations(s.user.id).catch(() => {
                     }))
                     .catch((e) => console.error("[AuthContext] processPendingActions failed:", e));
             }
